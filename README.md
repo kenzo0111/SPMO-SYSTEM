@@ -36,7 +36,7 @@ Other Tools: Barcode/QR integration, PDF/Excel export
 
 We are students from Camarines Norte State College (CNSC) taking BS in Information Systems (BSIS).
 
-👨‍💻 Marinel G. Ledesma – Frontend Developer
+👨‍💻 Marinel G. Ledesma – Frontend Developer / Papers
 
 👩‍💻 Vince Steven D. Balce – Backend Developer / Project Leader
 
