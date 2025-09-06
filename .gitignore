@@ -1,1 +1,72 @@
- 
+ # =========================
+# OS / Editor files
+# =========================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+
+# =========================
+# Node / Frontend
+# =========================
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+build/
+
+# =========================
+# Composer / PHP
+# =========================
+vendor/
+composer.lock
+
+# =========================
+# Laravel (if used)
+# =========================
+/bootstrap/cache/*
+/storage/*.key
+/storage/app/public/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+.env
+.env.*
+.env.local
+
+# =========================
+# Database / Dumps
+# =========================
+*.sql
+*.sqlite
+*.db
+*.db-journal
+
+# =========================
+# IDE / Editors
+# =========================
+.vscode/
+.idea/
+*.iml
+
+# =========================
+# Logs / Cache
+# =========================
+*.log
+*.cache
+*.pid
+*.seed
+*.cover
+coverage/
+phpunit.xml
+.phpunit.result.cache
+
+# =========================
+# Uploads (optional: if storing files locally)
+# =========================
+/public/uploads/*
+/storage/uploads/*
+
