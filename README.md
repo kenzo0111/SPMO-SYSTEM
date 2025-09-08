@@ -40,7 +40,7 @@ We are students from Camarines Norte State College (CNSC) taking BS in Informati
 
 👩‍💻 Vince Steven D. Balce – Backend Developer / Project Leader
 
-👨‍💻 Cherry Ann Quila – Documentation / QA / Designer
+👨‍💻 Cherry Ann Quila – Frontend / QA / Designer
 
 
 
