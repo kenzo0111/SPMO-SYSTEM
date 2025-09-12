@@ -52,7 +52,7 @@ header {
 
 /* Hero Section */
 .hero {
-  background: url('background.jpg') no-repeat center center/cover;
+  background: url('cnscbg.jpg') no-repeat center center/cover;
   min-height: 100vh;
   display: flex;
   align-items: center;
