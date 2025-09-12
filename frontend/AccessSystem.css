@@ -1,0 +1,156 @@
+/* Background for login */
+.login-body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #1a1c40, #0f1126);
+  color: #fff;
+  font-family: "Arial", sans-serif;
+}
+
+/* Header */
+.login-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 2rem;
+}
+
+.login-header .logo {
+  display: flex;
+  align-items: center;
+}
+
+.login-header img {
+  height: 45px;
+  margin-right: 0.8rem;
+}
+
+.logo-text h1 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.logo-text hr {
+  border: none;
+  border-top: 1px solid #555;
+  margin: 0.2rem 0;
+}
+
+.logo-text p {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* Login card */
+.login-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 350px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+}
+
+.login-card h2 {
+  margin-bottom: 0.3rem;
+  font-size: 1.6rem;
+  font-weight: bold;
+}
+
+.login-card .subtitle {
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+  color: #bbb;
+}
+
+.login-card label {
+  display: block;
+  font-size: 0.85rem;
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.login-card input[type="email"] {
+  width: 100%;
+  padding: 0.6rem;
+  margin-top: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.pin-inputs {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+}
+
+.pin-inputs input {
+  width: 45px;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.forgot {
+  display: block;
+  margin: 0.8rem 0;
+  font-size: 0.8rem;
+  color: #ff5c5c;
+  text-decoration: none;
+}
+
+.btn.green-btn {
+  display: block;
+  width: 100%;
+  padding: 0.8rem;
+  background: #3ddc84;
+  border: none;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: #000;
+  transition: transform 0.2s ease;
+}
+
+.btn.green-btn:hover {
+  transform: scale(1.05);
+}
+
+.register-text {
+  font-size: 0.8rem;
+  margin-top: 1rem;
+}
+
+.register-text a {
+  color: #3ddc84;
+  text-decoration: none;
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+  .login-card {
+    max-width: 90%;
+    padding: 1.5rem;
+  }
+  .pin-inputs input {
+    width: 40px;
+  }
+}
