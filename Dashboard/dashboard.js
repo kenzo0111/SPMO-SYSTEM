@@ -1824,3 +1824,4 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize icons
     lucide.createIcons();
 });
+
