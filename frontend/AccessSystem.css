@@ -42,6 +42,13 @@
   opacity: 0.8;
   margin: 0;
 }
+hr {
+  border: none;          /* remove default style */
+  height: 2px;           /* thickness */
+  background-color: yellow; /* yellow line */
+  margin: 1rem 0;        /* spacing */
+}
+
 
 /* Login card */
 .login-container {
@@ -49,6 +56,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 50px;
 }
 
 .login-card {
