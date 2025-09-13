@@ -1219,7 +1219,7 @@ function closePurchaseOrderModal() {
 }
 
 function generatePurchaseOrderModal(mode, requestId) {
-    const title = mode === 'create' ? 'NEW PURCHASE ORDER' : 'PURCHASE ORDER';
+    const title = mode === 'create' ? 'PURCHASE ORDER' : 'PURCHASE ORDER';
     const isReadOnly = mode === 'view';
     
     return `
@@ -1327,7 +1327,7 @@ function generatePurchaseOrderModal(mode, requestId) {
                     <table class="table" id="po-items-table">
                         <thead>
                             <tr>
-                                <th>Stock Property Number</th>
+                                <th>Stock Property No.</th>
                                 <th>Unit</th>
                                 <th>Description</th>
                                 <th>Detailed Description</th>
