@@ -970,12 +970,16 @@ function generateNewRequestPage() {
                     </tbody>
                 </table>
                 
-                <div class="pagination">
-                    <div class="pagination-info">Showing 1 to ${MockData.newRequests.length} of ${MockData.newRequests.length} requests</div>
-                    <div class="pagination-controls">
-                        <button class="btn-secondary" disabled>Previous</button>
-                        <button class="btn-primary">1</button>
-                        <button class="btn-secondary">Next</button>
+                <div class="enhanced-pagination">
+                    <div class="pagination-left">
+                            Showing 1 to 3 of 3 entries
+                        </div>
+                    <div class="pagination-right">
+                        <button class="pagination-btn" disabled>Previous</button>
+                        <button class="pagination-btn active">1</button>
+                        <button class="pagination-btn">2</button>
+                        <button class="pagination-btn">3</button>
+                        <button class="pagination-btn">Next</button>
                     </div>
                 </div>
             </div>
