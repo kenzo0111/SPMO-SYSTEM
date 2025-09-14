@@ -90,19 +90,12 @@ const MockData = {
     ],
     
     newRequests: [
-        { id: 'REQ001', poNumber: 'PO-2025-001', supplier: 'ABC Office Supplies', requestDate: '2025-01-10', deliveryDate: '2025-01-20', totalAmount: 15750.00, status: 'draft', requestedBy: 'John Doe', department: 'Administration' },
-        { id: 'REQ002', poNumber: 'PO-2025-002', supplier: 'Tech Solutions Inc.', requestDate: '2025-01-12', deliveryDate: '2025-01-25', totalAmount: 85000.00, status: 'draft', requestedBy: 'Jane Smith', department: 'IT Department' },
-        { id: 'REQ003', poNumber: 'PO-2025-003', supplier: 'Cleaning Services Co.', requestDate: '2025-01-15', deliveryDate: '2025-01-30', totalAmount: 12500.00, status: 'submitted', requestedBy: 'Mike Johnson', department: 'Maintenance' }
     ],
     
     pendingRequests: [
-        { id: 'REQ004', poNumber: 'PO-2025-004', supplier: 'Educational Materials Inc.', requestDate: '2025-01-08', deliveryDate: '2025-01-22', totalAmount: 45000.00, status: 'pending', requestedBy: 'Sarah Wilson', department: 'Academic Affairs', priority: 'high', submittedDate: '2025-01-09' },
-        { id: 'REQ005', poNumber: 'PO-2025-005', supplier: 'Laboratory Equipment Co.', requestDate: '2025-01-10', deliveryDate: '2025-02-01', totalAmount: 125000.00, status: 'under-review', requestedBy: 'Dr. Robert Brown', department: 'Science Department', priority: 'urgent', submittedDate: '2025-01-11' }
     ],
     
     completedRequests: [
-        { id: 'REQ001', poNumber: 'PO-2024-089', supplier: 'ABC Office Supplies', requestDate: '2024-12-15', approvedDate: '2024-12-18', deliveredDate: '2024-12-28', totalAmount: 25000.00, status: 'completed', requestedBy: 'John Doe', department: 'Administration', approvedBy: 'Dr. Maria Santos', paymentStatus: 'paid' },
-        { id: 'REQ002', poNumber: 'PO-2024-090', supplier: 'Tech Solutions Inc.', requestDate: '2024-12-20', approvedDate: '2024-12-22', deliveredDate: '2025-01-05', totalAmount: 85000.00, status: 'delivered', requestedBy: 'Jane Smith', department: 'IT Department', approvedBy: 'Prof. Carlos Rivera', paymentStatus: 'pending' }
     ]
 };
 
@@ -1217,6 +1210,8 @@ function closePurchaseOrderModal() {
     modal.classList.remove('active');
     AppState.currentModal = null;
 }
+
+
 
 function generatePurchaseOrderModal(mode, requestId) {
     const title = mode === 'create' ? 'PURCHASE ORDER' : 'PURCHASE ORDER';
