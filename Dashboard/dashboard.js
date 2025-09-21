@@ -800,6 +800,8 @@ function generateStockInPage() {
     `;
 }
 
+
+
 function generateStockOutPage() {
     return `
         <div class="page-header">
