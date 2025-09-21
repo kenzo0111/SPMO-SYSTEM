@@ -90,19 +90,12 @@ const MockData = {
     ],
     
     newRequests: [
-        { id: 'REQ001', poNumber: 'PO-2025-001', supplier: 'ABC Office Supplies', requestDate: '2025-01-10', deliveryDate: '2025-01-20', totalAmount: 15750.00, status: 'draft', requestedBy: 'John Doe', department: 'Administration' },
-        { id: 'REQ002', poNumber: 'PO-2025-002', supplier: 'Tech Solutions Inc.', requestDate: '2025-01-12', deliveryDate: '2025-01-25', totalAmount: 85000.00, status: 'draft', requestedBy: 'Jane Smith', department: 'IT Department' },
-        { id: 'REQ003', poNumber: 'PO-2025-003', supplier: 'Cleaning Services Co.', requestDate: '2025-01-15', deliveryDate: '2025-01-30', totalAmount: 12500.00, status: 'submitted', requestedBy: 'Mike Johnson', department: 'Maintenance' }
     ],
     
     pendingRequests: [
-        { id: 'REQ004', poNumber: 'PO-2025-004', supplier: 'Educational Materials Inc.', requestDate: '2025-01-08', deliveryDate: '2025-01-22', totalAmount: 45000.00, status: 'pending', requestedBy: 'Sarah Wilson', department: 'Academic Affairs', priority: 'high', submittedDate: '2025-01-09' },
-        { id: 'REQ005', poNumber: 'PO-2025-005', supplier: 'Laboratory Equipment Co.', requestDate: '2025-01-10', deliveryDate: '2025-02-01', totalAmount: 125000.00, status: 'under-review', requestedBy: 'Dr. Robert Brown', department: 'Science Department', priority: 'urgent', submittedDate: '2025-01-11' }
     ],
     
     completedRequests: [
-        { id: 'REQ001', poNumber: 'PO-2024-089', supplier: 'ABC Office Supplies', requestDate: '2024-12-15', approvedDate: '2024-12-18', deliveredDate: '2024-12-28', totalAmount: 25000.00, status: 'completed', requestedBy: 'John Doe', department: 'Administration', approvedBy: 'Dr. Maria Santos', paymentStatus: 'paid' },
-        { id: 'REQ002', poNumber: 'PO-2024-090', supplier: 'Tech Solutions Inc.', requestDate: '2024-12-20', approvedDate: '2024-12-22', deliveredDate: '2025-01-05', totalAmount: 85000.00, status: 'delivered', requestedBy: 'Jane Smith', department: 'IT Department', approvedBy: 'Prof. Carlos Rivera', paymentStatus: 'pending' }
     ]
 };
 
@@ -900,7 +893,7 @@ function generateNewRequestPage() {
                 </button>
             </div>
         </div>
-        
+
         <div class="page-content">
             <div class="table-container">
                 <div class="table-header">
@@ -940,6 +933,7 @@ function generateNewRequestPage() {
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- If you have dynamic data -->
                         ${MockData.newRequests.map(request => `
                             <tr>
                                 <td>${request.id}</td>
@@ -967,13 +961,22 @@ function generateNewRequestPage() {
                                 </td>
                             </tr>
                         `).join('')}
+
+                        <!-- If no data -->
+                        <tr>
+                            <td colspan="10" class="px-6 py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center gap-2">
+                                    <p>No requests found</p>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
                 
                 <div class="enhanced-pagination">
                     <div class="pagination-left">
-                            Showing 1 to 3 of 3 entries
-                        </div>
+                        Showing 1 to 3 of 3 entries
+                    </div>
                     <div class="pagination-right">
                         <button class="pagination-btn" disabled>Previous</button>
                         <button class="pagination-btn active">1</button>
@@ -984,6 +987,7 @@ function generateNewRequestPage() {
                 </div>
             </div>
         </div>
+
     `;
 }
 
@@ -1000,7 +1004,7 @@ function generatePendingApprovalPage() {
                 </div>
             </div>
         </div>
-        
+
         <div class="page-content">
             <div class="table-container">
                 <div class="table-header">
@@ -1041,43 +1045,55 @@ function generatePendingApprovalPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${MockData.pendingRequests.map(request => `
-                            <tr>
-                                <td>${request.id}</td>
-                                <td>
-                                    <button class="link" onclick="openPurchaseOrderModal('view', '${request.id}')" style="background: none; border: none; color: #dc2626; text-decoration: underline; cursor: pointer;">
-                                        ${request.poNumber}
-                                    </button>
-                                </td>
-                                <td>${request.supplier}</td>
-                                <td>${formatCurrency(request.totalAmount)}</td>
-                                <td><span class="${getBadgeClass(request.priority, 'priority')}">${request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}</span></td>
-                                <td><span class="${getBadgeClass(request.status)}">${request.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span></td>
-                                <td>${request.requestedBy}</td>
-                                <td>${request.department}</td>
-                                <td>${request.submittedDate}</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="btn-outline-blue" onclick="openPurchaseOrderModal('view', '${request.id}')" title="View Details">
-                                            <i data-lucide="eye" class="icon"></i>
+                        ${MockData.pendingRequests.length > 0 
+                            ? MockData.pendingRequests.map(request => `
+                                <tr>
+                                    <td>${request.id}</td>
+                                    <td>
+                                        <button class="link" onclick="openPurchaseOrderModal('view', '${request.id}')" style="background: none; border: none; color: #dc2626; text-decoration: underline; cursor: pointer;">
+                                            ${request.poNumber}
                                         </button>
-                                        <button class="btn-outline-orange" onclick="openPurchaseOrderModal('edit', '${request.id}')" title="Edit Request">
-                                            <i data-lucide="edit" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-green" onclick="approveRequest('${request.id}')" title="Approve Request">
-                                            <i data-lucide="check" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-red" onclick="rejectRequest('${request.id}')" title="Reject Request">
-                                            <i data-lucide="x" class="icon"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `).join('')}
+                                    </td>
+                                    <td>${request.supplier}</td>
+                                    <td>${formatCurrency(request.totalAmount)}</td>
+                                    <td><span class="${getBadgeClass(request.priority, 'priority')}">${request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}</span></td>
+                                    <td><span class="${getBadgeClass(request.status)}">${request.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span></td>
+                                    <td>${request.requestedBy}</td>
+                                    <td>${request.department}</td>
+                                    <td>${request.submittedDate}</td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="btn-outline-blue" onclick="openPurchaseOrderModal('view', '${request.id}')" title="View Details">
+                                                <i data-lucide="eye" class="icon"></i>
+                                            </button>
+                                            <button class="btn-outline-orange" onclick="openPurchaseOrderModal('edit', '${request.id}')" title="Edit Request">
+                                                <i data-lucide="edit" class="icon"></i>
+                                            </button>
+                                            <button class="btn-outline-green" onclick="approveRequest('${request.id}')" title="Approve Request">
+                                                <i data-lucide="check" class="icon"></i>
+                                            </button>
+                                            <button class="btn-outline-red" onclick="rejectRequest('${request.id}')" title="Reject Request">
+                                                <i data-lucide="x" class="icon"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')
+                            : `
+                                <tr>
+                                    <td colspan="10" class="px-6 py-12 text-center text-gray-500">
+                                        <div class="flex flex-col items-center gap-2">
+                                            <p>No pending requests found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `
+                        }
                     </tbody>
                 </table>
             </div>
         </div>
+
     `;
 }
 
@@ -1165,7 +1181,14 @@ function generateCompletedRequestPage() {
                                     </div>
                                 </td>
                             </tr>
-                        `).join('')}
+                        `).join('')} 
+                                <tr>
+                                    <td colspan="10" class="px-6 py-12 text-center text-gray-500">
+                                        <div class="flex flex-col items-center gap-2">
+                                            <p>No Completed found</p>
+                                        </div>
+                                    </td>
+                                </tr>
                     </tbody>
                 </table>
                 
