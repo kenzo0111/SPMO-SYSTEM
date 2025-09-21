@@ -7,44 +7,65 @@
     <link rel="stylesheet" href="ContactSupport.css">
 </head>
 <body>
-   <div class="container">
+   
+    <div class="container">
+
+    <!-- Header section -->
     <div class="header">
       <h1>Contact Support</h1>
-      <p>We're here to help—share your thoughts or inquiries with us, and we'll get back to you soon!</p>
+      <p class="subtitle">
+        We’re here to help—share your thoughts or inquiries with us, 
+        and we’ll get back to you soon!
+      </p>
     </div>
 
-    <div class="card">
-      <!-- Left side -->
-      <div class="left">
-        <label for="name">Name</label>
-        <input type="text" id="name" placeholder="Your Name">
-
-        <label for="email">Email</label>
-        <input type="email" id="email" placeholder="you@example.com">
-
-        <div class="phone">
-          <span>📞 Office: 0934 567 3312</span>
+    <!-- Form -->
+    <form>
+      <!-- Left Side -->
+      <div class="left-side">
+        <div>
+          <label for="name">Name</label>
+          <input type="text" id="name" placeholder="Jonnie Dawson">
         </div>
 
-        <div class="socials">
-          <img src="twitter-logo.png" alt="Twitter">
-          <img src="instagram-logo.png" alt="Instagram">
+        <div>
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="hello@uiwiki.co">
+        </div>
+
+        <!-- Phone + Social side by side -->
+        <div class="row-boxes">
+          <div class="contact-box">
+            📞 Phone <br> 0934 567 3312
+          </div>
+          <div class="socials">
+            <span>Follow us:</span>
+            <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" alt="Facebook"></a>
+            <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/733/733558.png" alt="Instagram"></a>
+          </div>
         </div>
       </div>
 
-      <!-- Right side -->
-      <div class="right">
-        <label for="message">Message</label>
-        <textarea id="message" placeholder="Write your message..."></textarea>
-
-        <label for="screenshot">Screenshots (Optional)</label>
-        <div class="upload-box">
-          Upload or drop files
+      <!-- Right Side -->
+      <div class="right-side">
+        <div>
+          <label for="message">Message</label>
+          <textarea id="message" placeholder="I'd love to learn more about your services"></textarea>
         </div>
 
-        <button class="btn-submit">Submit</button>
+        <div>
+          <label for="screenshot">Screenshots (Optional)</label>
+          <div class="upload-box">Upload or drop files</div>
+        </div>
       </div>
-    </div>
+
+      <!-- Submit -->
+      <div class="full-width">
+        <button type="submit" class="submit-btn">Submit</button>
+      </div>
+    </form>
   </div>
+
+
 </body>
 </html> 
