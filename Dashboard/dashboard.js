@@ -26,8 +26,14 @@ const AppState = {
             unitCost: 0, 
             amount: 0 
         }
-    ]
+    ],
+
+    // ✅ add these for real data
+    newRequests: [],
+    pendingRequests: [],
+    completedRequests: []
 };
+
 
 // Mock Data
 const MockData = {
@@ -818,64 +824,235 @@ function generateStockOutPage() {
         </div>
         
         <div class="page-content">
-            <div class="table-container">
-                <div class="table-header">
-                    <div class="search-container">
-                        <input type="text" class="form-input search-input" placeholder="Search stock issues...">
+            <!-- Enhanced Filter Bar -->
+            <div class="enhanced-filter-bar">
+                <div class="filter-left">
+                    <div class="enhanced-search">
+                        <input type="text" class="form-input" placeholder="Search stock issues..." id="stockOutSearch">
                         <i data-lucide="search" class="search-icon"></i>
                     </div>
-                    <div class="table-filters">
-                        <input type="date" class="form-input" style="width: 160px;">
-                        <select class="form-select" style="width: 140px;">
-                            <option>All Departments</option>
-                            <option>Administration</option>
-                            <option>IT Department</option>
-                            <option>Academic Affairs</option>
-                        </select>
+                    <select class="filter-dropdown" id="departmentFilter">
+                        <option value="">All Departments</option>
+                        <option value="administration">Administration</option>
+                        <option value="it">IT Department</option>
+                        <option value="academic">Academic Affairs</option>
+                        <option value="finance">Finance</option>
+                        <option value="hr">Human Resources</option>
+                        <option value="maintenance">Maintenance</option>
+                    </select>
+                    <select class="filter-dropdown" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="completed">Completed</option>
+                        <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="filter-right">
+                    <input type="date" class="filter-dropdown" id="dateFrom" title="From Date" style="width: 150px;">
+                    <button class="btn btn-secondary" onclick="clearStockOutFilters()" title="Clear Filters">
+                        <i data-lucide="x" class="icon"></i>
+                        Clear
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportStockOut()" title="Export Data">
+                        <i data-lucide="download" class="icon"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="issue_id">Issue ID</th>
+                                <th class="sortable" data-sort="date">Date</th>
+                                <th class="sortable" data-sort="product_name">Product Name</th>
+                                <th>SKU</th>
+                                <th class="sortable" data-sort="quantity">Quantity</th>
+                                <th class="sortable" data-sort="unit_cost">Unit Cost</th>
+                                <th class="sortable" data-sort="total_cost">Total Cost</th>
+                                <th class="sortable" data-sort="department">Department</th>
+                                <th>Issued To</th>
+                                <th>Issued By</th>
+                                <th>Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-semibold">SO-2025-001</td>
+                                <td>2025-01-16</td>
+                                <td>Ballpoint Pen</td>
+                                <td class="text-sm text-gray-600">E002</td>
+                                <td>50</td>
+                                <td>₱15.00</td>
+                                <td class="font-semibold">₱750.00</td>
+                                <td>
+                                    <span class="badge blue">Administration</span>
+                                </td>
+                                <td>Jane Smith</td>
+                                <td>John Doe</td>
+                                <td>
+                                    <span class="badge green">Completed</span>
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('SO-2025-001')">
+                                            <i data-lucide="eye" class="icon"></i>
+                                        </button>
+                                        <button class="btn-outline-orange" title="Edit" onclick="editStockOut('SO-2025-001')">
+                                            <i data-lucide="edit" class="icon"></i>
+                                        </button>
+                                        <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('SO-2025-001')">
+                                            <i data-lucide="trash-2" class="icon"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold">SO-2025-002</td>
+                                <td>2025-01-15</td>
+                                <td>A4 Bond Paper</td>
+                                <td class="text-sm text-gray-600">P001</td>
+                                <td>20</td>
+                                <td>₱250.00</td>
+                                <td class="font-semibold">₱5,000.00</td>
+                                <td>
+                                    <span class="badge purple">IT Department</span>
+                                </td>
+                                <td>Mike Johnson</td>
+                                <td>Sarah Wilson</td>
+                                <td>
+                                    <span class="badge yellow">Pending</span>
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('SO-2025-002')">
+                                            <i data-lucide="eye" class="icon"></i>
+                                        </button>
+                                        <button class="btn-outline-orange" title="Edit" onclick="editStockOut('SO-2025-002')">
+                                            <i data-lucide="edit" class="icon"></i>
+                                        </button>
+                                        <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('SO-2025-002')">
+                                            <i data-lucide="trash-2" class="icon"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold">SO-2025-003</td>
+                                <td>2025-01-14</td>
+                                <td>Marker Pen (Black)</td>
+                                <td class="text-sm text-gray-600">E015</td>
+                                <td>12</td>
+                                <td>₱35.00</td>
+                                <td class="font-semibold">₱420.00</td>
+                                <td>
+                                    <span class="badge green">Academic Affairs</span>
+                                </td>
+                                <td>Dr. Maria Santos</td>
+                                <td>John Doe</td>
+                                <td>
+                                    <span class="badge green">Completed</span>
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('SO-2025-003')">
+                                            <i data-lucide="eye" class="icon"></i>
+                                        </button>
+                                        <button class="btn-outline-orange" title="Edit" onclick="editStockOut('SO-2025-003')">
+                                            <i data-lucide="edit" class="icon"></i>
+                                        </button>
+                                        <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('SO-2025-003')">
+                                            <i data-lucide="trash-2" class="icon"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold">SO-2025-004</td>
+                                <td>2025-01-13</td>
+                                <td>USB Flash Drive 32GB</td>
+                                <td class="text-sm text-gray-600">T008</td>
+                                <td>5</td>
+                                <td>₱800.00</td>
+                                <td class="font-semibold">₱4,000.00</td>
+                                <td>
+                                    <span class="badge orange">Finance</span>
+                                </td>
+                                <td>Robert Lee</td>
+                                <td>Sarah Wilson</td>
+                                <td>
+                                    <span class="badge red">Cancelled</span>
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('SO-2025-004')">
+                                            <i data-lucide="eye" class="icon"></i>
+                                        </button>
+                                        <button class="btn-outline-orange" title="Edit" onclick="editStockOut('SO-2025-004')">
+                                            <i data-lucide="edit" class="icon"></i>
+                                        </button>
+                                        <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('SO-2025-004')">
+                                            <i data-lucide="trash-2" class="icon"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-semibold">SO-2025-005</td>
+                                <td>2025-01-12</td>
+                                <td>Stapler (Heavy Duty)</td>
+                                <td class="text-sm text-gray-600">E025</td>
+                                <td>3</td>
+                                <td>₱450.00</td>
+                                <td class="font-semibold">₱1,350.00</td>
+                                <td>
+                                    <span class="badge indigo">HR Department</span>
+                                </td>
+                                <td>Lisa Chen</td>
+                                <td>John Doe</td>
+                                <td>
+                                    <span class="badge green">Completed</span>
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('SO-2025-005')">
+                                            <i data-lucide="eye" class="icon"></i>
+                                        </button>
+                                        <button class="btn-outline-orange" title="Edit" onclick="editStockOut('SO-2025-005')">
+                                            <i data-lucide="edit" class="icon"></i>
+                                        </button>
+                                        <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('SO-2025-005')">
+                                            <i data-lucide="trash-2" class="icon"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- Enhanced Pagination -->
+                    <div class="enhanced-pagination">
+                        <div class="pagination-left">
+                            Showing 1-5 of 47 stock issues
+                        </div>
+                        <div class="pagination-right">
+                            <button class="pagination-btn" disabled>
+                                <i data-lucide="chevron-left" class="icon"></i>
+                            </button>
+                            <button class="pagination-btn active">1</button>
+                            <button class="pagination-btn">2</button>
+                            <button class="pagination-btn">3</button>
+                            <span class="pagination-btn">...</span>
+                            <button class="pagination-btn">10</button>
+                            <button class="pagination-btn">
+                                <i data-lucide="chevron-right" class="icon"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Issue ID</th>
-                            <th>Date</th>
-                            <th>Product Name</th>
-                            <th>SKU</th>
-                            <th>Quantity</th>
-                            <th>Unit Cost</th>
-                            <th>Total Cost</th>
-                            <th>Department</th>
-                            <th>Issued To</th>
-                            <th>Issued By</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>SO-2025-001</td>
-                            <td>2025-01-16</td>
-                            <td>Ballpoint Pen</td>
-                            <td>E002</td>
-                            <td>50</td>
-                            <td>₱15.00</td>
-                            <td>₱750.00</td>
-                            <td>Administration</td>
-                            <td>Jane Smith</td>
-                            <td>John Doe</td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-outline-orange" title="Edit">
-                                        <i data-lucide="edit" class="icon"></i>
-                                    </button>
-                                    <button class="btn-outline-red" title="Delete">
-                                        <i data-lucide="trash-2" class="icon"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
             </div>
         </div>
     `;
@@ -883,86 +1060,96 @@ function generateStockOutPage() {
 
 function generateNewRequestPage() {
     return `
-        <div class="page-header">
+        <section class="page-header">
             <div class="page-header-content">
-                <div>
+                <header>
                     <h1 class="page-title">New Request</h1>
                     <p class="page-subtitle">Create and manage new purchase requests</p>
-                </div>
+                </header>
                 <button class="btn btn-primary" onclick="openPurchaseOrderModal('create')">
                     <i data-lucide="plus" class="icon"></i>
                     Create New Request
                 </button>
             </div>
-        </div>
+        </section>
 
-        <div class="page-content">
-            <div class="table-container">
-                <div class="table-header">
-                    <div class="search-container">
-                        <input type="text" class="form-input search-input" placeholder="Search requests...">
+        <main class="page-content">
+            <!-- 🔹 Enhanced Filter Bar -->
+            <section class="enhanced-filter-bar" aria-label="Filters">
+                <div class="filter-left">
+                    <div class="enhanced-search">
+                        <input type="search" class="form-input" placeholder="Search requests..." id="requestSearch" aria-label="Search requests">
                         <i data-lucide="search" class="search-icon"></i>
                     </div>
-                    <div class="table-filters">
-                        <select class="form-select" style="width: 120px;">
-                            <option>All Status</option>
-                            <option>Draft</option>
-                            <option>Submitted</option>
-                            <option>Pending</option>
-                        </select>
-                        <select class="form-select" style="width: 140px;">
-                            <option>All Departments</option>
-                            <option>Administration</option>
-                            <option>IT Department</option>
-                            <option>Maintenance</option>
-                        </select>
-                    </div>
+
+                    <label for="statusFilter" class="visually-hidden">Filter by Status</label>
+                    <select class="filter-dropdown" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="draft">Draft</option>
+                        <option value="submitted">Submitted</option>
+                        <option value="pending">Pending</option>
+                    </select>
+
+                    <label for="departmentFilter" class="visually-hidden">Filter by Department</label>
+                    <select class="filter-dropdown" id="departmentFilter">
+                        <option value="">All Departments</option>
+                        <option value="administration">Administration</option>
+                        <option value="it">IT Department</option>
+                        <option value="maintenance">Maintenance</option>
+                    </select>
                 </div>
-                
+            </section>
+
+            <!-- 🔹 Requests Table -->
+            <section class="table-container">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Request ID</th>
-                            <th>P.O. Number</th>
-                            <th>Supplier</th>
-                            <th>Request Date</th>
-                            <th>Delivery Date</th>
-                            <th>Total Amount</th>
-                            <th>Status</th>
-                            <th>Requested By</th>
-                            <th>Department</th>
-                            <th>Action</th>
+                            <th scope="col">Request ID</th>
+                            <th scope="col">P.O. Number</th>
+                            <th scope="col">Supplier</th>
+                            <th scope="col">Request Date</th>
+                            <th scope="col">Delivery Date</th>
+                            <th scope="col">Total Amount</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Requested By</th>
+                            <th scope="col">Department</th>
+                            <th scope="col">Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- If you have dynamic data -->
-                        ${MockData.newRequests.map(request => `
-                            <tr>
-                                <td>${request.id}</td>
-                                <td>
-                                    <button class="link" onclick="openPurchaseOrderModal('view', '${request.id}')" style="background: none; border: none; color: #dc2626; text-decoration: underline; cursor: pointer;">
-                                        ${request.poNumber}
+                        ${AppState.newRequests.map(request => `
+                        <tr>
+                            <td>${request.id}</td>
+                            <td>
+                                <button class="link" onclick="openPurchaseOrderModal('view', '${request.id}')"
+                                    style="background: none; border: none; color: #dc2626; text-decoration: underline; cursor: pointer;">
+                                    ${request.poNumber}
+                                </button>
+                            </td>
+                            <td>${request.supplier}</td>
+                            <td>${request.requestDate}</td>
+                            <td>${request.deliveryDate}</td>
+                            <td>${formatCurrency(request.totalAmount)}</td>
+                            <td>
+                                <span class="${getBadgeClass(request.status)}">
+                                    ${request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                                </span>
+                            </td>
+                            <td>${request.requestedBy}</td>
+                            <td>${request.department}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn-outline-orange" onclick="openPurchaseOrderModal('edit', '${request.id}')" title="Edit">
+                                        <i data-lucide="edit" class="icon"></i>
                                     </button>
-                                </td>
-                                <td>${request.supplier}</td>
-                                <td>${request.requestDate}</td>
-                                <td>${request.deliveryDate}</td>
-                                <td>${formatCurrency(request.totalAmount)}</td>
-                                <td><span class="${getBadgeClass(request.status)}">${request.status.charAt(0).toUpperCase() + request.status.slice(1)}</span></td>
-                                <td>${request.requestedBy}</td>
-                                <td>${request.department}</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="btn-outline-orange" onclick="openPurchaseOrderModal('edit', '${request.id}')" title="Edit">
-                                            <i data-lucide="edit" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-red" title="Delete">
-                                            <i data-lucide="trash-2" class="icon"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `).join('')}
+                                    <button class="btn-outline-red" onclick="deleteRequest('${request.id}')" title="Delete">
+                                        <i data-lucide="trash-2" class="icon"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
 
                         <!-- If no data -->
                         <tr>
@@ -974,8 +1161,9 @@ function generateNewRequestPage() {
                         </tr>
                     </tbody>
                 </table>
-                
-                <div class="enhanced-pagination">
+
+                <!-- 🔹 Pagination -->
+                <nav class="enhanced-pagination" aria-label="Pagination">
                     <div class="pagination-left">
                         Showing 1 to 3 of 3 entries
                     </div>
@@ -986,80 +1174,99 @@ function generateNewRequestPage() {
                         <button class="pagination-btn">3</button>
                         <button class="pagination-btn">Next</button>
                     </div>
-                </div>
-            </div>
-        </div>
-
+                </nav>
+            </section>
+        </main>
     `;
 }
 
+
 function generatePendingApprovalPage() {
     return `
-        <div class="page-header">
+        <section class="page-header">
             <div class="page-header-content">
-                <div>
+                <header>
                     <h1 class="page-title">Pending Approval</h1>
                     <p class="page-subtitle">Review and approve purchase requests</p>
-                </div>
+                </header>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span class="badge yellow">${MockData.pendingRequests.length} Pending Requests</span>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="page-content">
-            <div class="table-container">
-                <div class="table-header">
-                    <div class="search-container">
-                        <input type="text" class="form-input search-input" placeholder="Search requests...">
+        <main class="page-content">
+            <!-- 🔹 Enhanced Filter Bar -->
+            <section class="enhanced-filter-bar" aria-label="Filters">
+                <div class="filter-left">
+                    <!-- Search -->
+                    <div class="enhanced-search">
+                        <input type="search" class="form-input" placeholder="Search requests..." id="pendingSearch" aria-label="Search pending requests">
                         <i data-lucide="search" class="search-icon"></i>
                     </div>
-                    <div class="table-filters">
-                        <select class="form-select" style="width: 140px;">
-                            <option>All Status</option>
-                            <option>Pending</option>
-                            <option>Under Review</option>
-                            <option>Awaiting Approval</option>
-                        </select>
-                        <select class="form-select" style="width: 120px;">
-                            <option>All Priority</option>
-                            <option>Urgent</option>
-                            <option>High</option>
-                            <option>Medium</option>
-                            <option>Low</option>
-                        </select>
-                    </div>
+
+                    <!-- Status Filter -->
+                    <label for="statusFilter" class="visually-hidden">Filter by Status</label>
+                    <select class="filter-dropdown" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="under-review">Under Review</option>
+                        <option value="awaiting-approval">Awaiting Approval</option>
+                    </select>
+
+                    <!-- Priority Filter -->
+                    <label for="priorityFilter" class="visually-hidden">Filter by Priority</label>
+                    <select class="filter-dropdown" id="priorityFilter">
+                        <option value="">All Priority</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
                 </div>
-                
+            </section>
+
+            <!-- 🔹 Requests Table -->
+            <section class="table-container">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Request ID</th>
-                            <th>P.O. Number</th>
-                            <th>Supplier</th>
-                            <th>Total Amount</th>
-                            <th>Priority</th>
-                            <th>Status</th>
-                            <th>Requested By</th>
-                            <th>Department</th>
-                            <th>Submitted Date</th>
-                            <th>Action</th>
+                            <th scope="col">Request ID</th>
+                            <th scope="col">P.O. Number</th>
+                            <th scope="col">Supplier</th>
+                            <th scope="col">Total Amount</th>
+                            <th scope="col">Priority</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Requested By</th>
+                            <th scope="col">Department</th>
+                            <th scope="col">Submitted Date</th>
+                            <th scope="col">Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${MockData.pendingRequests.length > 0 
+                        ${
+                            MockData.pendingRequests.length > 0 
                             ? MockData.pendingRequests.map(request => `
                                 <tr>
                                     <td>${request.id}</td>
                                     <td>
-                                        <button class="link" onclick="openPurchaseOrderModal('view', '${request.id}')" style="background: none; border: none; color: #dc2626; text-decoration: underline; cursor: pointer;">
+                                        <button class="link" onclick="openPurchaseOrderModal('view', '${request.id}')"
+                                            style="background: none; border: none; color: #dc2626; text-decoration: underline; cursor: pointer;">
                                             ${request.poNumber}
                                         </button>
                                     </td>
                                     <td>${request.supplier}</td>
                                     <td>${formatCurrency(request.totalAmount)}</td>
-                                    <td><span class="${getBadgeClass(request.priority, 'priority')}">${request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}</span></td>
-                                    <td><span class="${getBadgeClass(request.status)}">${request.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span></td>
+                                    <td>
+                                        <span class="${getBadgeClass(request.priority, 'priority')}">
+                                            ${request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="${getBadgeClass(request.status)}">
+                                            ${request.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                        </span>
+                                    </td>
                                     <td>${request.requestedBy}</td>
                                     <td>${request.department}</td>
                                     <td>${request.submittedDate}</td>
@@ -1093,112 +1300,136 @@ function generatePendingApprovalPage() {
                         }
                     </tbody>
                 </table>
-            </div>
-        </div>
-
+            </section>
+        </main>
     `;
 }
 
+
 function generateCompletedRequestPage() {
     return `
-        <div class="page-header">
+        <section class="page-header">
             <div class="page-header-content">
-                <div>
+                <header>
                     <h1 class="page-title">Completed Request</h1>
                     <p class="page-subtitle">View completed and archived purchase requests</p>
-                </div>
+                </header>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span class="badge green">${MockData.completedRequests.filter(r => r.status === 'completed').length} Completed</span>
                     <span class="badge blue">${MockData.completedRequests.filter(r => r.status === 'delivered').length} Delivered</span>
                 </div>
             </div>
-        </div>
+        </section>
         
-        <div class="page-content">
-            <div class="table-container">
-                <div class="table-header">
-                    <div class="search-container">
-                        <input type="text" class="form-input search-input" placeholder="Search requests...">
+        <main class="page-content">
+            <!-- 🔹 Enhanced Filter Bar -->
+            <section class="enhanced-filter-bar" aria-label="Filters">
+                <div class="filter-left">
+                    <!-- Search -->
+                    <div class="enhanced-search">
+                        <input type="search" class="form-input" placeholder="Search requests..." id="completedSearch" aria-label="Search completed requests">
                         <i data-lucide="search" class="search-icon"></i>
                     </div>
-                    <div class="table-filters">
-                        <select class="form-select" style="width: 120px;">
-                            <option>All Status</option>
-                            <option>Approved</option>
-                            <option>Delivered</option>
-                            <option>Completed</option>
-                            <option>Cancelled</option>
-                        </select>
-                        <select class="form-select" style="width: 120px;">
-                            <option>All Payment</option>
-                            <option>Paid</option>
-                            <option>Pending</option>
-                            <option>Partial</option>
-                        </select>
-                    </div>
+
+                    <!-- Status Filter -->
+                    <label for="statusFilter" class="visually-hidden">Filter by Status</label>
+                    <select class="filter-dropdown" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="approved">Approved</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+
+                    <!-- Payment Filter -->
+                    <label for="paymentFilter" class="visually-hidden">Filter by Payment Status</label>
+                    <select class="filter-dropdown" id="paymentFilter">
+                        <option value="">All Payment</option>
+                        <option value="paid">Paid</option>
+                        <option value="pending">Pending</option>
+                        <option value="partial">Partial</option>
+                    </select>
                 </div>
-                
+            </section>
+
+            <!-- 🔹 Completed Requests Table -->
+            <section class="table-container">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Request ID</th>
-                            <th>P.O. Number</th>
-                            <th>Supplier</th>
-                            <th>Total Amount</th>
-                            <th>Status</th>
-                            <th>Payment Status</th>
-                            <th>Requested By</th>
-                            <th>Approved By</th>
-                            <th>Delivered Date</th>
-                            <th>Action</th>
+                            <th scope="col">Request ID</th>
+                            <th scope="col">P.O. Number</th>
+                            <th scope="col">Supplier</th>
+                            <th scope="col">Total Amount</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Payment Status</th>
+                            <th scope="col">Requested By</th>
+                            <th scope="col">Approved By</th>
+                            <th scope="col">Delivered Date</th>
+                            <th scope="col">Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${MockData.completedRequests.map(request => `
-                            <tr>
-                                <td>${request.id}</td>
-                                <td>
-                                    <button class="link" onclick="openPurchaseOrderModal('view', '${request.id}')" style="background: none; border: none; color: #dc2626; text-decoration: underline; cursor: pointer;">
-                                        ${request.poNumber}
-                                    </button>
-                                </td>
-                                <td>${request.supplier}</td>
-                                <td>${formatCurrency(request.totalAmount)}</td>
-                                <td><span class="${getBadgeClass(request.status)}">${request.status.charAt(0).toUpperCase() + request.status.slice(1)}</span></td>
-                                <td><span class="${getBadgeClass(request.paymentStatus, 'payment')}">${request.paymentStatus.charAt(0).toUpperCase() + request.paymentStatus.slice(1)}</span></td>
-                                <td>${request.requestedBy}</td>
-                                <td>${request.approvedBy}</td>
-                                <td>${request.deliveredDate || '-'}</td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="btn-outline-blue" onclick="openPurchaseOrderModal('view', '${request.id}')" title="View Details">
-                                            <i data-lucide="eye" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-green" onclick="downloadPO('${request.id}')" title="Download PO">
-                                            <i data-lucide="download" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-orange" onclick="archiveRequest('${request.id}')" title="Archive Request">
-                                            <i data-lucide="archive" class="icon"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `).join('')} 
+                        ${MockData.completedRequests.length > 0
+                            ? MockData.completedRequests.map(request => `
                                 <tr>
-                                    <td colspan="10" class="px-6 py-12 text-center text-gray-500">
-                                        <div class="flex flex-col items-center gap-2">
-                                            <p>No Completed found</p>
+                                    <td>${request.id}</td>
+                                    <td>
+                                        <button class="link" onclick="openPurchaseOrderModal('view', '${request.id}')"
+                                            style="background: none; border: none; color: #dc2626; text-decoration: underline; cursor: pointer;">
+                                            ${request.poNumber}
+                                        </button>
+                                    </td>
+                                    <td>${request.supplier}</td>
+                                    <td>${formatCurrency(request.totalAmount)}</td>
+                                    <td>
+                                        <span class="${getBadgeClass(request.status)}">
+                                            ${request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="${getBadgeClass(request.paymentStatus, 'payment')}">
+                                            ${request.paymentStatus.charAt(0).toUpperCase() + request.paymentStatus.slice(1)}
+                                        </span>
+                                    </td>
+                                    <td>${request.requestedBy}</td>
+                                    <td>${request.approvedBy}</td>
+                                    <td>${request.deliveredDate || '-'}</td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="btn-outline-blue" onclick="openPurchaseOrderModal('view', '${request.id}')" title="View Details">
+                                                <i data-lucide="eye" class="icon"></i>
+                                            </button>
+                                            <button class="btn-outline-green" onclick="downloadPO('${request.id}')" title="Download PO">
+                                                <i data-lucide="download" class="icon"></i>
+                                            </button>
+                                            <button class="btn-outline-orange" onclick="archiveRequest('${request.id}')" title="Archive Request">
+                                                <i data-lucide="archive" class="icon"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
+                            `).join('')
+                            : `
+                                <tr>
+                                    <td colspan="10" class="px-6 py-12 text-center text-gray-500">
+                                        <div class="flex flex-col items-center gap-2">
+                                            <p>No completed requests found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `
+                        }
                     </tbody>
                 </table>
-                
-                <!-- Summary Stats -->
-                <div class="grid-4 mt-6" style="background-color: #f9fafb; padding: 16px; border-radius: 8px;">
+
+                <!-- 🔹 Summary Stats -->
+                <aside class="grid-4 mt-6" style="background-color: #f9fafb; padding: 16px; border-radius: 8px;">
                     <div class="text-center">
                         <p style="font-size: 14px; color: #6b7280; margin: 0;">Total Requests</p>
-                        <p style="font-size: 18px; font-weight: 600; color: #111827; margin: 0;">${MockData.completedRequests.length}</p>
+                        <p style="font-size: 18px; font-weight: 600; color: #111827; margin: 0;">
+                            ${MockData.completedRequests.length}
+                        </p>
                     </div>
                     <div class="text-center">
                         <p style="font-size: 14px; color: #6b7280; margin: 0;">Total Value</p>
@@ -1218,9 +1449,9 @@ function generateCompletedRequestPage() {
                             ${MockData.completedRequests.filter(r => r.paymentStatus === 'paid').length}
                         </p>
                     </div>
-                </div>
-            </div>
-        </div>
+                </aside>
+            </section>
+        </main>
     `;
 }
 
@@ -1228,18 +1459,24 @@ function generateCompletedRequestPage() {
 function openPurchaseOrderModal(mode = 'create', requestId = null) {
     const modal = document.getElementById('purchase-order-modal');
     const modalContent = modal.querySelector('.modal-content');
-    
+
     AppState.currentModal = { mode, requestId };
-    
-    modalContent.innerHTML = generatePurchaseOrderModal(mode, requestId);
+
+    // ✅ Load existing request if not create mode
+    let requestData = null;
+    if (requestId) {
+        requestData = AppState.newRequests.find(r => r.id === requestId) ||
+                      AppState.pendingRequests.find(r => r.id === requestId) ||
+                      AppState.completedRequests.find(r => r.id === requestId);
+    }
+
+    modalContent.innerHTML = generatePurchaseOrderModal(mode, requestData);
     modal.classList.add('active');
-    
-    // Reinitialize icons
+
     lucide.createIcons();
-    
-    // Initialize modal functionality
-    initializePurchaseOrderModal();
+    initializePurchaseOrderModal(requestData);
 }
+
 
 function closePurchaseOrderModal() {
     const modal = document.getElementById('purchase-order-modal');
@@ -1247,10 +1484,10 @@ function closePurchaseOrderModal() {
     AppState.currentModal = null;
 }
 
-function generatePurchaseOrderModal(mode, requestId) {
+function generatePurchaseOrderModal(mode, requestData = null) {
     const title = mode === 'create' ? 'NEW PURCHASE ORDER' : 'PURCHASE ORDER';
     const isReadOnly = mode === 'view';
-    
+
     return `
         <div class="modal-header">
             <h2 class="modal-title">${title}</h2>
@@ -1267,38 +1504,48 @@ function generatePurchaseOrderModal(mode, requestId) {
                 <div class="space-y-4">
                     <div class="form-group">
                         <label class="form-label">Supplier</label>
-                        <input type="text" class="form-input" placeholder="Enter supplier name" ${isReadOnly ? 'readonly' : ''}>
+                        <input type="text" class="form-input" 
+                               value="${requestData?.supplier || ''}"
+                               placeholder="Enter supplier name" ${isReadOnly ? 'readonly' : ''}>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Address of the Supplier</label>
-                        <textarea class="form-textarea" placeholder="Enter supplier address" ${isReadOnly ? 'readonly' : ''}></textarea>
+                        <textarea class="form-textarea" 
+                                  placeholder="Enter supplier address" 
+                                  ${isReadOnly ? 'readonly' : ''}>${requestData?.supplierAddress || ''}</textarea>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">TIN Number of the Supplier</label>
-                        <input type="text" class="form-input" placeholder="Enter TIN number" ${isReadOnly ? 'readonly' : ''}>
+                        <input type="text" class="form-input" 
+                               value="${requestData?.supplierTIN || ''}"
+                               placeholder="Enter TIN number" ${isReadOnly ? 'readonly' : ''}>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <div class="form-group">
                         <label class="form-label">P.O. Number</label>
-                        <input type="text" class="form-input" placeholder="Enter P.O. number" ${isReadOnly ? 'readonly' : ''}>
+                        <input type="text" class="form-input" 
+                               value="${requestData?.poNumber || ''}"
+                               placeholder="Enter P.O. number" ${isReadOnly ? 'readonly' : ''}>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Date of Purchase</label>
-                        <input type="date" class="form-input" ${isReadOnly ? 'readonly' : ''}>
+                        <input type="date" class="form-input" 
+                               value="${requestData?.purchaseDate || ''}"
+                               ${isReadOnly ? 'readonly' : ''}>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Mode of Procurement</label>
                         <select class="form-select" ${isReadOnly ? 'disabled' : ''}>
-                            <option>Select payment mode</option>
-                            <option>Small Value Procurement</option>
-                            <option>Medium Value Procurement</option>
-                            <option>High Value Procurement</option>
+                            <option ${!requestData?.procurementMode ? 'selected' : ''}>Select payment mode</option>
+                            <option ${requestData?.procurementMode === 'Small Value Procurement' ? 'selected' : ''}>Small Value Procurement</option>
+                            <option ${requestData?.procurementMode === 'Medium Value Procurement' ? 'selected' : ''}>Medium Value Procurement</option>
+                            <option ${requestData?.procurementMode === 'High Value Procurement' ? 'selected' : ''}>High Value Procurement</option>
                         </select>
                     </div>
                 </div>
@@ -1307,7 +1554,9 @@ function generatePurchaseOrderModal(mode, requestId) {
             <!-- Gentlemen Section -->
             <div class="form-group">
                 <label class="form-label">Gentlemen:</label>
-                <textarea class="form-textarea" placeholder="Please furnish this Office the following articles subject to the terms and conditions contained herein" ${isReadOnly ? 'readonly' : ''}></textarea>
+                <textarea class="form-textarea" 
+                          placeholder="Please furnish this Office the following articles subject to the terms and conditions contained herein"
+                          ${isReadOnly ? 'readonly' : ''}>${requestData?.gentlemen || ''}</textarea>
             </div>
 
             <!-- Delivery Information -->
@@ -1315,24 +1564,32 @@ function generatePurchaseOrderModal(mode, requestId) {
                 <div class="space-y-4">
                     <div class="form-group">
                         <label class="form-label">Place of Delivery</label>
-                        <input type="text" class="form-input" placeholder="Enter delivery place" ${isReadOnly ? 'readonly' : ''}>
+                        <input type="text" class="form-input" 
+                               value="${requestData?.placeOfDelivery || ''}"
+                               placeholder="Enter delivery place" ${isReadOnly ? 'readonly' : ''}>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Date of Delivery</label>
-                        <input type="text" class="form-input" ${isReadOnly ? 'readonly' : ''}>
+                        <input type="text" class="form-input" 
+                               value="${requestData?.deliveryDate || ''}"
+                               ${isReadOnly ? 'readonly' : ''}>
                     </div>
                 </div>
 
                 <div class="space-y-4">
                     <div class="form-group">
                         <label class="form-label">Delivery Term</label>
-                        <input type="text" class="form-input" placeholder="Enter delivery term" ${isReadOnly ? 'readonly' : ''}>
+                        <input type="text" class="form-input" 
+                               value="${requestData?.deliveryTerm || ''}"
+                               placeholder="Enter delivery term" ${isReadOnly ? 'readonly' : ''}>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Payment Term</label>
-                        <input type="text" class="form-input" placeholder="Enter payment term" ${isReadOnly ? 'readonly' : ''}>
+                        <input type="text" class="form-input" 
+                               value="${requestData?.paymentTerm || ''}"
+                               placeholder="Enter payment term" ${isReadOnly ? 'readonly' : ''}>
                     </div>
                 </div>
             </div>
@@ -1367,13 +1624,13 @@ function generatePurchaseOrderModal(mode, requestId) {
                                 ${!isReadOnly ? '<th>Action</th>' : ''}
                             </tr>
                         </thead>
-                        <tbody id="po-items-tbody">
-                            <!-- Items will be added here dynamically -->
-                        </tbody>
+                        <tbody id="po-items-tbody"></tbody>
                         <tfoot>
                             <tr style="border-top: 1px solid #e5e7eb; background-color: #f9fafb;">
                                 <td colspan="${isReadOnly ? '7' : '8'}" style="text-align: right; font-weight: 600;">Grand Total:</td>
-                                <td style="font-weight: 700; color: #dc2626;" id="grand-total">₱0.00</td>
+                                <td style="font-weight: 700; color: #dc2626;" id="grand-total">
+                                    ${requestData ? formatCurrency(requestData.totalAmount || 0) : '₱0.00'}
+                                </td>
                                 ${!isReadOnly ? '<td></td>' : ''}
                             </tr>
                         </tfoot>
@@ -1395,15 +1652,21 @@ function generatePurchaseOrderModal(mode, requestId) {
                 <div class="grid-3 mt-4">
                     <div class="form-group">
                         <label class="form-label">ORS/BURS No:</label>
-                        <input type="text" class="form-input" placeholder="Part ORS/BURS number" ${isReadOnly ? 'readonly' : ''}>
+                        <input type="text" class="form-input" 
+                               value="${requestData?.orsNo || ''}"
+                               placeholder="Part ORS/BURS number" ${isReadOnly ? 'readonly' : ''}>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Date of the ORS/BURS:</label>
-                        <input type="date" class="form-input" ${isReadOnly ? 'readonly' : ''}>
+                        <input type="date" class="form-input" 
+                               value="${requestData?.orsDate || ''}"
+                               ${isReadOnly ? 'readonly' : ''}>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Amount:</label>
-                        <input type="text" class="form-input" placeholder="₱0.00" ${isReadOnly ? 'readonly' : ''}>
+                        <input type="text" class="form-input" 
+                               value="${requestData?.orsAmount || ''}"
+                               placeholder="₱0.00" ${isReadOnly ? 'readonly' : ''}>
                     </div>
                 </div>
             </div>
@@ -1415,14 +1678,15 @@ function generatePurchaseOrderModal(mode, requestId) {
                 ${isReadOnly ? 'Close' : 'Cancel'}
             </button>
             ${!isReadOnly ? `
-                <button class="btn btn-primary" onclick="savePurchaseOrder()">
+                <button class="btn btn-primary" onclick="savePurchaseOrder('${requestData?.id || ''}')">
                     ${mode === 'create' ? 'Create Purchase Order' : 'Update Purchase Order'}
                 </button>
             ` : ''}
         </div>
 
         <!-- Stock Lookup Popup -->
-        <div id="stock-lookup-popup" class="hidden" style="position: absolute; top: 16px; right: 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); padding: 16px; width: 320px; z-index: 10;">
+        <div id="stock-lookup-popup" class="hidden" 
+             style="position: absolute; top: 16px; right: 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); padding: 16px; width: 320px; z-index: 10;">
             <div class="space-y-2">
                 <label class="font-semibold">Available Stock Items</label>
                 <div style="max-height: 192px; overflow-y: auto; padding: 8px 0;">
@@ -1447,11 +1711,31 @@ function generatePurchaseOrderModal(mode, requestId) {
     `;
 }
 
+
 // Purchase Order Modal item management
-function initializePurchaseOrderModal() {
+function initializePurchaseOrderModal(requestData = null) {
+    if (requestData && requestData.items) {
+        // load items from request
+        AppState.purchaseOrderItems = requestData.items.map(item => ({ ...item }));
+    } else {
+        // reset for new order
+        AppState.purchaseOrderItems = [{
+            id: Date.now().toString(),
+            stockPropertyNumber: '',
+            unit: '',
+            description: '',
+            detailedDescription: '',
+            quantity: 0,
+            currentStock: 0,
+            unitCost: 0,
+            amount: 0
+        }];
+    }
+
     renderPOItems();
     updateStockSummary();
 }
+
 
 function addPOItem() {
     const newItem = {
@@ -1628,9 +1912,59 @@ function hideStockLookup() {
     document.getElementById('stock-lookup-popup').classList.add('hidden');
 }
 
-function savePurchaseOrder() {
-    console.log('Saving purchase order...', AppState.currentModal);
-    alert('Purchase order saved successfully!');
+function deleteRequest(requestId) {
+    if (!confirm("Are you sure you want to delete this request?")) return;
+
+    // Remove from newRequests
+    AppState.newRequests = AppState.newRequests.filter(r => r.id !== requestId);
+
+    // If you want to handle other tables later:
+    AppState.pendingRequests = AppState.pendingRequests.filter(r => r.id !== requestId);
+    AppState.completedRequests = AppState.completedRequests.filter(r => r.id !== requestId);
+
+    // Refresh table
+    loadPageContent('new-request');
+}
+
+
+function savePurchaseOrder(existingId = null) {
+    const modal = document.getElementById('purchase-order-modal');
+    const supplier = modal.querySelector('input[placeholder="Enter supplier name"]').value;
+    const poNumber = modal.querySelector('input[placeholder="Enter P.O. number"]').value;
+    const deliveryDate = modal.querySelector('input[type="date"]').value;
+    const totalAmount = AppState.purchaseOrderItems.reduce((sum, item) => sum + item.amount, 0);
+
+    if (existingId) {
+        // ✅ Update existing
+        const idx = AppState.newRequests.findIndex(r => r.id === existingId);
+        if (idx !== -1) {
+            AppState.newRequests[idx] = {
+                ...AppState.newRequests[idx],
+                supplier,
+                poNumber,
+                deliveryDate,
+                totalAmount,
+                items: [...AppState.purchaseOrderItems]
+            };
+        }
+    } else {
+        // ✅ Create new
+        const newRequest = {
+            id: `REQ-${Date.now()}`,
+            poNumber,
+            supplier,
+            requestDate: new Date().toISOString().split('T')[0],
+            deliveryDate,
+            totalAmount,
+            status: "submitted",
+            requestedBy: "Current User",
+            department: "IT Department",
+            items: [...AppState.purchaseOrderItems]
+        };
+        AppState.newRequests.push(newRequest);
+    }
+
+    loadPageContent('new-request');
     closePurchaseOrderModal();
 }
 

@@ -1,52 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Access System</title>
-    <link rel="stylesheet" href="AccessSystem.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SPMO Login</title>
+  <link rel="stylesheet" href="AccessSystem.css" />
 </head>
-<body class="login-body">
-      <!-- Header -->
-  <header class="login-header">
-    <div class="logo">
-      <img src="cnscrefine.png" alt="School Logo">
-      <div class="logo-text">
-        <h1>Supply and Property Management</h1>
-        <hr>
-        <p>WEB - BASED INVENTORY AND PROCUREMENT MANAGEMENT SYSTEM</p>
-      </div>
+<body>
+  <!-- Header -->
+  <header class="header logo-text">
+    <img src="cnscrefine.png" alt="Logo"/>
+    <div class="title">
+      <h1>Supply and Property Management</h1>
+      <hr/> <!-- Yellow line only under header title -->
+      <span>WEB - BASED INVENTORY AND PROCUREMENT MANAGEMENT SYSTEM</span>
     </div>
   </header>
 
-  <!-- Sign-in Section -->
-  <main>
-    <section class="login-container">
-      <form class="login-card" action="#" method="post">
-        <h2>Sign in</h2>
-        <p class="subtitle">Sign in with open account</p>
+  <!-- Card -->
+  <main class="wrap">
+    <form class="card" onsubmit="event.preventDefault(); alert('Email: '+email.value+'\\nPIN: '+hiddenPin.value);">
+      <h2>Sign in</h2>
+      <div class="sub">Sign in with open account</div>
 
-        <label for="email">Enter your E-mail</label>
-        <input type="email" id="email" name="email" placeholder="cnsc.spmo@edu.ph" required>
+      <div class="field">
+        <label class="label" for="email">Enter your E-mail</label>
+        <input class="input" id="email" name="email" type="email" placeholder="cnsc.spmo@edu.ph" required/>
+      </div>
 
-        <label for="password">Enter your Credentials</label>
-        <div class="pin-inputs">
-          <input type="password" maxlength="1" required placeholder="*" title="Enter digit 1">
-          <input type="password" maxlength="1" required placeholder="*" title="Enter digit 2">
-          <input type="password" maxlength="1" required placeholder="*" title="Enter digit 3">
-          <input type="password" maxlength="1" required placeholder="*" title="Enter digit 4">
-          <input type="password" maxlength="1" required placeholder="*" title="Enter digit 5">
+      <div class="field">
+        <label class="label">Enter your Credentials</label>
+        <div class="otp" id="otp">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 1">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 2">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 3">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 4">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 5">
         </div>
+      </div>
 
-        <a href="#" class="forgot">Forgot password?</a>
+      <div class="extras"><a href="#">Forgot password ?</a></div>
 
-        <button type="submit" class="btn green-btn">Sign in</button>
+      <input type="hidden" name="credentials" id="hiddenPin" />
+      <button class="btn" type="button" onclick="window.location.href='../Dashboard/index.html'">Sign in</button>
 
-        <p class="register-text">
-          Don’t have an account yet? <a href="#">Register here</a>
-        </p>
-      </form>
-    </section>
+      <div class="register">Don’t have an account yet ? <a href="#">Register here</a></div>
+    </form>
   </main>
+
+  <script>
+    // OTP / PIN behavior
+    const otpInputs = Array.from(document.querySelectorAll('#otp input'));
+    const hiddenPin = document.getElementById('hiddenPin');
+
+    const setHidden = () => hiddenPin.value = otpInputs.map(i => i.value).join('');
+
+    otpInputs.forEach((input, idx) => {
+      input.addEventListener('input', () => {
+        input.value = input.value.replace(/[^0-9]/g, '').slice(0,1);
+        if (input.value && idx < otpInputs.length - 1) otpInputs[idx + 1].focus();
+        setHidden();
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && idx > 0) otpInputs[idx - 1].focus();
+        if (e.key === 'ArrowLeft' && idx > 0) otpInputs[idx - 1].focus();
+        if (e.key === 'ArrowRight' && idx < otpInputs.length - 1) otpInputs[idx + 1].focus();
+      });
+
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, otpInputs.length).split('');
+        otpInputs.forEach((box, i) => box.value = digits[i] || '');
+        const next = digits.length >= otpInputs.length ? otpInputs[otpInputs.length-1] : otpInputs[digits.length] || otpInputs[0];
+        next.focus(); setHidden();
+      });
+    });
+  </script>
 </body>
 </html>
