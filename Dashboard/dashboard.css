@@ -659,9 +659,9 @@ body {
 }
 
 .form-select {
-    appearance: none;         /* Standard */
     -webkit-appearance: none; /* Safari */
     -moz-appearance: none;    /* Firefox */
+    appearance: none;         /* Standard */
     background-image: none;   /* Removes default arrow in some browsers */
     padding-right: 2rem;      /* Add space for your custom icon */
 }
