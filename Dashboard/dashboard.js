@@ -2187,3 +2187,107 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize icons
     lucide.createIcons();
 });
+// Inside loadPageContent(pageId)
+function loadPageContent(pageId) {
+    const mainContent = document.getElementById('main-content');
+    
+    switch(pageId) {
+        case 'dashboard':
+            mainContent.innerHTML = generateDashboardPage();
+            break;
+        case 'categories':
+            mainContent.innerHTML = generateCategoriesPage();
+            break;
+        case 'products':
+            mainContent.innerHTML = generateProductsPage();
+            break;
+        case 'stock-in':
+            mainContent.innerHTML = generateStockInPage();
+            break;
+        case 'stock-out':
+            mainContent.innerHTML = generateStockOutPage();
+            break;
+        case 'new-request':
+            mainContent.innerHTML = generateNewRequestPage();
+            break;
+        case 'pending-approval':
+            mainContent.innerHTML = generatePendingApprovalPage();
+            break;
+        case 'completed-request':
+            mainContent.innerHTML = generateCompletedRequestPage();
+            break;
+        case 'roles': // ✅ Roles & Management page
+            mainContent.innerHTML = generateRolesManagementPage();
+            break;
+        default:
+            mainContent.innerHTML = generateDashboardPage();
+    }
+    
+    lucide.createIcons();
+    initializePageEvents(pageId);
+}
+
+// ✅ Roles & Management Page styled like your screenshot
+function generateRolesManagementPage() {
+    return `
+        <div class="page-header">
+            <h1 class="page-title">User Management</h1>
+            <p class="page-subtitle">Manage system users, roles, and permissions</p>
+        </div>
+        
+        <div class="page-content">
+            <div class="card">
+                <div class="card-header">
+                    <button class="btn-primary" id="addMemberBtn" style="margin-left:auto;">
+                        <i data-lucide="user-plus" class="icon"></i> Add Member
+                    </button>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Member ID</th>
+                                <th>Group Name</th>
+                                <th>Member Name</th>
+                                <th>Role</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>SA001</td>
+                                <td>Group Juan</td>
+                                <td>Cherry Ann Quila</td>
+                                <td>Leader</td>
+                                <td>
+                                    <button class="btn-danger"><i data-lucide="trash"></i></button>
+                                    <button class="btn-warning"><i data-lucide="edit"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>SA002</td>
+                                <td>Group Juan</td>
+                                <td>Vince Balce</td>
+                                <td>Member</td>
+                                <td>
+                                    <button class="btn-danger"><i data-lucide="trash"></i></button>
+                                    <button class="btn-warning"><i data-lucide="edit"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>SA003</td>
+                                <td>Group Juan</td>
+                                <td>Marinel Ledesma</td>
+                                <td>Member</td>
+                                <td>
+                                    <button class="btn-danger"><i data-lucide="trash"></i></button>
+                                    <button class="btn-warning"><i data-lucide="edit"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+}
