@@ -20,7 +20,6 @@ body{
 .header .title h1{font-size:1rem;font-weight:700;line-height:1.2}
 .header .title span{font-size:.75rem;opacity:.8;letter-spacing:.02em}
 
-/* Yellow line for header */
 .logo-text hr {
   border: none;
   height: 2px;
