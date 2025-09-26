@@ -839,8 +839,8 @@ function generateStockOutPage() {
                         <option value="ccms">College of Computing and Multimedia Studies</option>
                         <option value="op">Office of the President</option>
                         <option value="vpaa">Office of the Vice President for Academic Affairs</option>
-                        <option value="vpre">Vice President for Research and Extension</option>
-                        <option value="vpfa">Vice President for Finance Affairs</option>
+                        <option value="vpre">Office of the Vice President for Research and Extension</option>
+                        <option value="vpfa">Office of the Vice President for Finance Affairs</option>
                     </select>
                     <select class="filter-dropdown" id="statusFilter">
                         <option value="">All Status</option>
@@ -1101,8 +1101,8 @@ function generateNewRequestPage() {
                         <option value="ccms">College of Computing and Multimedia Studies</option>
                         <option value="op">Office of the President</option>
                         <option value="vpaa">Office of the Vice President for Academic Affairs</option>
-                        <option value="vpre">Vice President for Research and Extension</option>
-                        <option value="vpfa">Vice President for Finance Affairs</option>
+                        <option value="vpre">Office of the Vice President for Research and Extension</option>
+                        <option value="vpfa">Office of the Vice President for Finance Affairs</option>
                     </select>
                 </div>
             </section>
