@@ -833,12 +833,14 @@ function generateStockOutPage() {
                     </div>
                     <select class="filter-dropdown" id="departmentFilter">
                         <option value="">All Departments</option>
-                        <option value="administration">Administration</option>
-                        <option value="it">IT Department</option>
-                        <option value="academic">Academic Affairs</option>
-                        <option value="finance">Finance</option>
-                        <option value="hr">Human Resources</option>
-                        <option value="maintenance">Maintenance</option>
+                        <option value="coeng">College of Engineering</option>
+                        <option value="cbpa">College of Business and Public Administration</option>
+                        <option value="cas">College of Arts and Sciences</option>
+                        <option value="ccms">College of Computing and Multimedia Studies</option>
+                        <option value="op">Office of the President</option>
+                        <option value="vpaa">Office of the Vice President for Academic Affairs</option>
+                        <option value="vpre">Vice President for Research and Extension</option>
+                        <option value="vpfa">Vice President for Finance Affairs</option>
                     </select>
                     <select class="filter-dropdown" id="statusFilter">
                         <option value="">All Status</option>
@@ -1093,9 +1095,14 @@ function generateNewRequestPage() {
                     <label for="departmentFilter" class="visually-hidden">Filter by Department</label>
                     <select class="filter-dropdown" id="departmentFilter">
                         <option value="">All Departments</option>
-                        <option value="administration">Administration</option>
-                        <option value="it">IT Department</option>
-                        <option value="maintenance">Maintenance</option>
+                        <option value="coeng">College of Engineering</option>
+                        <option value="cbpa">College of Business and Public Administration</option>
+                        <option value="cas">College of Arts and Sciences</option>
+                        <option value="ccms">College of Computing and Multimedia Studies</option>
+                        <option value="op">Office of the President</option>
+                        <option value="vpaa">Office of the Vice President for Academic Affairs</option>
+                        <option value="vpre">Vice President for Research and Extension</option>
+                        <option value="vpfa">Vice President for Finance Affairs</option>
                     </select>
                 </div>
             </section>
