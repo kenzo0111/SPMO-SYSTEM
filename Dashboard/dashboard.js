@@ -2291,3 +2291,108 @@ function generateRolesManagementPage() {
         </div>
     `;
 }
+// Inside loadPageContent(pageId)
+function loadPageContent(pageId) {
+    const mainContent = document.getElementById('main-content');
+    
+    switch(pageId) {
+        case 'dashboard':
+            mainContent.innerHTML = generateDashboardPage();
+            break;
+        case 'categories':
+            mainContent.innerHTML = generateCategoriesPage();
+            break;
+        case 'products':
+            mainContent.innerHTML = generateProductsPage();
+            break;
+        case 'stock-in':
+            mainContent.innerHTML = generateStockInPage();
+            break;
+        case 'stock-out':
+            mainContent.innerHTML = generateStockOutPage();
+            break;
+        case 'new-request':
+            mainContent.innerHTML = generateNewRequestPage();
+            break;
+        case 'pending-approval':
+            mainContent.innerHTML = generatePendingApprovalPage();
+            break;
+        case 'completed-request':
+            mainContent.innerHTML = generateCompletedRequestPage();
+            break;
+        case 'roles': // Roles & Management
+            mainContent.innerHTML = generateRolesManagementPage();
+            break;
+        case 'users': // ✅ Users Management
+            mainContent.innerHTML = generateUsersManagementPage();
+            break;
+        default:
+            mainContent.innerHTML = generateDashboardPage();
+    }
+    
+    lucide.createIcons();
+    initializePageEvents(pageId);
+}
+
+// ✅ Users Management Page (without stats boxes)
+function generateUsersManagementPage() {
+    // sample user data
+    const users = [
+        { name: "John Doe", email: "john@cnsc.edu.ph", role: "Admin", department: "IT", status: "Active", created: "2024-01-15" },
+        { name: "Jane Smith", email: "jane@cnsc.edu.ph", role: "Manager", department: "Procurement", status: "Active", created: "2024-01-10" },
+        { name: "Bob Johnson", email: "bob@cnsc.edu.ph", role: "User", department: "Finance", status: "Inactive", created: "2024-01-05" },
+        { name: "Alice Brown", email: "alice@cnsc.edu.ph", role: "User", department: "HR", status: "Active", created: "2024-01-12" }
+    ];
+
+    return `
+        <div class="page-header">
+            <h1 class="page-title">User Management</h1>
+            <p class="page-subtitle">Monitor and manage system users</p>
+        </div>
+
+        <!-- Add User -->
+        <div class="add-user-container" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button class="btn-primary" id="addUserBtn">
+                <i data-lucide="user-plus"></i> Add User
+            </button>
+        </div>
+
+        <!-- Users Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3>All Users</h3>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td>${user.name}</td>
+                                <td>${user.email}</td>
+                                <td>${user.role}</td>
+                                <td>${user.department}</td>
+                                <td><span class="badge ${user.status === "Active" ? "green" : "red"}">${user.status}</span></td>
+                                <td>${user.created}</td>
+                                <td>
+                                    <button class="btn-secondary"><i data-lucide="edit"></i></button>
+                                    <button class="btn-secondary"><i data-lucide="trash"></i></button>
+                                </td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
