@@ -235,6 +235,12 @@ function loadPageContent(pageId) {
         case 'completed-request':
             mainContent.innerHTML = generateCompletedRequestPage();
             break;
+        case 'roles': // Roles & Management
+            mainContent.innerHTML = generateRolesManagementPage();
+            break;
+        case 'users': // ✅ Users Management
+            mainContent.innerHTML = generateUsersManagementPage();
+            break;
         default:
             mainContent.innerHTML = generateDashboardPage();
     }
@@ -1461,14 +1467,17 @@ function generateCompletedRequestPage() {
     `;
 }
 
-// Purchase Order Modal Functions
+// ----------------------------- //
+// Purchase Order Modal Functions //
+// ----------------------------- //
+
 function openPurchaseOrderModal(mode = 'create', requestId = null) {
     const modal = document.getElementById('purchase-order-modal');
     const modalContent = modal.querySelector('.modal-content');
 
     AppState.currentModal = { mode, requestId };
 
-    // ✅ Load existing request if not create mode
+    // Load existing request if not create mode
     let requestData = null;
     if (requestId) {
         requestData = AppState.newRequests.find(r => r.id === requestId) ||
@@ -2193,154 +2202,246 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initialize icons
     lucide.createIcons();
 });
-// Inside loadPageContent(pageId)
-function loadPageContent(pageId) {
-    const mainContent = document.getElementById('main-content');
 
-    switch (pageId) {
-        case 'dashboard':
-            mainContent.innerHTML = generateDashboardPage();
-            break;
-        case 'categories':
-            mainContent.innerHTML = generateCategoriesPage();
-            break;
-        case 'products':
-            mainContent.innerHTML = generateProductsPage();
-            break;
-        case 'stock-in':
-            mainContent.innerHTML = generateStockInPage();
-            break;
-        case 'stock-out':
-            mainContent.innerHTML = generateStockOutPage();
-            break;
-        case 'new-request':
-            mainContent.innerHTML = generateNewRequestPage();
-            break;
-        case 'pending-approval':
-            mainContent.innerHTML = generatePendingApprovalPage();
-            break;
-        case 'completed-request':
-            mainContent.innerHTML = generateCompletedRequestPage();
-            break;
-        case 'roles': // ✅ Roles & Management page
-            mainContent.innerHTML = generateRolesManagementPage();
-            break;
-        default:
-            mainContent.innerHTML = generateDashboardPage();
-    }
+// ------------------------ //
+// Roles & Management Page  //
+// ------------------------//
 
-    lucide.createIcons();
-    initializePageEvents(pageId);
-}
-
-// ✅ Roles & Management Page styled like your screenshot
 function generateRolesManagementPage() {
-    return `
+    // Sample data (replace later with dynamic DB/API)
+    const members = [
+        { id: "SA001", group: "Group Juan", name: "Cherry Ann Quila", role: "Leader", email: "cherry@cnsc.edu.ph", department: "IT", status: "Active", created: "2024-01-15" },
+        { id: "SA002", group: "Group Juan", name: "Vince Balce", role: "Member", email: "vince@cnsc.edu.ph", department: "Finance", status: "Inactive", created: "2024-02-01" },
+        { id: "SA003", group: "Group Juan", name: "Marinel Ledesma", role: "Member", email: "marinel@cnsc.edu.ph", department: "HR", status: "Active", created: "2024-03-10" }
+    ];
+
+    // Make available globally so modals can access them
+    if (!window.MockData) window.MockData = {};
+    window.MockData.users = members;
+
+    const html = `
         <div class="page-header">
-            <h1 class="page-title">User Management</h1>
-            <p class="page-subtitle">Manage system users, roles, and permissions</p>
-        </div>
-        
-        <div class="page-content">
-            <div class="card">
-                <div class="card-header">
-                    <button class="btn-primary" id="addMemberBtn" style="margin-left:auto;">
-                        <i data-lucide="user-plus" class="icon"></i> Add Member
-                    </button>
+            <div class="page-header-content">
+                <div>
+                    <h1 class="page-title">Roles & Management</h1>
+                    <p class="page-subtitle">Manage groups, members, and their assigned roles</p>
                 </div>
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Member ID</th>
-                                <th>Group Name</th>
-                                <th>Member Name</th>
-                                <th>Role</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>SA001</td>
-                                <td>Group Juan</td>
-                                <td>Cherry Ann Quila</td>
-                                <td>Leader</td>
-                                <td>
-                                    <button class="btn-danger"><i data-lucide="trash"></i></button>
-                                    <button class="btn-warning"><i data-lucide="edit"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>SA002</td>
-                                <td>Group Juan</td>
-                                <td>Vince Balce</td>
-                                <td>Member</td>
-                                <td>
-                                    <button class="btn-danger"><i data-lucide="trash"></i></button>
-                                    <button class="btn-warning"><i data-lucide="edit"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>SA003</td>
-                                <td>Group Juan</td>
-                                <td>Marinel Ledesma</td>
-                                <td>Member</td>
-                                <td>
-                                    <button class="btn-danger"><i data-lucide="trash"></i></button>
-                                    <button class="btn-warning"><i data-lucide="edit"></i></button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div>
+                    <button class="btn btn-primary" onclick="openUserModal('create')">
+                        <i data-lucide="user-plus" class="icon"></i>
+                        Add Member
+                    </button>
                 </div>
             </div>
         </div>
-    `;
-}
-// Inside loadPageContent(pageId)
-function loadPageContent(pageId) {
-    const mainContent = document.getElementById('main-content');
 
-    switch (pageId) {
-        case 'dashboard':
-            mainContent.innerHTML = generateDashboardPage();
-            break;
-        case 'categories':
-            mainContent.innerHTML = generateCategoriesPage();
-            break;
-        case 'products':
-            mainContent.innerHTML = generateProductsPage();
-            break;
-        case 'stock-in':
-            mainContent.innerHTML = generateStockInPage();
-            break;
-        case 'stock-out':
-            mainContent.innerHTML = generateStockOutPage();
-            break;
-        case 'new-request':
-            mainContent.innerHTML = generateNewRequestPage();
-            break;
-        case 'pending-approval':
-            mainContent.innerHTML = generatePendingApprovalPage();
-            break;
-        case 'completed-request':
-            mainContent.innerHTML = generateCompletedRequestPage();
-            break;
-        case 'roles': // Roles & Management
-            mainContent.innerHTML = generateRolesManagementPage();
-            break;
-        case 'users': // ✅ Users Management
-            mainContent.innerHTML = generateUsersManagementPage();
-            break;
-        default:
-            mainContent.innerHTML = generateDashboardPage();
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Member ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${members.map(member => `
+                        <tr>
+                            <td>${member.id}</td>
+                            <td>${member.name}</td>
+                            <td>${member.email}</td>
+                            <td>
+                                <span class="status-badge ${member.role.toLowerCase()}">${member.role}</span>
+                            </td>
+                            <td>${member.department}</td>
+                            <td>
+                                <span class="status-badge ${member.status === "Active" ? "green" : "red"}">
+                                    ${member.status}
+                                </span>
+                            </td>
+                            <td>${member.created}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn-outline-blue" title="View" onclick="openUserModal('view', '${member.id}')">
+                                        <i data-lucide="eye" class="icon"></i>
+                                    </button>
+                                    <button class="btn-outline-orange" title="Edit" onclick="openUserModal('edit', '${member.id}')">
+                                        <i data-lucide="edit" class="icon"></i>
+                                    </button>
+                                    <button class="btn-outline-red" title="Delete" onclick="deleteMember('${member.id}')">
+                                        <i data-lucide="trash-2" class="icon"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Ensure icons render
+    setTimeout(() => {
+        if (window.lucide) lucide.createIcons();
+    }, 0);
+
+    return html;
+}
+
+// Delete function (simple confirm + reload)
+function deleteMember(memberId) {
+    if (confirm("Are you sure you want to delete this member?")) {
+        window.MockData.users = window.MockData.users.filter(u => u.id !== memberId);
+        loadPageContent('roles-management'); // refresh table/page
+    }
+}
+
+
+function openUserModal(mode = 'view', userId = null) {
+    const modal = document.getElementById('user-modal');
+    const modalContent = modal.querySelector('.modal-content');
+
+    let userData = null;
+    if (userId) {
+        userData = MockData.users.find(u => u.id === userId);
     }
 
+    modalContent.innerHTML = generateUserModal(mode, userData);
+    modal.classList.add('active');
+
     lucide.createIcons();
-    initializePageEvents(pageId);
 }
 
-// ✅ Users Management Page (without stats boxes)
+function closeUserModal() {
+    const modal = document.getElementById('user-modal');
+    modal.classList.remove('active');
+}
+
+function generateUserModal(mode = 'view', userData = null) {
+    const title = mode === 'create' ? 'ADD NEW USER' :
+        mode === 'edit' ? 'EDIT USER' :
+            'USER DETAILS';
+
+    const isReadOnly = mode === 'view';
+
+    return `
+        <div class="modal-header">
+            <h2 class="modal-title">${title}</h2>
+            <button class="modal-close" onclick="closeUserModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+
+        <div class="modal-body space-y-6">
+            <div class="form-group">
+                <label class="form-label">Name</label>
+                <input type="text" class="form-input"
+                       value="${userData?.name || ''}"
+                       placeholder="Enter full name"
+                       ${isReadOnly ? 'readonly' : ''}>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input"
+                       value="${userData?.email || ''}"
+                       placeholder="Enter email"
+                       ${isReadOnly ? 'readonly' : ''}>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Role</label>
+                <input type="text" class="form-input"
+                       value="${userData?.role || ''}"
+                       placeholder="Enter role"
+                       ${isReadOnly ? 'readonly' : ''}>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                <input type="text" class="form-input"
+                       value="${userData?.department || ''}"
+                       placeholder="Enter department"
+                       ${isReadOnly ? 'readonly' : ''}>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                ${isReadOnly
+            ? `<span class="status-badge ${userData?.status === 'Active' ? 'green' : 'red'}">${userData?.status || 'Inactive'}</span>`
+            : `
+                        <select class="form-select">
+                            <option ${userData?.status === 'Active' ? 'selected' : ''}>Active</option>
+                            <option ${userData?.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                        </select>
+                    `
+        }
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Created</label>
+                <input type="date" class="form-input"
+                       value="${userData?.created || ''}"
+                       ${isReadOnly ? 'readonly' : ''}>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeUserModal()">
+                ${isReadOnly ? 'Close' : 'Cancel'}
+            </button>
+            ${!isReadOnly ? `
+                <button class="btn btn-primary" onclick="saveUser('${userData?.id || ''}')">
+                    ${mode === 'create' ? 'Add User' : 'Update User'}
+                </button>
+            ` : ''}
+        </div>
+    `;
+}
+
+function saveUser(userId) {
+    const modal = document.getElementById('user-modal');
+
+    const inputs = modal.querySelectorAll('input, select');
+    const [name, email, role, department, status, created] = inputs;
+
+    if (!userId) {
+        // Create new user
+        const newUser = {
+            id: `U${MockData.users.length + 1}`,
+            name: name.value,
+            email: email.value,
+            role: role.value,
+            department: department.value,
+            status: status.value,
+            created: created.value
+        };
+        MockData.users.push(newUser);
+    } else {
+        // Update existing user
+        const existing = MockData.users.find(u => u.id === userId);
+        if (existing) {
+            existing.name = name.value;
+            existing.email = email.value;
+            existing.role = role.value;
+            existing.department = department.value;
+            existing.status = status.value;
+            existing.created = created.value;
+        }
+    }
+
+    closeUserModal();
+    loadPageContent('users'); // refresh table/page
+}
+// ------------------------- //
+//   Users Management Page  //
+// ------------------------- //
+
 function generateUsersManagementPage() {
     // sample user data
     const users = [
@@ -2352,60 +2453,49 @@ function generateUsersManagementPage() {
 
     return `
         <div class="page-header">
-            <h1 class="page-title">User Management</h1>
-            <p class="page-subtitle">Monitor and manage system users</p>
-        </div>
-
-        <!-- Add User -->
-        <div class="add-user-container" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-            <button class="btn-primary" id="addUserBtn">
-                <i data-lucide="user-plus"></i> Add User
-            </button>
-        </div>
-
-        <!-- Users Table -->
-        <div class="card">
-            <div class="card-header">
-                <h3>All Users</h3>
+            <div class="page-header-content">
+                <div>
+                    <h1 class="page-title">User Management</h1>
+                    <p class="page-subtitle">Monitor and manage system users</p>
+                </div>
             </div>
-            <div class="card-body">
-                <table class="table">
-                    <thead>
+        </div>
+
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${users.map(user => `
                         <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Department</th>
-                            <th>Status</th>
-                            <th>Created</th>
-                            <th>Actions</th>
+                            <td>${user.name}</td>
+                            <td>${user.email}</td>
+                            <td>${user.role}</td>
+                            <td>${user.department}</td>
+                            <td>
+                                <span class="status-badge ${user.status.toLowerCase()}">${user.status}</span>
+                            </td>
+                            <td>${user.created}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        ${users.map(user => `
-                            <tr>
-                                <td>${user.name}</td>
-                                <td>${user.email}</td>
-                                <td>${user.role}</td>
-                                <td>${user.department}</td>
-                                <td><span class="badge ${user.status === "Active" ? "green" : "red"}">${user.status}</span></td>
-                                <td>${user.created}</td>
-                                <td>
-                                    <button class="btn-secondary"><i data-lucide="edit"></i></button>
-                                    <button class="btn-secondary"><i data-lucide="trash"></i></button>
-                                </td>
-                            </tr>
-                        `).join("")}
-                    </tbody>
-                </table>
-            </div>
+                    `).join("")}
+
+                </tbody>
+            </table>
         </div>
     `;
 }
 
-// Add Product Modal
-
-
+// -----------------------------//
+// Add Product Modal and Functions //
+// -----------------------------//
 
 function openProductModal(mode = 'create', productId = null) {
     const modal = document.getElementById('product-modal');
@@ -2543,7 +2633,9 @@ function generateProductModal(mode = 'create', productData = null) {
     `;
 }
 
-// Category Modal and Functions
+// -----------------------------//
+// Category Modal and Functions //
+// -----------------------------//
 
 function openCategoryModal(mode = 'create', categoryId = null) {
     const modal = document.getElementById('category-modal');
@@ -2566,6 +2658,7 @@ function closeCategoryModal() {
 }
 
 
+// Open the Category Modal
 function generateCategoryModal(mode = 'create', categoryData = null) {
     const title = mode === 'create' ? 'ADD NEW CATEGORY' : 'CATEGORY DETAILS';
     const isReadOnly = mode === 'view';
@@ -2635,7 +2728,11 @@ function saveCategory(categoryId) {
     loadPageContent('categories'); // refresh table/page
 }
 
-// Stock In Modal and Functions
+
+
+// -----------------------------//
+// Stock In Modal and Functions //
+// -----------------------------//
 
 function openStockInModal(mode = 'create', stockId = null) {
     const modal = document.getElementById('stockin-modal');
@@ -2761,14 +2858,14 @@ function saveStockIn(stockId) {
 
     console.log("Saving stock-in record:", values);
 
-    // TODO: Save to MockData.stockIn or update existing record
-
     closeStockInModal();
     loadPageContent('stockin'); // refresh stock-in page
 }
 
 
-// Stock Out Modal and Functions
+// -----------------------------//
+// Stock Out Modal and Functions //
+// -----------------------------//
 
 function openStockOutModal(mode = 'create', stockId = null) {
     const modal = document.getElementById('stockout-modal');
