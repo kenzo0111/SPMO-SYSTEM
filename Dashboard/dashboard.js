@@ -236,7 +236,8 @@ function loadPageContent(pageId) {
             mainContent.innerHTML = generateCompletedRequestPage();
             break;
         case 'reports':
-            mainContent.innerHTML = generateInventoryReportsPage();
+            // CORRECT CALL: This now calls the function defined below
+            mainContent.innerHTML = generateInventoryReportsContent(); 
             break;
         case 'roles': // Roles & Management
             mainContent.innerHTML = generateRolesManagementPage();
@@ -246,141 +247,6 @@ function loadPageContent(pageId) {
             break;
         default:
             mainContent.innerHTML = generateDashboardPage();
-    }/**
- * Generates the semantic HTML string for the Inventory Reports Dashboard content
- * (excluding <html>, <head>, and <body> tags).
- * @returns {string} The HTML string containing the main dashboard structure.
- */
-    function generateInventoryReportsContent() {
-        return `
-    <div class="main-content">
-      <div class="page-header">
-        <div class="page-header-content">
-          <div>
-            <h1 class="page-title">Inventory Reports</h1>
-            <p class="page-subtitle">Comprehensive inventory analysis and insights</p>
-          </div>
-          <div>
-            <select id="dateRange" class="form-select">
-              <option value="last-7-days">Last 7 days</option>
-              <option value="last-30-days" selected>Last 30 days</option>
-              <option value="last-90-days">Last 90 days</option>
-              <option value="last-year">Last year</option>
-            </select>
-            <button class="btn btn-primary">📥 Export</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="page-content">
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-content">
-              <div class="metric-info">
-                <h3>Total Items</h3>
-                <p class="value">1,915</p>
-                <p class="change positive">↑ 2.4% from last month</p>
-              </div>
-              <div class="metric-icon blue">📦</div>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-content">
-              <div class="metric-info">
-                <h3>Low Stock Items</h3>
-                <p class="value">23</p>
-                <p class="change negative">↑ 15% from last week</p>
-              </div>
-              <div class="metric-icon red">📉</div>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-content">
-              <div class="metric-info">
-                <h3>Expiring Soon</h3>
-                <p class="value">8</p>
-                <p class="change warning">Next 60 days</p>
-              </div>
-              <div class="metric-icon orange">⚠️</div>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-content">
-              <div class="metric-info">
-                <h3>Avg. Turnover</h3>
-                <p class="value">3.2</p>
-                <p class="change positive">↑ 8% from last month</p>
-              </div>
-              <div class="metric-icon green">📈</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="product-tabs">
-          <button onclick="showTab('overview')" id="tab-overview" class="product-tab active">Overview</button>
-          <button onclick="showTab('stock-levels')" id="tab-stock-levels" class="product-tab">Stock Levels</button>
-          <button onclick="showTab('turnover')" id="tab-turnover" class="product-tab">Turnover Analysis</button>
-          <button onclick="showTab('alerts')" id="tab-alerts" class="product-tab">Alerts</button>
-          <button onclick="showTab('detailed')" id="tab-detailed" class="product-tab">Detailed Report</button>
-        </div>
-
-        <div id="content-overview">
-          <h2>Overview</h2>
-          </div>
-        <div id="content-stock-levels" class="hidden">
-          <h2>Stock Levels by Category</h2>
-          <div class="table-container">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th>Current Stock</th>
-                  <th>Minimum Required</th>
-                  <th>Maximum Capacity</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Office Supplies</td>
-                  <td>850</td>
-                  <td>500</td>
-                  <td>1200</td>
-                  <td><span class="badge green">Good</span></td>
-                </tr>
-                <tr>
-                  <td>IT Equipment</td>
-                  <td>75</td>
-                  <td>80</td>
-                  <td>200</td>
-                  <td><span class="badge red">Critical</span></td>
-                </tr>
-                </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <script>
-      function showTab(tabName) {
-        const contents = document.querySelectorAll('[id^="content-"]');
-        contents.forEach(content => content.classList.add("hidden"));
-        const tabs = document.querySelectorAll(".product-tab");
-        tabs.forEach(tab => tab.classList.remove("active"));
-
-        document.getElementById("content-" + tabName).classList.remove("hidden");
-        document.getElementById("tab-" + tabName).classList.add("active");
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        showTab("overview");
-      });
-    </script>
-  `;
     }
 
     // Reinitialize icons after content update
@@ -3152,3 +3018,161 @@ function saveStockOut(stockId) {
 }
 
 
+/**
+ * Generates the semantic HTML string for the Inventory Reports Dashboard content.
+ * It dynamically populates the 'Stock Levels by Category' table.
+ * @returns {string} The HTML string containing the main dashboard structure.
+ */
+function generateInventoryReportsContent() {
+    // 1. Mock Data for Dynamic Table (Similar to 'members' array)
+    const categoryStockLevels = [
+        { category: "Office Supplies", current: 850, min: 500, max: 1200, status: "Good" },
+        { category: "IT Equipment", current: 75, min: 80, max: 200, status: "Critical" },
+        { category: "Furniture", current: 300, min: 250, max: 500, status: "Low" },
+        { category: "Cleaning Supplies", current: 650, min: 400, max: 1000, status: "Good" }
+    ];
+
+    // Helper function to determine badge color
+    const getStatusBadgeClass = (status) => {
+        switch (status) {
+            case 'Good':
+                return 'green';
+            case 'Low':
+                return 'orange';
+            case 'Critical':
+                return 'red';
+            default:
+                return 'gray';
+        }
+    };
+
+    // 2. Dynamic Table Row Generation
+    const stockRowsHtml = categoryStockLevels.map(item => `
+        <tr>
+            <td>${item.category}</td>
+            <td>${item.current}</td>
+            <td>${item.min}</td>
+            <td>${item.max}</td>
+            <td><span class="badge ${getStatusBadgeClass(item.status)}">${item.status}</span></td>
+        </tr>
+    `).join("");
+
+    return `
+        <div class="main-content">
+            <div class="page-header">
+                <div class="page-header-content">
+                    <div>
+                        <h1 class="page-title">Inventory Reports</h1>
+                        <p class="page-subtitle">Comprehensive inventory analysis and insights</p>
+                    </div>
+                    <div>
+                        <select id="dateRange" class="form-select">
+                            <option value="last-7-days">Last 7 days</option>
+                            <option value="last-30-days" selected>Last 30 days</option>
+                            <option value="last-90-days">Last 90 days</option>
+                            <option value="last-year">Last year</option>
+                        </select>
+                        <button class="btn btn-primary">📥 Export</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page-content">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-content">
+                            <div class="metric-info">
+                                <h3>Total Items</h3>
+                                <p class="value">1,915</p>
+                                <p class="change positive">↑ 2.4% from last month</p>
+                            </div>
+                            <div class="metric-icon blue">📦</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-content">
+                            <div class="metric-info">
+                                <h3>Low Stock Items</h3>
+                                <p class="value">23</p>
+                                <p class="change negative">↑ 15% from last week</p>
+                            </div>
+                            <div class="metric-icon red">📉</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-content">
+                            <div class="metric-info">
+                                <h3>Expiring Soon</h3>
+                                <p class="value">8</p>
+                                <p class="change warning">Next 60 days</p>
+                            </div>
+                            <div class="metric-icon orange">⚠️</div>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-content">
+                            <div class="metric-info">
+                                <h3>Avg. Turnover</h3>
+                                <p class="value">3.2</p>
+                                <p class="change positive">↑ 8% from last month</p>
+                            </div>
+                            <div class="metric-icon green">📈</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-tabs">
+                    <button onclick="showTab('overview')" id="tab-overview" class="product-tab active">Overview</button>
+                    <button onclick="showTab('stock-levels')" id="tab-stock-levels" class="product-tab">Stock Levels</button>
+                    <button onclick="showTab('turnover')" id="tab-turnover" class="product-tab">Turnover Analysis</button>
+                    <button onclick="showTab('alerts')" id="tab-alerts" class="product-tab">Alerts</button>
+                    <button onclick="showTab('detailed')" id="tab-detailed" class="product-tab">Detailed Report</button>
+                </div>
+
+                <div id="content-overview">
+                    <h2>Overview</h2>
+                </div>
+
+                <div id="content-stock-levels" class="hidden">
+                    <h2>Stock Levels by Category</h2>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Current Stock</th>
+                                    <th>Minimum Required</th>
+                                    <th>Maximum Capacity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${stockRowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                </div>
+        </div>
+
+        <script>
+            function showTab(tabName) {
+                const contents = document.querySelectorAll('[id^="content-"]');
+                contents.forEach(content => content.classList.add("hidden"));
+                const tabs = document.querySelectorAll(".product-tab");
+                tabs.forEach(tab => tab.classList.remove("active"));
+
+                document.getElementById("content-" + tabName).classList.remove("hidden");
+                document.getElementById("tab-" + tabName).classList.add("active");
+            }
+            
+            document.addEventListener("DOMContentLoaded", () => {
+                showTab("overview");
+            });
+        </script>
+    `;
+}
