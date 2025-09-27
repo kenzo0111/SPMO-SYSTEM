@@ -15,16 +15,16 @@ const AppState = {
     productSortBy: 'Sort By',
     productFilterBy: 'Filter By',
     purchaseOrderItems: [
-        { 
-            id: '1', 
-            stockPropertyNumber: '', 
-            unit: '', 
-            description: '', 
-            detailedDescription: '', 
-            quantity: 0, 
-            currentStock: 0, 
-            unitCost: 0, 
-            amount: 0 
+        {
+            id: '1',
+            stockPropertyNumber: '',
+            unit: '',
+            description: '',
+            detailedDescription: '',
+            quantity: 0,
+            currentStock: 0,
+            unitCost: 0,
+            amount: 0
         }
     ],
 
@@ -45,30 +45,30 @@ const MockData = {
         { stockNumber: 'SE02', name: 'HDMI Cable 3m', currentStock: 12, unit: 'Pc' },
         { stockNumber: 'N001', name: 'Laptop Computer', currentStock: 2, unit: 'Unit' }
     ],
-    
+
     categories: [
-        { 
-            id: 'C001', 
-            name: 'Expendable', 
+        {
+            id: 'C001',
+            name: 'Expendable',
             description: 'Items that are used up quickly, have a short lifespan, and are not intended to be reused or tracked long-term. These are typically low-cost supplies.'
         },
-        { 
-            id: 'C002', 
-            name: 'Semi-Expendable(Low)', 
+        {
+            id: 'C002',
+            name: 'Semi-Expendable(Low)',
             description: 'Items that are not consumed immediately and have a longer useful life, but cost ₱5,000 or less per unit. These are not capitalized as fixed assets, but they are still monitored or assigned to users or departments due to their usefulness and potential for loss.'
         },
-        { 
-            id: 'C003', 
-            name: 'Semi-Expendable(High)', 
+        {
+            id: 'C003',
+            name: 'Semi-Expendable(High)',
             description: 'Items with a unit cost more than ₱5,000 but less than ₱50,000. These are not capitalized as PPE, but are considered valuable enough to be tagged, tracked, and documented in the inventory system.'
         },
-        { 
-            id: 'C004', 
-            name: 'Non-Expendable', 
+        {
+            id: 'C004',
+            name: 'Non-Expendable',
             description: 'Assets that are high-cost (₱50,000 and above) and used in operations over multiple years. These are capitalized and recorded in the organization\'s asset registry.'
         }
     ],
-    
+
     products: [
         // Expendable products
         { id: 'E001', name: 'Bond Paper A4', description: '500 sheets, 70gsm', quantity: 20, unitCost: 220.00, totalValue: 4400.00, date: '2025-01-10', type: 'expendable' },
@@ -94,13 +94,13 @@ const MockData = {
         { id: 'N005', name: 'Library Database System', description: 'Overhead software and library management system', quantity: 1, unitCost: 700000.00, totalValue: 700000.00, date: '2025-01-05', type: 'non-expendable' },
         { id: 'N006', name: 'Library Database System', description: 'Overhead software and library management system', quantity: 1, unitCost: 800000.00, totalValue: 800000.00, date: '2025-01-05', type: 'non-expendable' }
     ],
-    
+
     newRequests: [
     ],
-    
+
     pendingRequests: [
     ],
-    
+
     completedRequests: [
     ]
 };
@@ -139,7 +139,7 @@ function getBadgeClass(status, type = 'status') {
             'partial': 'badge orange'
         }
     };
-    
+
     return badgeClasses[type][status] || 'badge gray';
 }
 
@@ -152,7 +152,7 @@ function initializeNavigation() {
             navigateToPage(pageId);
         });
     });
-    
+
     // Handle nav group toggles
     document.querySelectorAll('.nav-header[data-group]').forEach(header => {
         header.addEventListener('click', () => {
@@ -160,7 +160,7 @@ function initializeNavigation() {
             toggleNavGroup(groupId);
         });
     });
-    
+
     // Initialize with dashboard page
     navigateToPage('dashboard');
 }
@@ -176,12 +176,12 @@ function updateActiveNavigation(pageId) {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
     });
-    
+
     // Add active class to current page
     const currentNavItem = document.querySelector(`[data-page="${pageId}"]`);
     if (currentNavItem) {
         currentNavItem.classList.add('active');
-        
+
         // Expand parent group if it's a submenu item
         const parentGroup = currentNavItem.closest('.nav-group');
         if (parentGroup) {
@@ -196,7 +196,7 @@ function updateActiveNavigation(pageId) {
 
 function toggleNavGroup(groupId) {
     const group = document.querySelector(`[data-group="${groupId}"]`).closest('.nav-group');
-    
+
     if (AppState.expandedMenus.includes(groupId)) {
         AppState.expandedMenus = AppState.expandedMenus.filter(id => id !== groupId);
         group.classList.remove('expanded');
@@ -209,8 +209,8 @@ function toggleNavGroup(groupId) {
 // Page Content Generation
 function loadPageContent(pageId) {
     const mainContent = document.getElementById('main-content');
-    
-    switch(pageId) {
+
+    switch (pageId) {
         case 'dashboard':
             mainContent.innerHTML = generateDashboardPage();
             break;
@@ -238,10 +238,10 @@ function loadPageContent(pageId) {
         default:
             mainContent.innerHTML = generateDashboardPage();
     }
-    
+
     // Reinitialize icons after content update
     lucide.createIcons();
-    
+
     // Initialize page-specific event listeners
     initializePageEvents(pageId);
 }
@@ -500,7 +500,7 @@ function generateCategoriesPage() {
                     <h1 class="page-title">Categories</h1>
                     <p class="page-subtitle">Manage inventory categories</p>
                 </div>
-                <button class="add-product-btn" onclick="openModal('category')">
+                <button class="add-product-btn" onclick="openCategoryModal('create')">
                     <i data-lucide="plus" class="icon"></i>
                     Add Category
                 </button>
@@ -546,7 +546,7 @@ function generateCategoriesPage() {
 function generateProductsPage() {
     const currentTab = AppState.currentProductTab || 'expendable';
     const filteredProducts = MockData.products.filter(product => product.type === currentTab.toLowerCase());
-    
+
     return `
         <div class="page-header">
             <div class="page-header-content">
@@ -554,7 +554,7 @@ function generateProductsPage() {
                     <h1 class="page-title">List of Products</h1>
                     <p class="page-subtitle">Manage product inventory</p>
                 </div>
-                <button class="add-product-btn" onclick="openModal('product')">
+                <button class="add-product-btn" onclick="openProductModal()">
                     <i data-lucide="plus" class="icon"></i>
                     Add Product
                 </button>
@@ -670,7 +670,7 @@ function generateStockInPage() {
                     <h1 class="page-title">Stock In</h1>
                     <p class="page-subtitle">Record incoming inventory and stock receipts</p>
                 </div>
-                <button class="btn btn-primary" onclick="openModal('stock-in')">
+                <button class="btn btn-primary" onclick="openStockInModal('create')">
                     <i data-lucide="plus" class="icon"></i>
                     Add Stock In
                 </button>
@@ -816,7 +816,7 @@ function generateStockOutPage() {
                     <h1 class="page-title">Stock Out</h1>
                     <p class="page-subtitle">Record outgoing inventory and issued items</p>
                 </div>
-                <button class="btn btn-primary" onclick="openModal('stock-out')">
+                <button class="btn btn-primary" onclick="openStockOutModal('create')">
                     <i data-lucide="plus" class="icon"></i>
                     Issue Stock
                 </button>
@@ -1251,9 +1251,8 @@ function generatePendingApprovalPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${
-                            MockData.pendingRequests.length > 0 
-                            ? MockData.pendingRequests.map(request => `
+                        ${MockData.pendingRequests.length > 0
+            ? MockData.pendingRequests.map(request => `
                                 <tr>
                                     <td>${request.id}</td>
                                     <td>
@@ -1295,7 +1294,7 @@ function generatePendingApprovalPage() {
                                     </td>
                                 </tr>
                             `).join('')
-                            : `
+            : `
                                 <tr>
                                     <td colspan="10" class="px-6 py-12 text-center text-gray-500">
                                         <div class="flex flex-col items-center gap-2">
@@ -1304,7 +1303,7 @@ function generatePendingApprovalPage() {
                                     </td>
                                 </tr>
                             `
-                        }
+        }
                     </tbody>
                 </table>
             </section>
@@ -1378,7 +1377,7 @@ function generateCompletedRequestPage() {
                     </thead>
                     <tbody>
                         ${MockData.completedRequests.length > 0
-                            ? MockData.completedRequests.map(request => `
+            ? MockData.completedRequests.map(request => `
                                 <tr>
                                     <td>${request.id}</td>
                                     <td>
@@ -1417,7 +1416,7 @@ function generateCompletedRequestPage() {
                                     </td>
                                 </tr>
                             `).join('')
-                            : `
+            : `
                                 <tr>
                                     <td colspan="10" class="px-6 py-12 text-center text-gray-500">
                                         <div class="flex flex-col items-center gap-2">
@@ -1426,7 +1425,7 @@ function generateCompletedRequestPage() {
                                     </td>
                                 </tr>
                             `
-                        }
+        }
                     </tbody>
                 </table>
 
@@ -1473,8 +1472,8 @@ function openPurchaseOrderModal(mode = 'create', requestId = null) {
     let requestData = null;
     if (requestId) {
         requestData = AppState.newRequests.find(r => r.id === requestId) ||
-                      AppState.pendingRequests.find(r => r.id === requestId) ||
-                      AppState.completedRequests.find(r => r.id === requestId);
+            AppState.pendingRequests.find(r => r.id === requestId) ||
+            AppState.completedRequests.find(r => r.id === requestId);
     }
 
     modalContent.innerHTML = generatePurchaseOrderModal(mode, requestData);
@@ -1771,10 +1770,10 @@ function removePOItem(id) {
 function updatePOItem(id, field, value) {
     const itemIndex = AppState.purchaseOrderItems.findIndex(item => item.id === id);
     if (itemIndex === -1) return;
-    
+
     const item = AppState.purchaseOrderItems[itemIndex];
     item[field] = value;
-    
+
     // Auto-populate stock info when stock property number is entered
     if (field === 'stockPropertyNumber') {
         const stockItem = MockData.inventory.find(inv => inv.stockNumber === value);
@@ -1784,12 +1783,12 @@ function updatePOItem(id, field, value) {
             item.currentStock = stockItem.currentStock;
         }
     }
-    
+
     // Calculate amount when quantity or unit cost changes
     if (field === 'quantity' || field === 'unitCost') {
         item.amount = item.quantity * item.unitCost;
     }
-    
+
     AppState.purchaseOrderItems[itemIndex] = item;
     renderPOItems();
     updateStockSummary();
@@ -1798,7 +1797,7 @@ function updatePOItem(id, field, value) {
 function renderPOItems() {
     const tbody = document.getElementById('po-items-tbody');
     const isReadOnly = AppState.currentModal?.mode === 'view';
-    
+
     tbody.innerHTML = AppState.purchaseOrderItems.map(item => `
         <tr>
             <td style="padding: 12px;">
@@ -1841,8 +1840,8 @@ function renderPOItems() {
                     <span style="font-size: 14px; font-weight: 500;">${item.currentStock}</span>
                     <span style="font-size: 12px; color: #6b7280;">${item.unit}</span>
                 </div>
-                ${item.quantity > item.currentStock && item.currentStock > 0 ? 
-                    '<div class="stock-warning">Exceeds stock</div>' : ''}
+                ${item.quantity > item.currentStock && item.currentStock > 0 ?
+            '<div class="stock-warning">Exceeds stock</div>' : ''}
             </td>
             <td style="padding: 12px;">
                 <input type="number" 
@@ -1876,11 +1875,11 @@ function renderPOItems() {
             ` : ''}
         </tr>
     `).join('');
-    
+
     // Update grand total
     const grandTotal = AppState.purchaseOrderItems.reduce((total, item) => total + item.amount, 0);
     document.getElementById('grand-total').textContent = formatCurrency(grandTotal);
-    
+
     // Reinitialize icons
     lucide.createIcons();
 }
@@ -1890,7 +1889,7 @@ function updateStockSummary() {
     const exceedingStock = AppState.purchaseOrderItems.filter(item => item.quantity > item.currentStock && item.currentStock > 0).length;
     const newItems = AppState.purchaseOrderItems.filter(item => item.currentStock === 0 && item.stockPropertyNumber).length;
     const totalQuantity = AppState.purchaseOrderItems.reduce((sum, item) => sum + item.quantity, 0);
-    
+
     summary.innerHTML = `
         <div>
             <p style="font-size: 14px; color: #1e40af;">
@@ -1988,7 +1987,7 @@ function switchProductTab(tabName) {
 // Page-specific event initialization
 function initializePageEvents(pageId) {
     // Add page-specific event listeners here
-    switch(pageId) {
+    switch (pageId) {
         case 'products':
             initializeProductsPageEvents();
             break;
@@ -2006,7 +2005,7 @@ function initializeProductsPageEvents() {
     // Initialize search functionality
     const searchInput = document.getElementById('product-search');
     if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
+        searchInput.addEventListener('input', function (e) {
             AppState.productSearchTerm = e.target.value;
             updateProductsTable();
         });
@@ -2015,16 +2014,16 @@ function initializeProductsPageEvents() {
     // Initialize sort and filter dropdowns
     const sortBy = document.getElementById('sort-by');
     const filterBy = document.getElementById('filter-by');
-    
+
     if (sortBy) {
-        sortBy.addEventListener('change', function(e) {
+        sortBy.addEventListener('change', function (e) {
             AppState.productSortBy = e.target.value;
             updateProductsTable();
         });
     }
 
     if (filterBy) {
-        filterBy.addEventListener('change', function(e) {
+        filterBy.addEventListener('change', function (e) {
             AppState.productFilterBy = e.target.value;
             updateProductsTable();
         });
@@ -2034,17 +2033,17 @@ function initializeProductsPageEvents() {
 function updateProductsTable() {
     const currentTab = AppState.currentProductTab || 'expendable';
     let filteredProducts = MockData.products.filter(product => product.type === currentTab.toLowerCase());
-    
+
     // Apply search filter
     if (AppState.productSearchTerm) {
         const searchTerm = AppState.productSearchTerm.toLowerCase();
-        filteredProducts = filteredProducts.filter(product => 
+        filteredProducts = filteredProducts.filter(product =>
             product.name.toLowerCase().includes(searchTerm) ||
             product.description.toLowerCase().includes(searchTerm) ||
             product.id.toLowerCase().includes(searchTerm)
         );
     }
-    
+
     // Apply filter
     if (AppState.productFilterBy && AppState.productFilterBy !== 'Filter By') {
         switch (AppState.productFilterBy) {
@@ -2067,7 +2066,7 @@ function updateProductsTable() {
                 break;
         }
     }
-    
+
     // Apply sorting
     if (AppState.productSortBy && AppState.productSortBy !== 'Sort By') {
         switch (AppState.productSortBy) {
@@ -2091,7 +2090,7 @@ function updateProductsTable() {
                 break;
         }
     }
-    
+
     // Update table body
     const tbody = document.querySelector('.table tbody');
     if (tbody) {
@@ -2116,13 +2115,13 @@ function updateProductsTable() {
                 </td>
             </tr>
         `).join('');
-        
+
         // Update pagination count
         const paginationLeft = document.querySelector('.pagination-left');
         if (paginationLeft) {
             paginationLeft.textContent = `Showing 1 to ${filteredProducts.length}`;
         }
-        
+
         // Reinitialize icons
         lucide.createIcons();
     }
@@ -2162,7 +2161,7 @@ function openModal(type) {
 }
 
 // Modal close on outside click
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     const modal = document.getElementById('purchase-order-modal');
     if (e.target === modal) {
         closePurchaseOrderModal();
@@ -2188,17 +2187,17 @@ window.archiveRequest = archiveRequest;
 window.openModal = openModal;
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializeNavigation();
-    
+
     // Initialize icons
     lucide.createIcons();
 });
 // Inside loadPageContent(pageId)
 function loadPageContent(pageId) {
     const mainContent = document.getElementById('main-content');
-    
-    switch(pageId) {
+
+    switch (pageId) {
         case 'dashboard':
             mainContent.innerHTML = generateDashboardPage();
             break;
@@ -2229,7 +2228,7 @@ function loadPageContent(pageId) {
         default:
             mainContent.innerHTML = generateDashboardPage();
     }
-    
+
     lucide.createIcons();
     initializePageEvents(pageId);
 }
@@ -2301,8 +2300,8 @@ function generateRolesManagementPage() {
 // Inside loadPageContent(pageId)
 function loadPageContent(pageId) {
     const mainContent = document.getElementById('main-content');
-    
-    switch(pageId) {
+
+    switch (pageId) {
         case 'dashboard':
             mainContent.innerHTML = generateDashboardPage();
             break;
@@ -2336,7 +2335,7 @@ function loadPageContent(pageId) {
         default:
             mainContent.innerHTML = generateDashboardPage();
     }
-    
+
     lucide.createIcons();
     initializePageEvents(pageId);
 }
@@ -2403,3 +2402,520 @@ function generateUsersManagementPage() {
         </div>
     `;
 }
+
+// Add Product Modal
+
+
+
+function openProductModal(mode = 'create', productId = null) {
+    const modal = document.getElementById('product-modal');
+    const modalContent = modal.querySelector('.modal-content');
+
+    AppState.currentModal = { mode, productId };
+
+    // Load product data if editing or viewing
+    let productData = null;
+    if (productId) {
+        productData = MockData.products.find(p => p.id === productId);
+    }
+
+    modalContent.innerHTML = generateProductModal(mode, productData);
+    modal.classList.add('active');
+
+    lucide.createIcons();
+}
+
+function closeProductModal() {
+    const modal = document.getElementById('product-modal');
+    modal.classList.remove('active');
+    AppState.currentModal = null;
+}
+
+function saveProduct(productId) {
+    // collect form values (simplified example)
+    const modal = document.getElementById('product-modal');
+    const inputs = modal.querySelectorAll('.form-input, .form-select, .form-textarea');
+
+    const values = {};
+    inputs.forEach(input => {
+        const label = input.previousElementSibling?.innerText || '';
+        values[label] = input.value;
+    });
+
+    console.log("Saving product:", values);
+
+
+    closeProductModal();
+    loadPageContent('products'); // refresh list
+}
+
+function generateProductModal(mode = 'create', productData = null) {
+    const title = mode === 'create' ? 'ADD NEW PRODUCT' : 'PRODUCT DETAILS';
+    const isReadOnly = mode === 'view';
+
+    return `
+        <div class="modal-header">
+            <h2 class="modal-title">${title}</h2>
+            <p class="modal-subtitle">Manage Inventory</p>
+            <button class="modal-close" onclick="closeProductModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+
+        <div class="modal-body space-y-6">
+            <!-- Basic Product Info -->
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Product Name</label>
+                    <input type="text" class="form-input"
+                           value="${productData?.name || ''}"
+                           placeholder="Enter product name"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" ${isReadOnly ? 'disabled' : ''}>
+                        <option value="">Select category</option>
+                        <option value="expendable" ${productData?.type === 'expendable' ? 'selected' : ''}>Expendable</option>
+                        <option value="semi-expendable" ${productData?.type === 'semi-expendable' ? 'selected' : ''}>Semi-Expendable</option>
+                        <option value="non-expendable" ${productData?.type === 'non-expendable' ? 'selected' : ''}>Non-Expendable</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea class="form-textarea"
+                          placeholder="Enter description"
+                          ${isReadOnly ? 'readonly' : ''}>${productData?.description || ''}</textarea>
+            </div>
+
+            <!-- Pricing & Quantity -->
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Unit Cost</label>
+                    <input type="number" class="form-input"
+                           step="0.01" min="0"
+                           value="${productData?.unitCost || ''}"
+                           placeholder="Enter unit cost"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-input"
+                           min="1"
+                           value="${productData?.quantity || ''}"
+                           placeholder="Enter quantity"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input"
+                           value="${productData?.date || ''}"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Total Value</label>
+                    <input type="text" class="form-input"
+                           value="${productData ? formatCurrency(productData.totalValue || 0) : '₱0.00'}"
+                           readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeProductModal()">
+                ${isReadOnly ? 'Close' : 'Cancel'}
+            </button>
+            ${!isReadOnly ? `
+                <button class="btn btn-primary" onclick="saveProduct('${productData?.id || ''}')">
+                    ${mode === 'create' ? 'Add Product' : 'Update Product'}
+                </button>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Category Modal and Functions
+
+function openCategoryModal(mode = 'create', categoryId = null) {
+    const modal = document.getElementById('category-modal');
+    const modalContent = modal.querySelector('.modal-content');
+
+    let categoryData = null;
+    if (categoryId) {
+        categoryData = MockData.categories.find(c => c.id === categoryId);
+    }
+
+    modalContent.innerHTML = generateCategoryModal(mode, categoryData);
+    modal.classList.add('active');
+
+    lucide.createIcons();
+}
+
+function closeCategoryModal() {
+    const modal = document.getElementById('category-modal');
+    modal.classList.remove('active');
+}
+
+
+function generateCategoryModal(mode = 'create', categoryData = null) {
+    const title = mode === 'create' ? 'ADD NEW CATEGORY' : 'CATEGORY DETAILS';
+    const isReadOnly = mode === 'view';
+
+    return `
+        <div class="modal-header">
+            <h2 class="modal-title">${title}</h2>
+            <button class="modal-close" onclick="closeCategoryModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+
+        <div class="modal-body space-y-6">
+            <div class="form-group">
+                <label class="form-label">Category Name</label>
+                <input type="text" class="form-input"
+                       value="${categoryData?.name || ''}"
+                       placeholder="Enter category name"
+                       ${isReadOnly ? 'readonly' : ''}>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea class="form-textarea"
+                          placeholder="Enter description"
+                          ${isReadOnly ? 'readonly' : ''}>${categoryData?.description || ''}</textarea>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeCategoryModal()">
+                ${isReadOnly ? 'Close' : 'Cancel'}
+            </button>
+            ${!isReadOnly ? `
+                <button class="btn btn-primary" onclick="saveCategory('${categoryData?.id || ''}')">
+                    ${mode === 'create' ? 'Add Category' : 'Update Category'}
+                </button>
+            ` : ''}
+        </div>
+    `;
+}
+
+function saveCategory(categoryId) {
+    // Grab input values
+    const modal = document.getElementById('category-modal');
+    const name = modal.querySelector('input').value;
+    const description = modal.querySelector('textarea').value;
+
+    if (!categoryId) {
+        // Create new
+        const newCategory = {
+            id: `C${MockData.categories.length + 1}`,
+            name,
+            description
+        };
+        MockData.categories.push(newCategory);
+    } else {
+        // Update existing
+        const existing = MockData.categories.find(c => c.id === categoryId);
+        if (existing) {
+            existing.name = name;
+            existing.description = description;
+        }
+    }
+
+    closeCategoryModal();
+    loadPageContent('categories'); // refresh table/page
+}
+
+// Stock In Modal and Functions
+
+function openStockInModal(mode = 'create', stockId = null) {
+    const modal = document.getElementById('stockin-modal');
+    const modalContent = modal.querySelector('.modal-content');
+
+    let stockData = null;
+    if (stockId) {
+        stockData = MockData.stockIn.find(r => r.id === stockId);
+    }
+
+    modalContent.innerHTML = generateStockInModal(mode, stockData);
+    modal.classList.add('active');
+    lucide.createIcons();
+}
+
+function closeStockInModal() {
+    const modal = document.getElementById('stockin-modal');
+    modal.classList.remove('active');
+}
+
+function generateStockInModal(mode = 'create', stockData = null) {
+    const title = mode === 'create' ? 'STOCK IN' : 'STOCK IN DETAILS';
+    const isReadOnly = mode === 'view';
+
+    return `
+        <div class="modal-header">
+            <h2 class="modal-title">${title}</h2>
+            <button class="modal-close" onclick="closeStockInModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+
+        <div class="modal-body space-y-6">
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input"
+                           value="${stockData?.date || ''}"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">SKU</label>
+                    <input type="text" class="form-input"
+                           value="${stockData?.sku || ''}"
+                           placeholder="E001"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Product Name</label>
+                <input type="text" class="form-input"
+                       value="${stockData?.productName || ''}"
+                       placeholder="Enter product name"
+                       ${isReadOnly ? 'readonly' : ''}>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-input"
+                           min="1"
+                           value="${stockData?.quantity || ''}"
+                           placeholder="Enter quantity"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Unit Cost</label>
+                    <input type="number" class="form-input"
+                           step="0.01" min="0"
+                           value="${stockData?.unitCost || ''}"
+                           placeholder="₱0.00"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Total Cost</label>
+                <input type="text" class="form-input"
+                       value="${stockData ? formatCurrency(stockData.totalCost || 0) : '₱0.00'}"
+                       readonly>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Supplier</label>
+                <input type="text" class="form-input"
+                       value="${stockData?.supplier || ''}"
+                       placeholder="Enter supplier name"
+                       ${isReadOnly ? 'readonly' : ''}>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Received By</label>
+                <input type="text" class="form-input"
+                       value="${stockData?.receivedBy || ''}"
+                       placeholder="Enter receiver name"
+                       ${isReadOnly ? 'readonly' : ''}>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeStockInModal()">
+                ${isReadOnly ? 'Close' : 'Cancel'}
+            </button>
+            ${!isReadOnly ? `
+                <button class="btn btn-primary" onclick="saveStockIn('${stockData?.id || ''}')">
+                    ${mode === 'create' ? 'Add Stock In' : 'Update Stock In'}
+                </button>
+            ` : ''}
+        </div>
+    `;
+}
+
+function saveStockIn(stockId) {
+    const modal = document.getElementById('stockin-modal');
+    const inputs = modal.querySelectorAll('.form-input');
+
+    const values = {};
+    inputs.forEach(input => {
+        const label = input.previousElementSibling?.innerText || '';
+        values[label] = input.value;
+    });
+
+    console.log("Saving stock-in record:", values);
+
+    // TODO: Save to MockData.stockIn or update existing record
+
+    closeStockInModal();
+    loadPageContent('stockin'); // refresh stock-in page
+}
+
+
+// Stock Out Modal and Functions
+
+function openStockOutModal(mode = 'create', stockId = null) {
+    const modal = document.getElementById('stockout-modal');
+    const modalContent = modal.querySelector('.modal-content');
+
+    let stockData = null;
+    if (stockId) {
+        stockData = MockData.stockOut.find(r => r.id === stockId);
+    }
+
+    modalContent.innerHTML = generateStockOutModal(mode, stockData);
+    modal.classList.add('active');
+    lucide.createIcons();
+}
+
+function closeStockOutModal() {
+    const modal = document.getElementById('stockout-modal');
+    modal.classList.remove('active');
+}
+
+function generateStockOutModal(mode = 'create', stockData = null) {
+    const title = mode === 'create' ? 'STOCK OUT' : 'STOCK OUT DETAILS';
+    const isReadOnly = mode === 'view';
+
+    return `
+        <div class="modal-header">
+            <h2 class="modal-title">${title}</h2>
+            <button class="modal-close" onclick="closeStockOutModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+
+        <div class="modal-body space-y-6">
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input"
+                           value="${stockData?.date || ''}"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">SKU</label>
+                    <input type="text" class="form-input"
+                           value="${stockData?.sku || ''}"
+                           placeholder="E002"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Product Name</label>
+                <input type="text" class="form-input"
+                       value="${stockData?.productName || ''}"
+                       placeholder="Enter product name"
+                       ${isReadOnly ? 'readonly' : ''}>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-input"
+                           min="1"
+                           value="${stockData?.quantity || ''}"
+                           placeholder="Enter quantity"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Unit Cost</label>
+                    <input type="number" class="form-input"
+                           step="0.01" min="0"
+                           value="${stockData?.unitCost || ''}"
+                           placeholder="₱0.00"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Total Cost</label>
+                <input type="text" class="form-input"
+                       value="${stockData ? formatCurrency(stockData.totalCost || 0) : '₱0.00'}"
+                       readonly>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                <input type="text" class="form-input"
+                       value="${stockData?.department || ''}"
+                       placeholder="Enter department"
+                       ${isReadOnly ? 'readonly' : ''}>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Issued To</label>
+                    <input type="text" class="form-input"
+                           value="${stockData?.issuedTo || ''}"
+                           placeholder="Employee / Person"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Issued By</label>
+                    <input type="text" class="form-input"
+                           value="${stockData?.issuedBy || ''}"
+                           placeholder="Staff / Officer"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-select" ${isReadOnly ? 'disabled' : ''}>
+                    <option ${!stockData?.status ? 'selected' : ''}>Select status</option>
+                    <option ${stockData?.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                    <option ${stockData?.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                    <option ${stockData?.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeStockOutModal()">
+                ${isReadOnly ? 'Close' : 'Cancel'}
+            </button>
+            ${!isReadOnly ? `
+                <button class="btn btn-primary" onclick="saveStockOut('${stockData?.id || ''}')">
+                    ${mode === 'create' ? 'Add Stock Out' : 'Update Stock Out'}
+                </button>
+            ` : ''}
+        </div>
+    `;
+}
+
+function saveStockOut(stockId) {
+    const modal = document.getElementById('stockout-modal');
+    const inputs = modal.querySelectorAll('.form-input, .form-select');
+
+    const values = {};
+    inputs.forEach(input => {
+        const label = input.previousElementSibling?.innerText || '';
+        values[label] = input.value;
+    });
+
+    console.log("Saving stock-out record:", values);
+
+    // TODO: Save to MockData.stockOut or update existing record
+
+    closeStockOutModal();
+    loadPageContent('stockout'); // refresh stock-out page
+}
+
