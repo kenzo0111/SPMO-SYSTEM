@@ -2317,16 +2317,20 @@ document.addEventListener('DOMContentLoaded', function () {
 // ------------------------//
 
 function generateRolesManagementPage() {
-    // Sample data (replace later with dynamic DB/API)
-    const members = [
+    // Sample data for initial load only
+    const initialMembers = [
         { id: "SA001", group: "Group Juan", name: "Cherry Ann Quila", role: "Leader", email: "cherry@cnsc.edu.ph", department: "IT", status: "Active", created: "2024-01-15" },
         { id: "SA002", group: "Group Juan", name: "Vince Balce", role: "Member", email: "vince@cnsc.edu.ph", department: "Finance", status: "Inactive", created: "2024-02-01" },
         { id: "SA003", group: "Group Juan", name: "Marinel Ledesma", role: "Member", email: "marinel@cnsc.edu.ph", department: "HR", status: "Active", created: "2024-03-10" }
     ];
 
-    // Make available globally so modals can access them
+    // FIX: Only initialize MockData.users if it doesn't already exist.
     if (!window.MockData) window.MockData = {};
-    window.MockData.users = members;
+    if (!window.MockData.users) {
+        window.MockData.users = initialMembers;
+    }
+
+    const membersToRender = window.MockData.users;
 
     const html = `
         <div class="page-header">
@@ -2359,7 +2363,7 @@ function generateRolesManagementPage() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${members.map(member => `
+                    ${membersToRender.map(member => `
                         <tr>
                             <td>${member.id}</td>
                             <td>${member.name}</td>
@@ -2402,35 +2406,110 @@ function generateRolesManagementPage() {
     return html;
 }
 
-// Delete function (simple confirm + reload)
+function saveUser(userId) {
+    // 1. Get elements by their IDs
+    const nameInput = document.getElementById('userName');
+    const emailInput = document.getElementById('userEmail');
+    const roleInput = document.getElementById('userRole');
+    const departmentInput = document.getElementById('userDepartment');
+    const statusInput = document.getElementById('userStatus');
+    const createdInput = document.getElementById('userCreated');
+
+    // 2. Gather form data
+    const userData = {
+        name: nameInput.value,
+        email: emailInput.value,
+        role: roleInput.value,
+        department: departmentInput.value,
+        status: statusInput ? statusInput.value : 'Active',
+        // FIX: Ensure 'created' value defaults to today if empty.
+        created: createdInput.value || getTodayDateString()
+    };
+
+    if (!userId) {
+        // --- CREATE NEW USER ---
+        if (!window.MockData) window.MockData = {};
+        if (!window.MockData.users) window.MockData.users = [];
+
+        // Robust ID generation
+        const maxIdNum = window.MockData.users
+            .map(u => parseInt(u.id.replace('SA', '').replace('U', ''), 10))
+            .filter(n => !isNaN(n))
+            .reduce((max, current) => Math.max(max, current), 0);
+
+        const newIdNumber = maxIdNum + 1;
+
+        const newUser = {
+            id: `SA${String(newIdNumber).padStart(3, '0')}`,
+            group: "New Group",
+            ...userData
+        };
+
+        window.MockData.users.push(newUser);
+    } else {
+        // --- UPDATE EXISTING USER (EDIT) ---
+        const existing = window.MockData.users.find(u => u.id === userId);
+        if (existing) {
+            Object.assign(existing, userData);
+        }
+    }
+
+    closeUserModal();
+    refreshRolesTable(); // Refresh the table to reflect changes
+}
+
+/**
+ * REVISED: Delete member using the new table refresh function.
+ */
 function deleteMember(memberId) {
     if (confirm("Are you sure you want to delete this member?")) {
         window.MockData.users = window.MockData.users.filter(u => u.id !== memberId);
-        loadPageContent('roles-management'); // refresh table/page
+        refreshRolesTable(); // Refresh the table to reflect deletion
     }
 }
 
+
+
+function refreshRolesTable() {
+    // Assuming your main content container has the ID 'main-content'
+    const mainContentArea = document.getElementById('main-content');
+
+    if (mainContentArea) {
+        // Regenerate the entire page HTML using the updated MockData.users
+        const newPageHTML = generateRolesManagementPage();
+
+        mainContentArea.innerHTML = newPageHTML;
+
+        // Ensure icons are re-rendered
+        setTimeout(() => {
+            if (window.lucide) lucide.createIcons();
+        }, 0);
+    }
+}
 
 function openUserModal(mode = 'view', userId = null) {
     const modal = document.getElementById('user-modal');
     const modalContent = modal.querySelector('.modal-content');
 
     let userData = null;
-    if (userId) {
-        userData = MockData.users.find(u => u.id === userId);
+    if (userId && window.MockData && window.MockData.users) {
+        // Find user data for 'edit' or 'view' mode
+        userData = window.MockData.users.find(u => u.id === userId);
     }
 
     modalContent.innerHTML = generateUserModal(mode, userData);
     modal.classList.add('active');
 
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
 }
+
 
 function closeUserModal() {
     const modal = document.getElementById('user-modal');
     modal.classList.remove('active');
 }
 
+// Your existing generateUserModal (included for context)
 function generateUserModal(mode = 'view', userData = null) {
     const title = mode === 'create' ? 'ADD NEW USER' :
         mode === 'edit' ? 'EDIT USER' :
@@ -2449,7 +2528,7 @@ function generateUserModal(mode = 'view', userData = null) {
         <div class="modal-body space-y-6">
             <div class="form-group">
                 <label class="form-label">Name</label>
-                <input type="text" class="form-input"
+                <input type="text" class="form-input" id="userName"
                        value="${userData?.name || ''}"
                        placeholder="Enter full name"
                        ${isReadOnly ? 'readonly' : ''}>
@@ -2457,7 +2536,7 @@ function generateUserModal(mode = 'view', userData = null) {
 
             <div class="form-group">
                 <label class="form-label">Email</label>
-                <input type="email" class="form-input"
+                <input type="email" class="form-input" id="userEmail"
                        value="${userData?.email || ''}"
                        placeholder="Enter email"
                        ${isReadOnly ? 'readonly' : ''}>
@@ -2465,7 +2544,7 @@ function generateUserModal(mode = 'view', userData = null) {
 
             <div class="form-group">
                 <label class="form-label">Role</label>
-                <input type="text" class="form-input"
+                <input type="text" class="form-input" id="userRole"
                        value="${userData?.role || ''}"
                        placeholder="Enter role"
                        ${isReadOnly ? 'readonly' : ''}>
@@ -2473,7 +2552,7 @@ function generateUserModal(mode = 'view', userData = null) {
 
             <div class="form-group">
                 <label class="form-label">Department</label>
-                <input type="text" class="form-input"
+                <input type="text" class="form-input" id="userDepartment"
                        value="${userData?.department || ''}"
                        placeholder="Enter department"
                        ${isReadOnly ? 'readonly' : ''}>
@@ -2484,7 +2563,7 @@ function generateUserModal(mode = 'view', userData = null) {
                 ${isReadOnly
             ? `<span class="status-badge ${userData?.status === 'Active' ? 'green' : 'red'}">${userData?.status || 'Inactive'}</span>`
             : `
-                        <select class="form-select">
+                        <select class="form-select" id="userStatus">
                             <option ${userData?.status === 'Active' ? 'selected' : ''}>Active</option>
                             <option ${userData?.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
                         </select>
@@ -2494,7 +2573,7 @@ function generateUserModal(mode = 'view', userData = null) {
 
             <div class="form-group">
                 <label class="form-label">Created</label>
-                <input type="date" class="form-input"
+                <input type="date" class="form-input" id="userCreated"
                        value="${userData?.created || ''}"
                        ${isReadOnly ? 'readonly' : ''}>
             </div>
@@ -2513,40 +2592,7 @@ function generateUserModal(mode = 'view', userData = null) {
     `;
 }
 
-function saveUser(userId) {
-    const modal = document.getElementById('user-modal');
 
-    const inputs = modal.querySelectorAll('input, select');
-    const [name, email, role, department, status, created] = inputs;
-
-    if (!userId) {
-        // Create new user
-        const newUser = {
-            id: `U${MockData.users.length + 1}`,
-            name: name.value,
-            email: email.value,
-            role: role.value,
-            department: department.value,
-            status: status.value,
-            created: created.value
-        };
-        MockData.users.push(newUser);
-    } else {
-        // Update existing user
-        const existing = MockData.users.find(u => u.id === userId);
-        if (existing) {
-            existing.name = name.value;
-            existing.email = email.value;
-            existing.role = role.value;
-            existing.department = department.value;
-            existing.status = status.value;
-            existing.created = created.value;
-        }
-    }
-
-    closeUserModal();
-    loadPageContent('users'); // refresh table/page
-}
 // ------------------------- //
 //   Users Management Page  //
 // ------------------------- //
