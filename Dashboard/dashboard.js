@@ -1644,7 +1644,6 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                     <label class="text-lg font-semibold">Items</label>
                     <div style="display: flex; gap: 8px;">
                         ${!isReadOnly ? `
-                            <button class="btn-secondary" onclick="showStockLookup()">Stock Lookup</button>
                             <button class="btn btn-primary" onclick="addPOItem()">
                                 <i data-lucide="plus" class="icon"></i>
                                 Add Item
@@ -1679,14 +1678,6 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                             </tr>
                         </tfoot>
                     </table>
-                </div>
-            </div>
-
-            <!-- Stock Information Summary -->
-            <div class="stock-info">
-                <label style="color: #1e40af; font-weight: 600;">Stock Information Summary</label>
-                <div class="grid-2 mt-3" id="stock-summary">
-                    <!-- Will be updated dynamically -->
                 </div>
             </div>
 
@@ -1728,30 +1719,6 @@ function generatePurchaseOrderModal(mode, requestData = null) {
             ` : ''}
         </div>
 
-        <!-- Stock Lookup Popup -->
-        <div id="stock-lookup-popup" class="hidden" 
-              style="position: absolute; top: 16px; right: 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); padding: 16px; width: 320px; z-index: 10;">
-            <div class="space-y-2">
-                <label class="font-semibold">Available Stock Items</label>
-                <div style="max-height: 192px; overflow-y: auto; padding: 8px 0;">
-                    ${MockData.inventory.map(stock => `
-                        <div style="padding: 8px; border: 1px solid #e5e7eb; border-radius: 4px; margin-bottom: 8px;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <div>
-                                    <p style="font-weight: 500; margin: 0; font-size: 14px;">${stock.stockNumber}</p>
-                                    <p style="color: #6b7280; margin: 0; font-size: 12px;">${stock.name}</p>
-                                </div>
-                                <div style="text-align: right;">
-                                    <p style="font-weight: 500; margin: 0; font-size: 14px;">${stock.currentStock}</p>
-                                    <p style="color: #6b7280; margin: 0; font-size: 10px;">${stock.unit}</p>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-                <button class="btn-secondary" onclick="hideStockLookup()" style="width: 100%;">Close</button>
-            </div>
-        </div>
     `;
 }
 
