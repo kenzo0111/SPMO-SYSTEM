@@ -840,14 +840,14 @@ function generateStockOutPage() {
                     </div>
                     <select class="filter-dropdown" id="departmentFilter">
                         <option value="">All Departments</option>
-                        <option value="coeng">College of Engineering</option>
-                        <option value="cbpa">College of Business and Public Administration</option>
-                        <option value="cas">College of Arts and Sciences</option>
-                        <option value="ccms">College of Computing and Multimedia Studies</option>
-                        <option value="op">Office of the President</option>
-                        <option value="vpaa">Office of the Vice President for Academic Affairs</option>
-                        <option value="vpre">Office of the Vice President for Research and Extension</option>
-                        <option value="vpfa">Office of the Vice President for Finance Affairs</option>
+                        <option value="COENG">College of Engineering</option>
+                        <option value="CBPA">College of Business and Public Administration</option>
+                        <option value="CAS">College of Arts and Sciences</option>
+                        <option value="CCMS">College of Computing and Multimedia Studies</option>
+                        <option value="OP">Office of the President</option>
+                        <option value="VPAA">Office of the Vice President for Academic Affairs</option>
+                        <option value="VPRE">Office of the Vice President for Research and Extension</option>
+                        <option value="VPFA">Office of the Vice President for Finance Affairs</option>
                     </select>
                     <select class="filter-dropdown" id="statusFilter">
                         <option value="">All Status</option>
@@ -1504,6 +1504,19 @@ function generatePurchaseOrderModal(mode, requestData = null) {
     const title = mode === 'create' ? 'NEW PURCHASE ORDER' : 'PURCHASE ORDER';
     const isReadOnly = mode === 'view';
 
+    // Department List using user's suggested values
+    const departments = [
+        { value: 'COENG', label: 'College of Engineering' },
+        { value: 'CBPA', label: 'College of Business and Public Administration' },
+        { value: 'CAS', label: 'College of Arts and Sciences' },
+        { value: 'CCMS', label: 'College of Computing and Multimedia Studies' },
+        { value: 'OP', label: 'Office of the President' },
+        { value: 'OVPAA', label: 'Office of the Vice President for Academic Affairs' },
+        { value: 'OVPRE', label: 'Office of the Vice President for Research and Extension' },
+        { value: 'OVPFA', label: 'Office of the Vice President for Finance Affairs' }
+    ];
+    const selectedDepartment = requestData?.department || ''; // Default to empty value
+
     return `
         <div class="modal-header">
             <h2 class="modal-title">${title}</h2>
@@ -1528,8 +1541,8 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                     <div class="form-group">
                         <label class="form-label">Address of the Supplier</label>
                         <textarea class="form-textarea" 
-                                  placeholder="Enter supplier address" 
-                                  ${isReadOnly ? 'readonly' : ''}>${requestData?.supplierAddress || ''}</textarea>
+                                     placeholder="Enter supplier address" 
+                                     ${isReadOnly ? 'readonly' : ''}>${requestData?.supplierAddress || ''}</textarea>
                     </div>
                     
                     <div class="form-group">
@@ -1538,6 +1551,21 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                                value="${requestData?.supplierTIN || ''}"
                                placeholder="Enter TIN number" ${isReadOnly ? 'readonly' : ''}>
                     </div>
+                    
+                    <!-- Department Dropdown (REVISED FIELD) -->
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <select class="form-select" name="department" ${isReadOnly ? 'disabled' : ''}>
+                            <option value="">Select Department</option>
+                            ${departments.map(dept => `
+                                <option value="${dept.value}" ${dept.value === selectedDepartment ? 'selected' : ''}>
+                                    ${dept.label}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <!-- END REVISED FIELD -->
+                    
                 </div>
 
                 <div class="space-y-4">
@@ -1702,7 +1730,7 @@ function generatePurchaseOrderModal(mode, requestData = null) {
 
         <!-- Stock Lookup Popup -->
         <div id="stock-lookup-popup" class="hidden" 
-             style="position: absolute; top: 16px; right: 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); padding: 16px; width: 320px; z-index: 10;">
+              style="position: absolute; top: 16px; right: 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); padding: 16px; width: 320px; z-index: 10;">
             <div class="space-y-2">
                 <label class="font-semibold">Available Stock Items</label>
                 <div style="max-height: 192px; overflow-y: auto; padding: 8px 0;">
@@ -1726,7 +1754,6 @@ function generatePurchaseOrderModal(mode, requestData = null) {
         </div>
     `;
 }
-
 
 // Purchase Order Modal item management
 function initializePurchaseOrderModal(requestData = null) {
@@ -1943,15 +1970,89 @@ function deleteRequest(requestId) {
 }
 
 
+// Mock modal elements for DOM querying in savePurchaseOrder
+const mockModal = document.createElement('div');
+mockModal.id = 'purchase-order-modal';
+mockModal.innerHTML = `
+    <input type="text" placeholder="Enter supplier name" value="Global Tech Co.">
+    <input type="text" placeholder="Enter P.O. number" value="">
+    <input type="date" value="2025-11-15">
+`;
+document.body.appendChild(mockModal);
+/**
+ * Generates the next sequential Request ID (e.g., 'REQ-003').
+ * It finds the highest number from existing IDs in AppState.newRequests and increments it.
+ * @returns {string} The new sequential ID formatted as REQ-XXX.
+ */
+function generateNextRequestId() {
+    const prefix = 'REQ-';
+    // 1. Map all existing IDs
+    const highestNum = AppState.newRequests
+        .map(r => r.id)
+        // 2. Filter for valid REQ-### format and parse the number
+        .filter(id => id.startsWith(prefix) && id.length > prefix.length)
+        .map(id => parseInt(id.substring(prefix.length)))
+        .filter(num => !isNaN(num))
+        // 3. Find the maximum number, defaulting to 0 if none exist
+        .reduce((max, num) => Math.max(max, num), 0);
+
+    const nextNum = highestNum + 1;
+    // 4. Pad with leading zeros to ensure a length of 3 (e.g., 1 -> '001')
+    return `${prefix}${String(nextNum).padStart(3, '0')}`;
+}
+
+/**
+ * Generates a new P.O. Number in the format YYYY-MM-XXX.
+ * The XXX part is a sequential count for the current month and year.
+ * @returns {string} The new P.O. Number.
+ */
+function generateNewPONumber() {
+    const now = new Date();
+    const year = now.getFullYear();
+    // Months are 0-indexed, so add 1 and pad (e.g., 9 -> '10')
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+
+    const datePrefix = `${year}-${month}`;
+
+    // Count how many requests already exist for the current year/month
+    const count = AppState.newRequests
+        .filter(r => r.poNumber && r.poNumber.startsWith(datePrefix))
+        .length;
+
+    const nextCount = count + 1;
+    const paddedCount = String(nextCount).padStart(3, '0');
+
+    return `${datePrefix}-${paddedCount}`;
+}
+
+/**
+ * Saves or updates a Purchase Order, implementing new structured ID and P.O. numbering.
+ * @param {string | null} existingId - The ID of the request being updated, or null for a new request.
+ */
+
 function savePurchaseOrder(existingId = null) {
     const modal = document.getElementById('purchase-order-modal');
+
+    // Retrieve input values
     const supplier = modal.querySelector('input[placeholder="Enter supplier name"]').value;
-    const poNumber = modal.querySelector('input[placeholder="Enter P.O. number"]').value;
     const deliveryDate = modal.querySelector('input[type="date"]').value;
+    // ✅ Use name="department" to select the value from the dropdown
+    const department = modal.querySelector('select[name="department"]').value;
     const totalAmount = AppState.purchaseOrderItems.reduce((sum, item) => sum + item.amount, 0);
 
+    let poNumber;
     if (existingId) {
-        // ✅ Update existing
+        poNumber = modal.querySelector('input[placeholder="Enter P.O. number"]').value;
+    } else {
+        poNumber = generateNewPONumber();
+        const poInput = modal.querySelector('input[placeholder="Enter P.O. number"]');
+        if (poInput) poInput.value = poNumber;
+    }
+
+
+    if (existingId) {
+        // Update existing request
+        console.log(`[UPDATE] Updating Request ID: ${existingId}`);
         const idx = AppState.newRequests.findIndex(r => r.id === existingId);
         if (idx !== -1) {
             AppState.newRequests[idx] = {
@@ -1959,14 +2060,18 @@ function savePurchaseOrder(existingId = null) {
                 supplier,
                 poNumber,
                 deliveryDate,
+                department, // Update department
                 totalAmount,
                 items: [...AppState.purchaseOrderItems]
             };
         }
     } else {
-        // ✅ Create new
+        // Create new request
+        const newRequestId = generateNextRequestId();
+        console.log(`[CREATE] Creating new Request ID: ${newRequestId}`);
+
         const newRequest = {
-            id: `REQ-${Date.now()}`,
+            id: newRequestId,
             poNumber,
             supplier,
             requestDate: new Date().toISOString().split('T')[0],
@@ -1974,15 +2079,18 @@ function savePurchaseOrder(existingId = null) {
             totalAmount,
             status: "submitted",
             requestedBy: "Current User",
-            department: "IT Department",
+            department, // Store department
             items: [...AppState.purchaseOrderItems]
         };
         AppState.newRequests.push(newRequest);
     }
 
+    // Refresh UI and close modal
     loadPageContent('new-request');
     closePurchaseOrderModal();
+    console.log("--- Current New Requests State ---", AppState.newRequests);
 }
+
 
 // Product Tab Functions
 function switchProductTab(tabName) {
