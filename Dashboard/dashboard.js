@@ -3134,3 +3134,183 @@ function saveStockOut(stockId) {
     closeStockOutModal();
     loadPageContent('stockout'); // refresh stock-out page
 }
+// ===== STATUS MANAGEMENT =====
+function initStatusManagement(filter = "all") {
+    const mainContent = document.getElementById("main-content");
+    if (!mainContent) return;
+
+    mainContent.innerHTML = `
+        <div class="status-container">
+            <!-- Cards -->
+            <div class="status-cards">
+                <div class="status-card received" data-status="received">
+                    <h3>Received</h3>
+                    <div class="count">2</div>
+                    <p>Awaiting processing</p>
+                </div>
+                <div class="status-card finished" data-status="finished">
+                    <h3>Finished</h3>
+                    <div class="count">1</div>
+                    <p>Successfully completed</p>
+                </div>
+                <div class="status-card cancelled" data-status="cancelled">
+                    <h3>Cancelled</h3>
+                    <div class="count">1</div>
+                    <p>Request withdrawn</p>
+                </div>
+                <div class="status-card rejected" data-status="rejected">
+                    <h3>Rejected</h3>
+                    <div class="count">1</div>
+                    <p>Request denied</p>
+                </div>
+            </div>
+
+            <!-- Header -->
+            <div class="status-header">
+                <div>
+                    <h2>Status Management</h2>
+                    <p>Track and manage request statuses across all departments</p>
+                </div>
+                <div class="actions">
+                    <button class="btn-export">Export</button>
+                    <button class="btn-new">+ New Request</button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters">
+                <input type="text" placeholder="Search by Requester, ID, or Item">
+                
+             <div class="filters by department">
+                <input type="text" placeholder="Filter by Department">
+                <select>
+                    <option>All Department</option>
+                    <option>IT Department</option>
+                    <option>HR Department</option>
+                    <option>FINANCE Department</option>
+                    <option>MARKETING Department</option>
+                    <option>Operations</option>
+                </select>
+                <select>
+                    <option>Filter by Priority</option>
+                    <option>High</option>
+                    <option>Medium</option>
+                    <option>Low</option>
+                </select>
+                <button>More Filters</button>
+            </div>
+
+            <!-- Table -->
+            <table class="request-table">
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Requester</th>
+                        <th>Department</th>
+                        <th>Item</th>
+                        <th>Priority</th>
+                        <th>Date Updated</th>
+                        <th>Action</th>
+                        <th>Cost</th>
+                    </tr>
+                </thead>
+                <tbody id="status-table-body">
+                    ${renderStatusRows(filter)}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // ===== Clickable Cards =====
+    mainContent.querySelectorAll(".status-card").forEach(card => {
+        card.addEventListener("click", () => {
+            const status = card.dataset.status;
+            const tbody = document.getElementById("status-table-body");
+            tbody.innerHTML = renderStatusRows(status);
+        });
+    });
+
+    // ===== Clickable Sidebar Items =====
+    const submenuItems = document.querySelectorAll('.nav-submenu .nav-item');
+    submenuItems.forEach(item => {
+        item.addEventListener("click", () => {
+            const status = item.dataset.page; // "received", "finished", etc.
+            const tbody = document.getElementById("status-table-body");
+            tbody.innerHTML = renderStatusRows(status);
+
+            // Optional: highlight active item
+            submenuItems.forEach(i => i.classList.remove("active"));
+            item.classList.add("active");
+        });
+    });
+}
+
+// ===== Dummy rows for status =====
+function renderStatusRows(status) {
+    const rows = {
+        received: `
+            <tr>
+                <td>REQ-2024-001</td>
+                <td>John Smith</td>
+                <td>IT Department</td>
+                <td>Laptop Computer</td>
+                <td><span style="color:red;font-weight:bold;">High</span></td>
+                <td>1/15/2024</td>
+                <td>Review Required</td>
+                <td>$1,200</td>
+            </tr>
+            <tr>
+                <td>REQ-2024-005</td>
+                <td>David Brown</td>
+                <td>Operations</td>
+                <td>Safety Equipment</td>
+                <td><span style="color:red;font-weight:bold;">High</span></td>
+                <td>1/16/2024</td>
+                <td>Pending Approval</td>
+                <td>$400</td>
+            </tr>`,
+        finished: `
+            <tr>
+                <td>REQ-2024-002</td>
+                <td>Alice Green</td>
+                <td>Finance</td>
+                <td>Printer</td>
+                <td>Medium</td>
+                <td>1/10/2024</td>
+                <td>Completed</td>
+                <td>$300</td>
+            </tr>`,
+        cancelled: `
+            <tr>
+                <td>REQ-2024-003</td>
+                <td>Bob Lee</td>
+                <td>HR</td>
+                <td>Office Chairs</td>
+                <td>Low</td>
+                <td>1/12/2024</td>
+                <td>Cancelled</td>
+                <td>$500</td>
+            </tr>`,
+        rejected: `
+            <tr>
+                <td>REQ-2024-004</td>
+                <td>Emily Davis</td>
+                <td>Marketing</td>
+                <td>Projector</td>
+                <td>Medium</td>
+                <td>1/14/2024</td>
+                <td>Rejected</td>
+                <td>$700</td>
+            </tr>`
+    };
+
+    if (status === "all") {
+        return rows.received + rows.finished + rows.cancelled + rows.rejected;
+    }
+    return rows[status] || "";
+}
+
+// ===== Example Sidebar Button Trigger =====
+document.querySelector('[data-group="status"]').addEventListener('click', () => {
+    initStatusManagement("all");
+});

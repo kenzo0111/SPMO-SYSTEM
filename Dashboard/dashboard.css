@@ -1263,3 +1263,161 @@ textarea:focus {
 ::-webkit-scrollbar-thumb:hover {
     background: #a1a1a1;
 }
+/* ===== STATUS MANAGEMENT CONTENT ===== */
+.status-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Cards Row */
+.status-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.status-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.status-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+
+.status-card h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.status-card p {
+    font-size: 14px;
+    color: #777;
+    margin-top: 5px;
+}
+
+.status-card .count {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+/* Card colors */
+.status-card.received { border-left: 6px solid #007bff; }
+.status-card.finished { border-left: 6px solid #28a745; }
+.status-card.cancelled { border-left: 6px solid #6c757d; }
+.status-card.rejected { border-left: 6px solid #dc3545; }
+
+/* Header Row (title + buttons) */
+.status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.status-header p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.status-header .actions {
+    display: flex;
+    gap: 10px;
+}
+
+.status-header button {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+}
+/* Force Status Header to always be first */
+.status-header {
+    order: -1;  /* moves header above cards */
+}
+
+/* Cards should appear after header */
+.status-cards {
+    order: 0;
+}
+
+.btn-export {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+}
+
+.btn-export:hover {
+    background: #e9ecef;
+}
+
+.btn-new {
+    background: #dc3545;
+    color: white;
+    font-weight: 600;
+}
+
+.btn-new:hover {
+    background: #c82333;
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filters input,
+.filters select,
+.filters button {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+/* Request Table */
+.request-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.request-table th, .request-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    font-size: 14px;
+}
+
+.request-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+}
+
+.request-table tr:hover {
+    background: #f1f9ff;
+}
