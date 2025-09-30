@@ -235,7 +235,6 @@ function loadPageContent(pageId) {
         case 'completed-request':
             mainContent.innerHTML = generateCompletedRequestPage();
             break;
-        case 'reports':
         case 'roles': // Roles & Management
             mainContent.innerHTML = generateRolesManagementPage();
             break;
@@ -795,19 +794,19 @@ function generateStockInPage() {
                     </tbody>
                 </table>
                 
-                <!-- Enhanced Pagination (matching Products page style) -->
-                <div class="enhanced-pagination">
-                    <div class="pagination-left">
+                <!-- 🔹 Pagination -->
+                <nav class="enhanced-pagination" aria-label="Pagination">
+                    <div class="pagination-left" style="margin-left: 16px">
                         Showing 1 to 3 of 3 entries
                     </div>
-                    <div class="pagination-right">
+                    <div class="pagination-right" style="margin-right: 16px">
                         <button class="pagination-btn" disabled>Previous</button>
                         <button class="pagination-btn active">1</button>
                         <button class="pagination-btn">2</button>
                         <button class="pagination-btn">3</button>
                         <button class="pagination-btn">Next</button>
                     </div>
-                </div>
+                </nav>
             </div>
         </div>
     `;
@@ -1042,25 +1041,19 @@ function generateStockOutPage() {
                         </tbody>
                     </table>
                     
-                    <!-- Enhanced Pagination -->
-                    <div class="enhanced-pagination">
-                        <div class="pagination-left">
-                            Showing 1-5 of 47 stock issues
+                    <!-- 🔹 Pagination -->
+                    <nav class="enhanced-pagination" aria-label="Pagination">
+                        <div class="pagination-left" style="margin-left: 16px">
+                            Showing 1 to 5 of 5 entries
                         </div>
-                        <div class="pagination-right">
-                            <button class="pagination-btn" disabled>
-                                <i data-lucide="chevron-left" class="icon"></i>
-                            </button>
+                        <div class="pagination-right" style="margin-right: 16px">
+                            <button class="pagination-btn" disabled>Previous</button>
                             <button class="pagination-btn active">1</button>
                             <button class="pagination-btn">2</button>
                             <button class="pagination-btn">3</button>
-                            <span class="pagination-btn">...</span>
-                            <button class="pagination-btn">10</button>
-                            <button class="pagination-btn">
-                                <i data-lucide="chevron-right" class="icon"></i>
-                            </button>
+                            <button class="pagination-btn">Next</button>
                         </div>
-                    </div>
+                    </nav>
                 </div>
             </div>
         </div>
@@ -1178,10 +1171,10 @@ function generateNewRequestPage() {
 
                 <!-- 🔹 Pagination -->
                 <nav class="enhanced-pagination" aria-label="Pagination">
-                    <div class="pagination-left">
+                    <div class="pagination-left" style="margin-left: 16px">
                         Showing 1 to 3 of 3 entries
                     </div>
-                    <div class="pagination-right">
+                    <div class="pagination-right" style="margin-right: 16px">
                         <button class="pagination-btn" disabled>Previous</button>
                         <button class="pagination-btn active">1</button>
                         <button class="pagination-btn">2</button>
@@ -3133,7 +3126,9 @@ function saveStockOut(stockId) {
     console.log("Saving stock-out record:", values);
     closeStockOutModal();
     loadPageContent('stockout'); // refresh stock-out page
+
 }
+
 // ===== STATUS MANAGEMENT =====
 function initStatusManagement(filter = "all") {
     const mainContent = document.getElementById("main-content");
@@ -3170,10 +3165,6 @@ function initStatusManagement(filter = "all") {
                 <div>
                     <h2>Status Management</h2>
                     <p>Track and manage request statuses across all departments</p>
-                </div>
-                <div class="actions">
-                    <button class="btn-export">Export</button>
-                    <button class="btn-new">+ New Request</button>
                 </div>
             </div>
 
