@@ -1,4 +1,4 @@
- # =========================
+# =========================
 # OS / Editor files
 # =========================
 .DS_Store
@@ -7,35 +7,20 @@ Thumbs.db
 *.swo
 *.bak
 *.tmp
+
+# =========================
+# Logs / Cache
+# =========================
 *.log
+*.cache
+*.pid
 
 # =========================
-# Node / Frontend
+# IDE / Editors
 # =========================
-node_modules/
-npm-debug.log
-yarn-error.log
-dist/
-build/
-
-# =========================
-# Composer / PHP
-# =========================
-vendor/
-composer.lock
-
-# =========================
-# Laravel (if used)
-# =========================
-/bootstrap/cache/*
-/storage/*.key
-/storage/app/public/*
-/storage/framework/cache/*
-/storage/framework/sessions/*
-/storage/framework/views/*
-.env
-.env.*
-.env.local
+.vscode/
+.idea/
+*.iml
 
 # =========================
 # Database / Dumps
@@ -46,27 +31,18 @@ composer.lock
 *.db-journal
 
 # =========================
-# IDE / Editors
+# Composer / PHP
 # =========================
-.vscode/
-.idea/
-*.iml
+vendor/
+composer.lock
 
 # =========================
-# Logs / Cache
+# Environment Files
 # =========================
-*.log
-*.cache
-*.pid
-*.seed
-*.cover
-coverage/
-phpunit.xml
-.phpunit.result.cache
+.env
+.env.*
 
 # =========================
 # Uploads (optional: if storing files locally)
 # =========================
-/public/uploads/*
-/storage/uploads/*
-
+/uploads/

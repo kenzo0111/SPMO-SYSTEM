@@ -1,0 +1,20 @@
+{
+    "name": "cnsc/spmo-system",
+    "description": "Supply and Property Management Office System",
+    "type": "project",
+    "require": {
+        "vlucas/phpdotenv": "5.6.x-dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "Cnsc\\SpmoSystem\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "kenzo0111",
+            "email": "147122275+kenzo0111@users.noreply.github.com"
+        }
+    ],
+    "minimum-stability": "dev"
+}
