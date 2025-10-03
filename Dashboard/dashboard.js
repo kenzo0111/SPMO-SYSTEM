@@ -1930,15 +1930,8 @@ function deleteRequest(requestId) {
 }
 
 
-// Mock modal elements for DOM querying in savePurchaseOrder
-const mockModal = document.createElement('div');
-mockModal.id = 'purchase-order-modal';
-mockModal.innerHTML = `
-    <input type="text" placeholder="Enter supplier name" value="Global Tech Co.">
-    <input type="text" placeholder="Enter P.O. number" value="">
-    <input type="date" value="2025-11-15">
-`;
-document.body.appendChild(mockModal);
+// Mock modal injection removed — do not append test inputs to document body.
+// If a DOM stub is needed for testing, create it conditionally where tests run.
 /**
  * Generates the next sequential Request ID (e.g., 'REQ-003').
  * It finds the highest number from existing IDs in AppState.newRequests and increments it.
