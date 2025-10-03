@@ -578,10 +578,10 @@ function generateCategoriesPage() {
                                 <td style="padding: 16px 24px; color: #6b7280; max-width: 600px; line-height: 1.5;">${category.description}</td>
                                 <td style="padding: 16px 24px;">
                                     <div class="table-actions">
-                                        <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
+                                        <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="openCategoryModal('edit','${category.id}')">
                                             <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
                                         </button>
-                                        <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
+                                        <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="deleteCategory('${category.id}')">
                                             <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
                                         </button>
                                     </div>
@@ -683,10 +683,10 @@ function generateProductsPage() {
                                 <td>${product.date}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
+                                        <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="deleteProduct('${product.id}')">
                                             <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
                                         </button>
-                                        <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
+                                        <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="openProductModal('edit','${product.id}')">
                                             <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
                                         </button>
                                     </div>
@@ -2670,21 +2670,48 @@ function closeProductModal() {
 }
 
 function saveProduct(productId) {
-    // collect form values (simplified example)
     const modal = document.getElementById('product-modal');
-    const inputs = modal.querySelectorAll('.form-input, .form-select, .form-textarea');
+    const name = modal.querySelector('input[type="text"]').value.trim();
+    const category = modal.querySelector('select.form-select').value;
+    const description = modal.querySelector('textarea').value.trim();
+    const unitCost = parseFloat(modal.querySelector('input[type="number"]').value) || 0;
+    const quantity = parseInt(modal.querySelectorAll('input[type="number"]')[1].value) || 0;
+    const date = modal.querySelector('input[type="date"]').value || new Date().toISOString().slice(0, 10);
 
-    const values = {};
-    inputs.forEach(input => {
-        const label = input.previousElementSibling?.innerText || '';
-        values[label] = input.value;
-    });
+    if (!name) { alert('Product name is required'); return; }
 
-    console.log("Saving product:", values);
+    const totalValue = unitCost * quantity;
 
+    if (!productId) {
+        // generate id based on category prefix
+        const prefix = category === 'expendable' ? 'E' : (category === 'semi-expendable' ? 'SE' : 'N');
+        const nextIndex = MockData.products.length + 1;
+        const padded = String(nextIndex).padStart(3, '0');
+        const newId = `${prefix}${padded}`;
+
+        const newProduct = { id: newId, name, description, quantity, unitCost, totalValue, date, type: category };
+        MockData.products.push(newProduct);
+    } else {
+        const existing = MockData.products.find(p => p.id === productId);
+        if (existing) {
+            existing.name = name;
+            existing.description = description;
+            existing.unitCost = unitCost;
+            existing.quantity = quantity;
+            existing.totalValue = totalValue;
+            existing.date = date;
+            existing.type = category;
+        }
+    }
 
     closeProductModal();
     loadPageContent('products'); // refresh list
+}
+
+function deleteProduct(productId) {
+    if (!confirm('Delete this product?')) return;
+    MockData.products = MockData.products.filter(p => p.id !== productId);
+    loadPageContent('products');
 }
 
 function generateProductModal(mode = 'create', productData = null) {
@@ -2855,25 +2882,39 @@ function saveCategory(categoryId) {
     const name = modal.querySelector('input').value;
     const description = modal.querySelector('textarea').value;
 
+    // Basic validation
+    if (!name || name.trim().length < 2) {
+        alert('Please enter a valid category name (at least 2 characters).');
+        return;
+    }
+
     if (!categoryId) {
-        // Create new
+        // Create new: generate padded ID like C001
+        const nextIndex = MockData.categories.length + 1;
+        const padded = String(nextIndex).padStart(3, '0');
         const newCategory = {
-            id: `C${MockData.categories.length + 1}`,
-            name,
-            description
+            id: `C${padded}`,
+            name: name.trim(),
+            description: description.trim()
         };
         MockData.categories.push(newCategory);
     } else {
         // Update existing
         const existing = MockData.categories.find(c => c.id === categoryId);
         if (existing) {
-            existing.name = name;
-            existing.description = description;
+            existing.name = name.trim();
+            existing.description = description.trim();
         }
     }
 
     closeCategoryModal();
     loadPageContent('categories'); // refresh table/page
+}
+
+function deleteCategory(categoryId) {
+    if (!confirm('Delete this category? This action cannot be undone.')) return;
+    MockData.categories = MockData.categories.filter(c => c.id !== categoryId);
+    loadPageContent('categories');
 }
 
 
