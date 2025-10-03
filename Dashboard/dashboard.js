@@ -3221,8 +3221,7 @@ function initStatusManagement(filter = "all") {
                     <option>Medium</option>
                     <option>Low</option>
                 </select>
-                <button id="moreFiltersBtn">More Filters</button>
-            </div>
+\            </div>
 
             <!-- Table -->
             <table class="request-table">
