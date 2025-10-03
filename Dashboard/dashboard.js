@@ -3129,11 +3129,12 @@ function saveStockOut(stockId) {
 
 }
 
-//  STATUS MANAGEMENT
+// ===== STATUS MANAGEMENT =====
 function initStatusManagement(filter = "all") {
     const mainContent = document.getElementById("main-content");
     if (!mainContent) return;
 
+    // ✅ Render UI
     mainContent.innerHTML = `
         <div class="status-container">
             <!-- Cards -->
@@ -3214,15 +3215,14 @@ function initStatusManagement(filter = "all") {
         </div>
     `;
 
-
-    // Attach Filter Events
+    // ===== Attach Filter Events =====
     document.getElementById("searchInput").addEventListener("input", applyFilters);
     document.getElementById("deptInput").addEventListener("input", applyFilters);
     document.getElementById("deptSelect").addEventListener("change", applyFilters);
     document.getElementById("prioritySelect").addEventListener("change", applyFilters);
 }
 
-// Dummy Rows
+// ===== Dummy Rows =====
 function renderStatusRows(status) {
     const rows = {
         received: `
@@ -3287,7 +3287,7 @@ function renderStatusRows(status) {
     return rows[status] || "";
 }
 
-//  Apply Filters 
+// ===== Apply Filters =====
 function applyFilters() {
     const search = document.getElementById("searchInput").value.toLowerCase();
     const deptText = document.getElementById("deptInput").value.toLowerCase();
@@ -3310,43 +3310,40 @@ function applyFilters() {
     });
 }
 
-// Sidebar Behavior (Accordion + Status ONLY) 
+// ===== Sidebar Behavior (Status ONLY) =====
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll('.nav-header').forEach(header => {
-        header.addEventListener('click', () => {
-            const parentGroup = header.closest('.nav-group');
-            const submenu = parentGroup.querySelector('.nav-submenu');
-            const isExpanded = parentGroup.classList.contains('expanded');
+    // find the status nav group
+    const statusNavGroup = document.querySelector('.nav-group[data-group="status"]');
+    if (!statusNavGroup) return;
 
-            // Close all other groups
-            document.querySelectorAll('.nav-group.expanded').forEach(group => {
-                group.classList.remove('expanded');
-            });
+    const statusHeader = statusNavGroup.querySelector('.nav-header[data-group="status"]');
+    const submenu = statusNavGroup.querySelector('.nav-submenu');
+    const submenuItems = submenu.querySelectorAll('.nav-item');
 
-            // Expand only clicked one
-            if (!isExpanded) {
-                parentGroup.classList.add('expanded');
+    // 🔹 When you click "Status Management" header
+    statusHeader.addEventListener('click', () => {
+        submenu.classList.toggle('open');
 
-                // If it's the Status Management group, load default page
-                if (header.dataset.group === "status") {
-                    initStatusManagement("all");
-                }
-            }
-        });
+        // Rotate only the chevron for status
+        const chevron = statusHeader.querySelector('.chevron');
+        chevron.style.transform = submenu.classList.contains('open') ? "rotate(90deg)" : "rotate(0deg)";
+
+        // ✅ Always load ALL statuses when clicking Status Management
+        initStatusManagement("all");
     });
 
-    // Submenu items (Received, Finished, etc.)
-    document.querySelectorAll('.nav-submenu .nav-item').forEach(item => {
-        item.addEventListener('click', e => {
-            e.stopPropagation(); 
+    // 🔹 When you click a submenu (Received, Finished, etc.)
+    submenuItems.forEach(item => {
+        item.addEventListener("click", (e) => {
+            e.stopPropagation(); // don’t collapse submenu
             const status = item.dataset.page;
 
-            // Load filtered status
+            // Replace main content with correct status
             initStatusManagement(status);
 
-            // Highlight active
-            item.parentElement.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
+            // Mark active item
+            submenuItems.forEach(i => i.classList.remove("active"));
+            item.classList.add("active");
         });
     });
 });
