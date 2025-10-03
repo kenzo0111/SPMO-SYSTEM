@@ -3156,7 +3156,6 @@ function initStatusManagement(filter = "all") {
                 </div>
                 <div class="actions">
                     <button class="btn-export">Export</button>
-                    <button class="btn-new">+ New Request</button>
                 </div>
             </div>
 
@@ -3297,40 +3296,45 @@ function applyFilters() {
     });
 }
 
-// ===== Sidebar Behavior (Status ONLY) =====
+// ===== Sidebar Behavior (Accordion + Status ONLY) =====
 document.addEventListener("DOMContentLoaded", () => {
-    // find the status nav group
-    const statusNavGroup = document.querySelector('.nav-group[data-group="status"]');
-    if (!statusNavGroup) return;
+    // Accordion for all groups
+    document.querySelectorAll('.nav-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const parentGroup = header.closest('.nav-group');
+            const submenu = parentGroup.querySelector('.nav-submenu');
+            const isExpanded = parentGroup.classList.contains('expanded');
 
-    const statusHeader = statusNavGroup.querySelector('.nav-header[data-group="status"]');
-    const submenu = statusNavGroup.querySelector('.nav-submenu');
-    const submenuItems = submenu.querySelectorAll('.nav-item');
+            // Close all others
+            document.querySelectorAll('.nav-group.expanded').forEach(group => {
+                group.classList.remove('expanded');
+            });
 
-    // 🔹 When you click "Status Management" header
-    statusHeader.addEventListener('click', () => {
-        submenu.classList.toggle('open');
+            // Expand clicked one
+            if (!isExpanded) {
+                parentGroup.classList.add('expanded');
 
-        // Rotate only the chevron for status
-        const chevron = statusHeader.querySelector('.chevron');
-        chevron.style.transform = submenu.classList.contains('open') ? "rotate(90deg)" : "rotate(0deg)";
-
-        // ✅ Always load ALL statuses when clicking Status Management
-        initStatusManagement("all");
+                // Special case: Status Management
+                if (header.dataset.group === "status") {
+                    initStatusManagement("all");
+                }
+            }
+        });
     });
 
-    // 🔹 When you click a submenu (Received, Finished, etc.)
-    submenuItems.forEach(item => {
-        item.addEventListener("click", (e) => {
-            e.stopPropagation(); // don’t collapse submenu
+    // Submenu items inside Status
+    document.querySelectorAll('.nav-submenu .nav-item').forEach(item => {
+        item.addEventListener('click', e => {
+            e.stopPropagation();
             const status = item.dataset.page;
 
-            // Replace main content with correct status
-            initStatusManagement(status);
+            if (item.closest('.nav-group').querySelector('.nav-header').dataset.group === "status") {
+                initStatusManagement(status);
 
-            // Mark active item
-            submenuItems.forEach(i => i.classList.remove("active"));
-            item.classList.add("active");
+                // Highlight active submenu
+                item.parentElement.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            }
         });
     });
 });
