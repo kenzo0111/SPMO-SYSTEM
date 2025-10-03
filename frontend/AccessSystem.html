@@ -36,6 +36,7 @@
           <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 3">
           <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 4">
           <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 5">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 6">
         </div>
       </div>
 
@@ -84,9 +85,9 @@
       const userEmail = emailInput.value;
       const userPin = hiddenPin.value;
 
-      // Basic validation: Check if all 5 PIN digits are entered
-      if (userPin.length !== 5) {
-        alert("Please enter all 5 digits of your credentials.");
+      // Basic validation: Check if all 6 PIN digits are entered
+      if (userPin.length !== 6) {
+        alert("Please enter all 6 digits of your credentials.");
         otpInputs[0].focus(); // Focus on the first PIN box
         return; // Stop the login process
       }

@@ -163,6 +163,18 @@ function initializeNavigation() {
 
     // Initialize with dashboard page
     navigateToPage('dashboard');
+
+    // Sync DOM with AppState.expandedMenus (honor initial expanded groups)
+    document.querySelectorAll('.nav-group').forEach(g => {
+        const header = g.querySelector('.nav-header[data-group]');
+        if (!header) return;
+        const id = header.getAttribute('data-group');
+        if (AppState.expandedMenus.includes(id)) {
+            g.classList.add('expanded');
+        } else {
+            g.classList.remove('expanded');
+        }
+    });
 }
 
 function navigateToPage(pageId) {
@@ -195,14 +207,30 @@ function updateActiveNavigation(pageId) {
 }
 
 function toggleNavGroup(groupId) {
-    const group = document.querySelector(`[data-group="${groupId}"]`).closest('.nav-group');
+    const headerElem = document.querySelector(`[data-group="${groupId}"]`);
+    if (!headerElem) return;
+    const group = headerElem.closest('.nav-group');
 
-    if (AppState.expandedMenus.includes(groupId)) {
-        AppState.expandedMenus = AppState.expandedMenus.filter(id => id !== groupId);
+    const isCurrentlyExpanded = group.classList.contains('expanded') || AppState.expandedMenus.includes(groupId);
+
+    if (isCurrentlyExpanded) {
+        // Collapse this group
         group.classList.remove('expanded');
+        AppState.expandedMenus = AppState.expandedMenus.filter(id => id !== groupId);
     } else {
-        AppState.expandedMenus.push(groupId);
+        // Accordion behavior: collapse all other groups first
+        document.querySelectorAll('.nav-group.expanded').forEach(g => {
+            g.classList.remove('expanded');
+            const hdr = g.querySelector('.nav-header[data-group]');
+            if (hdr) {
+                const otherId = hdr.getAttribute('data-group');
+                AppState.expandedMenus = AppState.expandedMenus.filter(id => id !== otherId);
+            }
+        });
+
+        // Expand the requested group
         group.classList.add('expanded');
+        if (!AppState.expandedMenus.includes(groupId)) AppState.expandedMenus.push(groupId);
     }
 }
 
@@ -225,6 +253,22 @@ function loadPageContent(pageId) {
             break;
         case 'stock-out':
             mainContent.innerHTML = generateStockOutPage();
+            break;
+        case 'status':
+            // Show all statuses
+            initStatusManagement('all');
+            break;
+        case 'received':
+            initStatusManagement('received');
+            break;
+        case 'finished':
+            initStatusManagement('finished');
+            break;
+        case 'cancelled':
+            initStatusManagement('cancelled');
+            break;
+        case 'rejected':
+            initStatusManagement('rejected');
             break;
         case 'new-request':
             mainContent.innerHTML = generateNewRequestPage();

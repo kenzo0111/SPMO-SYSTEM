@@ -53,16 +53,39 @@ body{
 }
 .input::placeholder{color:#b9bfcb}
 
-/* OTP / PIN group */
-.otp{display:flex;gap:14px;margin-top:.3rem}
+/* OTP / PIN group (responsive for 6 inputs) */
+.otp{
+  display:flex;
+  gap:12px;
+  margin-top:.3rem;
+  justify-content:space-between;
+  align-items:center;
+}
 .otp input{
-  width:60px;height:60px;text-align:center;font-size:1.3rem;font-weight:600;
-  border-radius:12px;border:1px solid var(--glass-border);
-  background: rgba(255,255,255,.12); color:var(--text); outline:none;
+  /* Let inputs share available space but cap their width so they don't stretch too wide */
+  flex: 1 1 0;
+  max-width:64px;
+  min-width:40px;
+  height:60px;
+  text-align:center;
+  font-size:1.3rem;
+  font-weight:600;
+  border-radius:12px;
+  border:1px solid var(--glass-border);
+  background: rgba(255,255,255,.12);
+  color:var(--text);
+  outline:none;
   caret-color:#fff;
   -webkit-text-security: disc; /* mask single char */
 }
-@media (max-width:460px){ .otp input{width:52px;height:52px} }
+
+/* Slightly smaller boxes on narrower screens */
+@media (max-width:640px){
+  .otp input{ max-width:56px; height:56px }
+}
+@media (max-width:460px){
+  .otp input{ max-width:48px; height:48px; min-width:36px }
+}
 
 .extras{display:flex;justify-content:flex-end;margin:.45rem 0 1.4rem}
 .extras a{color:var(--danger);font-size:.85rem;text-decoration:none}
