@@ -3035,6 +3035,11 @@ function generateStockInModal(mode = 'create', stockData = null) {
     `;
 }
 
+function generateUniqueId() {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+
 function saveStockIn(stockId) {
     const modal = document.getElementById('stockin-modal');
     const inputs = modal.querySelectorAll('.form-input');
