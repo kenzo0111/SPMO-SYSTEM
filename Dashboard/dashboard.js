@@ -1930,13 +1930,7 @@ function deleteRequest(requestId) {
 }
 
 
-// Mock modal injection removed — do not append test inputs to document body.
-// If a DOM stub is needed for testing, create it conditionally where tests run.
-/**
- * Generates the next sequential Request ID (e.g., 'REQ-003').
- * It finds the highest number from existing IDs in AppState.newRequests and increments it.
- * @returns {string} The new sequential ID formatted as REQ-XXX.
- */
+
 function generateNextRequestId() {
     const prefix = 'REQ-';
     // 1. Map all existing IDs
