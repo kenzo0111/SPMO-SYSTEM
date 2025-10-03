@@ -158,6 +158,8 @@ function initializeNavigation() {
         header.addEventListener('click', () => {
             const groupId = header.getAttribute('data-group');
             toggleNavGroup(groupId);
+            // Special-case: when clicking the Status Management header, navigate to the status view
+            if (groupId === 'status') navigateToPage('status');
         });
     });
 
@@ -3339,45 +3341,6 @@ function applyFilters() {
     });
 }
 
-// ===== Sidebar Behavior (Accordion + Status ONLY) =====
-document.addEventListener("DOMContentLoaded", () => {
-    // Accordion for all groups
-    document.querySelectorAll('.nav-header').forEach(header => {
-        header.addEventListener('click', () => {
-            const parentGroup = header.closest('.nav-group');
-            const submenu = parentGroup.querySelector('.nav-submenu');
-            const isExpanded = parentGroup.classList.contains('expanded');
-
-            // Close all others
-            document.querySelectorAll('.nav-group.expanded').forEach(group => {
-                group.classList.remove('expanded');
-            });
-
-            // Expand clicked one
-            if (!isExpanded) {
-                parentGroup.classList.add('expanded');
-
-                // Special case: Status Management
-                if (header.dataset.group === "status") {
-                    initStatusManagement("all");
-                }
-            }
-        });
-    });
-
-    // Submenu items inside Status
-    document.querySelectorAll('.nav-submenu .nav-item').forEach(item => {
-        item.addEventListener('click', e => {
-            e.stopPropagation();
-            const status = item.dataset.page;
-
-            if (item.closest('.nav-group').querySelector('.nav-header').dataset.group === "status") {
-                initStatusManagement(status);
-
-                // Highlight active submenu
-                item.parentElement.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-            }
-        });
-    });
-});
+// Sidebar and status behavior is handled centrally by the navigation initialization
+// (initializeNavigation, toggleNavGroup, navigateToPage and loadPageContent).
+// The earlier status-only DOMContentLoaded handler was removed to avoid duplicate listeners.
