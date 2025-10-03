@@ -3129,7 +3129,7 @@ function saveStockOut(stockId) {
 
 }
 
-// ===== STATUS MANAGEMENT =====
+//  STATUS MANAGEMENT
 function initStatusManagement(filter = "all") {
     const mainContent = document.getElementById("main-content");
     if (!mainContent) return;
@@ -3166,29 +3166,31 @@ function initStatusManagement(filter = "all") {
                     <h2>Status Management</h2>
                     <p>Track and manage request statuses across all departments</p>
                 </div>
+                <div class="actions">
+                    <button class="btn-export">Export</button>
+                    <button class="btn-new">+ New Request</button>
+                </div>
             </div>
 
             <!-- Filters -->
             <div class="filters">
-                <input type="text" placeholder="Search by Requester, ID, or Item">
-                
-             <div class="filters by department">
-                <input type="text" placeholder="Filter by Department">
-                <select>
+                <input type="text" id="searchInput" placeholder="Search by Requester, ID, or Item">
+                <input type="text" id="deptInput" placeholder="Filter by Department">
+                <select id="deptSelect">
                     <option>All Department</option>
                     <option>IT Department</option>
                     <option>HR Department</option>
-                    <option>FINANCE Department</option>
-                    <option>MARKETING Department</option>
+                    <option>Finance Department</option>
+                    <option>Marketing Department</option>
                     <option>Operations</option>
                 </select>
-                <select>
+                <select id="prioritySelect">
                     <option>Filter by Priority</option>
                     <option>High</option>
                     <option>Medium</option>
                     <option>Low</option>
                 </select>
-                <button>More Filters</button>
+                <button id="moreFiltersBtn">More Filters</button>
             </div>
 
             <!-- Table -->
@@ -3212,31 +3214,15 @@ function initStatusManagement(filter = "all") {
         </div>
     `;
 
-    // ===== Clickable Cards =====
-    mainContent.querySelectorAll(".status-card").forEach(card => {
-        card.addEventListener("click", () => {
-            const status = card.dataset.status;
-            const tbody = document.getElementById("status-table-body");
-            tbody.innerHTML = renderStatusRows(status);
-        });
-    });
 
-    // ===== Clickable Sidebar Items =====
-    const submenuItems = document.querySelectorAll('.nav-submenu .nav-item');
-    submenuItems.forEach(item => {
-        item.addEventListener("click", () => {
-            const status = item.dataset.page; // "received", "finished", etc.
-            const tbody = document.getElementById("status-table-body");
-            tbody.innerHTML = renderStatusRows(status);
-
-            // Optional: highlight active item
-            submenuItems.forEach(i => i.classList.remove("active"));
-            item.classList.add("active");
-        });
-    });
+    // Attach Filter Events
+    document.getElementById("searchInput").addEventListener("input", applyFilters);
+    document.getElementById("deptInput").addEventListener("input", applyFilters);
+    document.getElementById("deptSelect").addEventListener("change", applyFilters);
+    document.getElementById("prioritySelect").addEventListener("change", applyFilters);
 }
 
-// ===== Dummy rows for status =====
+// Dummy Rows
 function renderStatusRows(status) {
     const rows = {
         received: `
@@ -3301,7 +3287,66 @@ function renderStatusRows(status) {
     return rows[status] || "";
 }
 
-// ===== Example Sidebar Button Trigger =====
-document.querySelector('[data-group="status"]').addEventListener('click', () => {
-    initStatusManagement("all");
+//  Apply Filters 
+function applyFilters() {
+    const search = document.getElementById("searchInput").value.toLowerCase();
+    const deptText = document.getElementById("deptInput").value.toLowerCase();
+    const deptSelect = document.getElementById("deptSelect").value.toLowerCase();
+    const priority = document.getElementById("prioritySelect").value.toLowerCase();
+
+    const rows = document.querySelectorAll("#status-table-body tr");
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const department = row.cells[2].innerText.toLowerCase();
+        const rowPriority = row.cells[4].innerText.toLowerCase();
+
+        let match = true;
+        if (search && !text.includes(search)) match = false;
+        if (deptText && !department.includes(deptText)) match = false;
+        if (deptSelect !== "all department" && !department.includes(deptSelect)) match = false;
+        if (priority !== "filter by priority" && !rowPriority.includes(priority)) match = false;
+
+        row.style.display = match ? "" : "none";
+    });
+}
+
+// Sidebar Behavior (Accordion + Status ONLY) 
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll('.nav-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const parentGroup = header.closest('.nav-group');
+            const submenu = parentGroup.querySelector('.nav-submenu');
+            const isExpanded = parentGroup.classList.contains('expanded');
+
+            // Close all other groups
+            document.querySelectorAll('.nav-group.expanded').forEach(group => {
+                group.classList.remove('expanded');
+            });
+
+            // Expand only clicked one
+            if (!isExpanded) {
+                parentGroup.classList.add('expanded');
+
+                // If it's the Status Management group, load default page
+                if (header.dataset.group === "status") {
+                    initStatusManagement("all");
+                }
+            }
+        });
+    });
+
+    // Submenu items (Received, Finished, etc.)
+    document.querySelectorAll('.nav-submenu .nav-item').forEach(item => {
+        item.addEventListener('click', e => {
+            e.stopPropagation(); 
+            const status = item.dataset.page;
+
+            // Load filtered status
+            initStatusManagement(status);
+
+            // Highlight active
+            item.parentElement.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+        });
+    });
 });
