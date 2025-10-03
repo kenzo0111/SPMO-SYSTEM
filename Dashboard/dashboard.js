@@ -1849,7 +1849,7 @@ function renderPOItems() {
                        onchange="updatePOItem('${item.id}', 'stockPropertyNumber', this.value)"
                        class="form-input" 
                        style="height: 32px;" 
-                       placeholder="e.g., E001"
+                       placeholder="e.g., 1"
                        ${isReadOnly ? 'readonly' : ''}>
             </td>
             <td style="padding: 12px;">
