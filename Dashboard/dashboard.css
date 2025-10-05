@@ -920,6 +920,42 @@ body {
     gap: 16px;
 }
 
+/* Make grid-3 responsive: 3 cols desktop, 2 cols tablet, 1 col mobile */
+@media (max-width: 1024px) {
+    .grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* About/Team card tweaks (applies to simple card blocks inside grid-3 in About page) */
+.page-content .grid-3 > div,
+.page-content .grid-3 .team-card {
+    background: #ffffff;
+    border: 1px solid #eef2f7;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.page-content .grid-3 > div p,
+.page-content .grid-3 > div h3 {
+    margin: 0;
+}
+
+/* Ensure stacked cards have consistent spacing without relying on inline styles */
+.page-content .card + .card {
+    margin-top: 16px;
+}
+
 .grid-4 {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -1463,3 +1499,88 @@ textarea:focus {
 .request-table tr:hover {
     background: #f1f9ff;
 }
+
+/* Header popup styles (notifications and user menu) */
+.header-actions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.notifications-btn {
+    padding: 8px;
+    border-radius: 50%;
+    position: relative;
+}
+
+#notifications-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    background-color: #dc2626;
+    border-radius: 50%;
+    display: none;
+}
+
+#notifications-menu {
+    display: none;
+    position: absolute;
+    right: 56px;
+    top: calc(100% + 8px);
+    z-index: 1200;
+    width: 320px;
+    max-width: 90vw;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    padding: 8px;
+}
+
+#notifications-list {
+    max-height: 260px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px 8px;
+}
+
+.header-user-block {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+#header-user-avatar {
+    width: 36px;
+    height: 36px;
+    background-color: #dc2626;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#user-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 1200;
+    min-width: 160px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    padding: 6px;
+}
+

@@ -10,10 +10,21 @@ const AppState = {
     currentPage: 'dashboard',
     expandedMenus: ['inventory'],
     currentModal: null,
+    // current logged in user (basic profile)
+    currentUser: {
+        id: 'SA000',
+        name: 'John Doe',
+        email: 'john.doe@cnsc.edu.ph',
+        role: 'Student Assistant',
+        department: 'IT',
+        status: 'Active',
+        created: new Date().toISOString().split('T')[0]
+    },
     currentProductTab: 'expendable',
     productSearchTerm: '',
     productSortBy: 'Sort By',
     productFilterBy: 'Filter By',
+    lowStockThreshold: 20,
     purchaseOrderItems: [
         {
             id: '1',
@@ -31,7 +42,12 @@ const AppState = {
     // ✅ add these for real data
     newRequests: [],
     pendingRequests: [],
-    completedRequests: []
+    completedRequests: [],
+    notifications: [
+        { id: 'n1', title: 'New requisition submitted', time: '2h ago', read: false },
+        { id: 'n2', title: 'Stock level low: Paper A4', time: '1d ago', read: false },
+        { id: 'n3', title: 'PO #1234 approved', time: '3d ago', read: true }
+    ]
 };
 
 
@@ -245,6 +261,96 @@ function closeConfirm(value = false) {
 window.showConfirm = showConfirm;
 window.closeConfirm = closeConfirm;
 
+// ---- Notifications helpers ----
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"]+/g, function (s) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[s];
+    });
+}
+
+function renderNotifications() {
+    const listEl = document.getElementById('notifications-list');
+    const badge = document.getElementById('notifications-badge');
+    if (!listEl || !badge) return;
+    listEl.innerHTML = '';
+    const unread = (AppState.notifications || []).filter(n => !n.read).length;
+    badge.style.display = unread > 0 ? 'block' : 'none';
+
+    (AppState.notifications || []).forEach(n => {
+        const item = document.createElement('div');
+        item.style.padding = '8px';
+        item.style.borderRadius = '6px';
+        item.style.cursor = 'pointer';
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+        if (!n.read) {
+            item.style.background = '#f8fafc';
+        }
+        item.innerHTML = `
+            <div style="flex:1;">
+                <div style="font-size:13px;color:#111827;">${escapeHtml(n.title)}</div>
+                <div style="font-size:12px;color:#6b7280;margin-top:4px;">${escapeHtml(n.time)}</div>
+            </div>
+            <div style="margin-left:8px;">
+                <button class="btn-link" style="font-size:12px;color:#6b7280;border:none;background:none;" onclick="event.stopPropagation(); toggleNotificationRead('${n.id}');">${n.read ? 'Unread' : 'Mark read'}</button>
+            </div>
+        `;
+        item.addEventListener('click', function () {
+            toggleNotificationRead(n.id);
+        });
+        listEl.appendChild(item);
+    });
+}
+
+function toggleNotifications(e) {
+    e && e.stopPropagation();
+    const menu = document.getElementById('notifications-menu');
+    const btn = document.getElementById('notifications-btn');
+    if (!menu || !btn) return;
+    const isOpen = menu.style.display === 'block';
+    if (isOpen) {
+        closeNotifications();
+    } else {
+        renderNotifications();
+        menu.style.display = 'block';
+        btn.setAttribute('aria-expanded', 'true');
+        setTimeout(() => {
+            document.addEventListener('click', outsideNotificationsClick);
+        }, 0);
+    }
+}
+
+function closeNotifications() {
+    const menu = document.getElementById('notifications-menu');
+    const btn = document.getElementById('notifications-btn');
+    if (!menu || !btn) return;
+    menu.style.display = 'none';
+    btn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', outsideNotificationsClick);
+}
+
+function outsideNotificationsClick(e) {
+    const menu = document.getElementById('notifications-menu');
+    const btn = document.getElementById('notifications-btn');
+    if (!menu || !btn) return;
+    if (menu.contains(e.target) || btn.contains(e.target)) return;
+    closeNotifications();
+}
+
+function toggleNotificationRead(id) {
+    const n = (AppState.notifications || []).find(x => x.id === id);
+    if (!n) return;
+    n.read = true;
+    renderNotifications();
+}
+
+function markAllNotificationsRead() {
+    (AppState.notifications || []).forEach(n => n.read = true);
+    renderNotifications();
+}
+
 // Navigation Functions
 function initializeNavigation() {
     // Handle nav item clicks
@@ -345,6 +451,8 @@ function loadPageContent(pageId) {
     switch (pageId) {
         case 'dashboard':
             mainContent.innerHTML = generateDashboardPage();
+            // ensure notifications badge/menu is in sync
+            try { renderNotifications(); } catch (e) { /* ignore if not ready */ }
             break;
         case 'categories':
             mainContent.innerHTML = generateCategoriesPage();
@@ -383,11 +491,23 @@ function loadPageContent(pageId) {
         case 'completed-request':
             mainContent.innerHTML = generateCompletedRequestPage();
             break;
+        case 'inventory-reports':
+            mainContent.innerHTML = generateInventoryReportsPage();
+            break;
+        case 'requisition-reports':
+            mainContent.innerHTML = generateRequisitionReportsPage();
+            break;
+        case 'status-report':
+            mainContent.innerHTML = generateStatusReportsPage();
+            break;
         case 'roles': // Roles & Management
             mainContent.innerHTML = generateRolesManagementPage();
             break;
         case 'users': // ✅ Users Management
             mainContent.innerHTML = generateUsersManagementPage();
+            break;
+        case 'about':
+            mainContent.innerHTML = generateAboutPage();
             break;
         default:
             mainContent.innerHTML = generateDashboardPage();
@@ -417,7 +537,7 @@ function generateDashboardPage() {
                     <h1 class="page-title">Dashboard Overview</h1>
                     <p class="page-subtitle">Last updated: ${currentTime}</p>
                 </div>
-                <div style="display: flex; align-items: center; gap: 16px;">
+                <div id="header-actions" class="header-actions">
                     <!-- Search -->
                     <div style="position: relative;">
                         <i data-lucide="search" style="width: 16px; height: 16px; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
@@ -425,22 +545,34 @@ function generateDashboardPage() {
                     </div>
                     
                     <!-- Notifications -->
-                    <button class="btn-secondary" style="padding: 8px; border-radius: 50%; position: relative;">
+                    <button id="notifications-btn" class="btn-secondary notifications-btn" onclick="toggleNotifications(event)" aria-haspopup="true" aria-expanded="false" title="Notifications">
                         <i data-lucide="bell" class="icon"></i>
-                        <span style="position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; background-color: #dc2626; border-radius: 50%;"></span>
+                        <span id="notifications-badge"></span>
                     </button>
+
+                    <!-- Notifications popup (absolute inside header-actions) -->
+                    <div id="notifications-menu">
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px 8px 8px;">
+                            <strong>Notifications</strong>
+                            <button class="btn-link" style="border:none;background:none;color:#6b7280;cursor:pointer;" onclick="markAllNotificationsRead();">Mark all read</button>
+                        </div>
+                        <div id="notifications-list" style="max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:4px 8px;">
+                            <!-- notifications injected here -->
+                        </div>
+                        <div style="text-align:center;padding-top:8px;">
+                            <button class="btn-secondary" style="padding:6px 12px;border-radius:6px;" onclick="closeNotifications()">Close</button>
+                        </div>
+                    </div>
                     
-                    <!-- Settings -->
-                    <button class="btn-secondary" style="padding: 8px; border-radius: 50%;">
-                        <i data-lucide="settings" class="icon"></i>
-                    </button>
-                    
-                    <!-- User Profile -->
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 32px; height: 32px; background-color: #dc2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 500;">JD</div>
-                        <div style="font-size: 14px;">
-                            <p style="font-weight: 500; color: #111827; margin: 0;">John Doe</p>
-                            <p style="color: #6b7280; margin: 0;">Student Assistant</p>
+                    <!-- Compact User Menu Button (avatar only) -->
+                    <div id="header-user-block" class="header-user-block" onclick="toggleUserMenu(event)" title="Profile menu">
+                        <div id="header-user-avatar">${AppState.currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('')}</div>
+                        <i data-lucide="chevron-down" style="width: 16px; height: 16px; color: #6b7280;"></i>
+
+                        <!-- Popup menu (hidden by default) - absolute inside header block -->
+                        <div id="user-menu">
+                            <button class="btn-menu" style="display:block;width:100%;text-align:left;padding:8px;border:none;background:none;cursor:pointer;border-radius:6px;" onclick="openUserModal('edit','current'); closeUserMenu();">Settings</button>
+                            <button class="btn-menu" style="display:block;width:100%;text-align:left;padding:8px;border:none;background:none;cursor:pointer;border-radius:6px;" onclick="logout()">Logout</button>
                         </div>
                     </div>
                 </div>
@@ -774,8 +906,11 @@ function generateProductsPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${filteredProducts.map((product, index) => `
-                            <tr style="${index % 2 === 0 ? 'background-color: white;' : 'background-color: #f9fafb;'}">
+                        ${filteredProducts.map((product, index) => {
+        const isLow = (product.quantity || 0) <= (AppState.lowStockThreshold || 20);
+        const rowBg = isLow ? 'background-color: #fff7f0;' : (index % 2 === 0 ? 'background-color: white;' : 'background-color: #f9fafb;');
+        return `
+                            <tr style="${rowBg}">
                                 <td style="font-weight: 500;">${product.id}</td>
                                 <td style="font-weight: 500;">${product.name}</td>
                                 <td style="color: #6b7280; max-width: 300px;">${product.description}</td>
@@ -794,7 +929,7 @@ function generateProductsPage() {
                                     </div>
                                 </td>
                             </tr>
-                        `).join('')}
+                        `}).join('')}
                     </tbody>
                 </table>
                 
@@ -1406,6 +1541,452 @@ function generateCompletedRequestPage() {
     `;
 }
 
+// -----------------------------
+// Reports Pages
+// -----------------------------
+
+function generateInventoryReportsPage() {
+    // Filters: date range (not used for inventory mock) and department
+    const departments = ['All', 'IT', 'Procurement', 'Finance', 'HR', 'Admin'];
+
+    return `
+        <div class="page-header">
+            <div class="page-header-content">
+                <div>
+                    <h1 class="page-title">Inventory Reports</h1>
+                    <p class="page-subtitle">Generate and export inventory summary</p>
+                </div>
+                <div>
+                    <button class="btn btn-secondary" id="export-inventory-btn">Export CSV</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="card">
+                <div style="display:flex;gap:12px;align-items:center;">
+                    <div>
+                        <label class="form-label">Department</label>
+                        <select id="inventory-department-filter" class="form-select">
+                            ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">From</label>
+                        <input type="date" id="inventory-date-from" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">To</label>
+                        <input type="date" id="inventory-date-to" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:12px;">
+                <canvas id="inventory-chart" width="600" height="200"></canvas>
+            </div>
+
+            <div class="card" style="margin-top:12px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                <div style="flex:1;">
+                    <h3 style="margin:0 0 8px 0;">Low Stocks</h3>
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                        <label class="form-label" style="margin:0;">Threshold</label>
+                        <input type="number" id="low-stock-threshold" class="form-input" value="20" style="width:100px;">
+                        <button class="btn btn-secondary" id="export-lowstock-btn">Export Low Stocks</button>
+                    </div>
+                    <div class="table-container" style="max-height:240px;overflow:auto;">
+                        <table class="table" id="low-stock-table">
+                            <thead>
+                                <tr>
+                                    <th>Stock Number</th>
+                                    <th>Name</th>
+                                    <th>Current Stock</th>
+                                    <th>Unit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- low stock rows injected by renderInventoryReport() -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div style="width:320px;">
+                    <!-- small summary card for low stocks -->
+                    <div style="padding:12px;border-radius:8px;background:#fff;border:1px solid #eef2f7;">
+                        <p style="margin:0;color:#6b7280;">Items below threshold</p>
+                        <h2 id="low-stock-count" style="margin:8px 0 0 0;">0</h2>
+                        <p id="lowest-item" style="margin:8px 0 0 0;color:#6b7280;">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container" style="margin-top:16px;">
+                <table class="table" id="inventory-report-table">
+                    <thead>
+                        <tr>
+                            <th>Stock Number</th>
+                            <th>Name</th>
+                            <th>Current Stock</th>
+                            <th>Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- rows injected by renderInventoryReport() -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function generateRequisitionReportsPage() {
+    const departments = ['All', 'IT', 'Procurement', 'Finance', 'HR', 'Admin'];
+
+    return `
+        <div class="page-header">
+            <div class="page-header-content">
+                <div>
+                    <h1 class="page-title">Requisition Reports</h1>
+                    <p class="page-subtitle">Overview of requisitions and requests</p>
+                </div>
+                <div>
+                    <button class="btn btn-secondary" id="export-requisition-btn">Export CSV</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="card">
+                <div style="display:flex;gap:12px;align-items:center;">
+                    <div>
+                        <label class="form-label">Department</label>
+                        <select id="requisition-department-filter" class="form-select">
+                            ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">From</label>
+                        <input type="date" id="requisition-date-from" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">To</label>
+                        <input type="date" id="requisition-date-to" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container" style="margin-top:16px;">
+                <table class="table" id="requisition-report-table">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>PO Number</th>
+                            <th>Supplier</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- rows injected by renderRequisitionReport() -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function generateStatusReportsPage() {
+    const departments = ['All', 'IT', 'Procurement', 'Finance', 'HR', 'Admin'];
+
+    return `
+        <div class="page-header">
+            <div class="page-header-content">
+                <div>
+                    <h1 class="page-title">Status Report</h1>
+                    <p class="page-subtitle">Breakdown of request statuses</p>
+                </div>
+                <div>
+                    <button class="btn btn-secondary" id="export-status-btn">Export CSV</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="card">
+                <div style="display:flex;gap:12px;align-items:center;">
+                    <div>
+                        <label class="form-label">Department</label>
+                        <select id="status-department-filter" class="form-select">
+                            ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">From</label>
+                        <input type="date" id="status-date-from" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">To</label>
+                        <input type="date" id="status-date-to" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:12px;">
+                <canvas id="status-chart" width="600" height="200"></canvas>
+            </div>
+
+            <div class="table-container" style="margin-top:16px;">
+                <table class="table" id="status-report-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- rows injected by renderStatusReport() -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// CSV export helpers
+function downloadCSV(filename, rows) {
+    // Add UTF-8 BOM for Excel compatibility
+    const BOM = '\uFEFF';
+    const csvContent = rows.map(r => r.map(c => `"${(c + '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+function exportInventoryCSV() {
+    // export only currently filtered rows if filters applied
+    const rows = [['Stock Number', 'Name', 'Current Stock', 'Unit']];
+    const rowsToExport = (window.__inventoryFilteredRows && window.__inventoryFilteredRows.length) ? window.__inventoryFilteredRows : MockData.inventory;
+    rowsToExport.forEach(i => rows.push([i.stockNumber, i.name, i.currentStock, i.unit]));
+    downloadCSV('inventory-report.csv', rows);
+}
+
+function exportRequisitionCSV() {
+    const rows = [['Request ID', 'PO Number', 'Supplier', 'Total Amount', 'Status']];
+    const rowsToExport = (window.__requisitionFilteredRows && window.__requisitionFilteredRows.length) ? window.__requisitionFilteredRows : [...(AppState.newRequests || []), ...(AppState.pendingRequests || []), ...(AppState.completedRequests || [])];
+    rowsToExport.forEach(r => rows.push([r.id || '', r.poNumber || '', r.supplier || '', r.totalAmount || 0, r.status || '']));
+    downloadCSV('requisition-report.csv', rows);
+}
+
+function exportStatusCSV() {
+    const rows = [['Status', 'Count']];
+    const rowsToExport = (window.__statusSummary && Object.keys(window.__statusSummary).length) ? window.__statusSummary : (function () { const all = [...(AppState.newRequests || []), ...(AppState.pendingRequests || []), ...(AppState.completedRequests || [])]; return all.reduce((acc, r) => { acc[r.status || 'unknown'] = (acc[r.status || 'unknown'] || 0) + 1; return acc; }, {}); })();
+    Object.keys(rowsToExport).forEach(k => rows.push([k, rowsToExport[k]]));
+    downloadCSV('status-report.csv', rows);
+}
+
+// Render helpers + Chart wiring
+function renderInventoryReport() {
+    const tbody = document.querySelector('#inventory-report-table tbody');
+    if (!tbody) return;
+
+    // apply filters
+    const dept = document.getElementById('inventory-department-filter')?.value || 'All';
+    // MockData has no department per item; we'll just allow dept filter to demonstrate
+    const from = document.getElementById('inventory-date-from')?.value;
+    const to = document.getElementById('inventory-date-to')?.value;
+
+    let rows = MockData.inventory.slice();
+    // date filters ignored for inventory mock but kept for future real data
+
+    // save filtered rows globally for export
+    window.__inventoryFilteredRows = rows;
+
+    tbody.innerHTML = rows.map(i => `
+        <tr>
+            <td style="font-weight:500;">${i.stockNumber}</td>
+            <td>${i.name}</td>
+            <td>${i.currentStock}</td>
+            <td>${i.unit}</td>
+        </tr>
+    `).join('');
+
+    // render chart (simple bar)
+    const labels = rows.map(r => r.name);
+    const data = rows.map(r => r.currentStock);
+    renderInventoryChart(labels, data);
+
+    // Low-stock computation
+    const thresholdInput = document.getElementById('low-stock-threshold');
+    const threshold = thresholdInput ? parseInt(thresholdInput.value, 10) || 0 : 20;
+    const lowStockItems = rows.filter(r => typeof r.currentStock === 'number' ? r.currentStock <= threshold : false);
+
+    // populate low-stock table
+    const lowTbody = document.querySelector('#low-stock-table tbody');
+    if (lowTbody) {
+        lowTbody.innerHTML = lowStockItems.map(i => `
+            <tr>
+                <td style="font-weight:500;">${i.stockNumber}</td>
+                <td>${i.name}</td>
+                <td>${i.currentStock}</td>
+                <td>${i.unit}</td>
+            </tr>
+        `).join('');
+    }
+
+    // update summary
+    const lowCountEl = document.getElementById('low-stock-count');
+    const lowestItemEl = document.getElementById('lowest-item');
+    if (lowCountEl) lowCountEl.textContent = lowStockItems.length;
+    if (lowestItemEl) {
+        if (lowStockItems.length > 0) {
+            const sorted = lowStockItems.slice().sort((a, b) => a.currentStock - b.currentStock);
+            lowestItemEl.textContent = `${sorted[0].name} (${sorted[0].currentStock} ${sorted[0].unit})`;
+        } else {
+            lowestItemEl.textContent = '-';
+        }
+    }
+
+    // store low-stock rows for export
+    window.__lowStockRows = lowStockItems;
+}
+
+function exportLowStockCSV() {
+    const rows = [['Stock Number', 'Name', 'Current Stock', 'Unit']];
+    const toExport = (window.__lowStockRows && window.__lowStockRows.length) ? window.__lowStockRows : [];
+    toExport.forEach(i => rows.push([i.stockNumber, i.name, i.currentStock, i.unit]));
+    downloadCSV('low-stock-report.csv', rows);
+}
+
+function renderRequisitionReport() {
+    const tbody = document.querySelector('#requisition-report-table tbody');
+    if (!tbody) return;
+
+    const dept = document.getElementById('requisition-department-filter')?.value || 'All';
+    const from = document.getElementById('requisition-date-from')?.value;
+    const to = document.getElementById('requisition-date-to')?.value;
+
+    let all = [...(AppState.newRequests || []), ...(AppState.pendingRequests || []), ...(AppState.completedRequests || [])];
+
+    // simple date filtering by requestDate if available
+    if (from) all = all.filter(r => r.requestDate ? new Date(r.requestDate) >= new Date(from) : true);
+    if (to) all = all.filter(r => r.requestDate ? new Date(r.requestDate) <= new Date(to) : true);
+
+    // dept filter: assume r.department stores dept code or name
+    if (dept && dept !== 'All') all = all.filter(r => (r.department || '').toLowerCase().includes(dept.toLowerCase()));
+
+    window.__requisitionFilteredRows = all;
+
+    tbody.innerHTML = all.map(r => `
+        <tr>
+            <td style="font-weight:500;">${r.id || '-'}</td>
+            <td>${r.poNumber || '-'}</td>
+            <td>${r.supplier || '-'}</td>
+            <td>${formatCurrency(r.totalAmount || 0)}</td>
+            <td><span class="${getBadgeClass(r.status || 'draft')}">${(r.status || 'Draft')}</span></td>
+        </tr>
+    `).join('');
+}
+
+function renderStatusReport() {
+    const tbody = document.querySelector('#status-report-table tbody');
+    if (!tbody) return;
+
+    const dept = document.getElementById('status-department-filter')?.value || 'All';
+    const from = document.getElementById('status-date-from')?.value;
+    const to = document.getElementById('status-date-to')?.value;
+
+    let all = [...(AppState.newRequests || []), ...(AppState.pendingRequests || []), ...(AppState.completedRequests || [])];
+    if (from) all = all.filter(r => r.requestDate ? new Date(r.requestDate) >= new Date(from) : true);
+    if (to) all = all.filter(r => r.requestDate ? new Date(r.requestDate) <= new Date(to) : true);
+    if (dept && dept !== 'All') all = all.filter(r => (r.department || '').toLowerCase().includes(dept.toLowerCase()));
+
+    const summary = all.reduce((acc, r) => { const s = r.status || 'unknown'; acc[s] = (acc[s] || 0) + 1; return acc; }, {});
+    window.__statusSummary = summary;
+
+    tbody.innerHTML = Object.keys(summary).map(k => `
+        <tr>
+            <td>${k}</td>
+            <td>${summary[k]}</td>
+        </tr>
+    `).join('');
+
+    // render status chart
+    renderStatusChart(Object.keys(summary), Object.values(summary));
+}
+
+// Chart renderers
+let __inventoryChartInstance = null;
+function renderInventoryChart(labels, data) {
+    const ctx = document.getElementById('inventory-chart');
+    if (!ctx) return;
+    if (__inventoryChartInstance) __inventoryChartInstance.destroy();
+    __inventoryChartInstance = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{ label: 'Current Stock', data, backgroundColor: '#3b82f6' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
+let __statusChartInstance = null;
+function renderStatusChart(labels, data) {
+    const ctx = document.getElementById('status-chart');
+    if (!ctx) return;
+    if (__statusChartInstance) __statusChartInstance.destroy();
+    __statusChartInstance = new Chart(ctx.getContext('2d'), {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#6b7280'] }] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
+// Hook filters and export buttons after page load
+function initializeReportPageEvents(pageId) {
+    if (pageId === 'inventory-reports') {
+        document.getElementById('inventory-department-filter')?.addEventListener('change', renderInventoryReport);
+        document.getElementById('inventory-date-from')?.addEventListener('change', renderInventoryReport);
+        document.getElementById('inventory-date-to')?.addEventListener('change', renderInventoryReport);
+        document.getElementById('export-inventory-btn')?.addEventListener('click', exportInventoryCSV);
+        document.getElementById('low-stock-threshold')?.addEventListener('change', renderInventoryReport);
+        document.getElementById('low-stock-threshold')?.addEventListener('change', function (e) {
+            const v = parseInt(e.target.value, 10);
+            if (!isNaN(v)) AppState.lowStockThreshold = v;
+        });
+        document.getElementById('export-lowstock-btn')?.addEventListener('click', exportLowStockCSV);
+        // initial render
+        renderInventoryReport();
+    }
+    if (pageId === 'requisition-reports') {
+        document.getElementById('requisition-department-filter')?.addEventListener('change', renderRequisitionReport);
+        document.getElementById('requisition-date-from')?.addEventListener('change', renderRequisitionReport);
+        document.getElementById('requisition-date-to')?.addEventListener('change', renderRequisitionReport);
+        document.getElementById('export-requisition-btn')?.addEventListener('click', exportRequisitionCSV);
+        renderRequisitionReport();
+    }
+    if (pageId === 'status-report') {
+        document.getElementById('status-department-filter')?.addEventListener('change', renderStatusReport);
+        document.getElementById('status-date-from')?.addEventListener('change', renderStatusReport);
+        document.getElementById('status-date-to')?.addEventListener('change', renderStatusReport);
+        document.getElementById('export-status-btn')?.addEventListener('click', exportStatusCSV);
+        renderStatusReport();
+    }
+}
+
+// Ensure initializePageEvents calls the report page events too
+const _origInitializePageEvents = initializePageEvents;
+initializePageEvents = function (pageId) {
+    _origInitializePageEvents(pageId);
+    initializeReportPageEvents(pageId);
+}
+
 // ----------------------------- //
 // Purchase Order Modal Functions //
 // ----------------------------- //
@@ -1680,7 +2261,6 @@ function initializePurchaseOrderModal(requestData = null) {
     }
 
     renderPOItems();
-    updateStockSummary();
 }
 
 
@@ -1704,7 +2284,6 @@ function removePOItem(id) {
     if (AppState.purchaseOrderItems.length > 1) {
         AppState.purchaseOrderItems = AppState.purchaseOrderItems.filter(item => item.id !== id);
         renderPOItems();
-        updateStockSummary();
     }
 }
 
@@ -1732,7 +2311,6 @@ function updatePOItem(id, field, value) {
 
     AppState.purchaseOrderItems[itemIndex] = item;
     renderPOItems();
-    updateStockSummary();
 }
 
 function renderPOItems() {
@@ -2022,6 +2600,8 @@ function initializeProductsPageEvents() {
             updateProductsTable();
         });
     }
+
+    // ...existing code...
 }
 
 function updateProductsTable() {
@@ -2088,8 +2668,11 @@ function updateProductsTable() {
     // Update table body
     const tbody = document.querySelector('.table tbody');
     if (tbody) {
-        tbody.innerHTML = filteredProducts.map((product, index) => `
-            <tr style="${index % 2 === 0 ? 'background-color: white;' : 'background-color: #f9fafb;'}">
+        tbody.innerHTML = filteredProducts.map((product, index) => {
+            const isLow = (product.quantity || 0) <= (AppState.lowStockThreshold || 20);
+            const rowBg = isLow ? 'background-color: #fff7f0;' : (index % 2 === 0 ? 'background-color: white;' : 'background-color: #f9fafb;');
+            return `
+            <tr style="${rowBg}">
                 <td style="font-weight: 500;">${product.id}</td>
                 <td style="font-weight: 500;">${product.name}</td>
                 <td style="color: #6b7280; max-width: 300px;">${product.description}</td>
@@ -2108,7 +2691,7 @@ function updateProductsTable() {
                     </div>
                 </td>
             </tr>
-        `).join('');
+        `}).join('');
 
         // Update pagination count
         const paginationLeft = document.querySelector('.pagination-left');
@@ -2242,6 +2825,57 @@ window.downloadPO = downloadPO;
 window.archiveRequest = archiveRequest;
 window.openModal = openModal;
 
+// -----------------------------
+// User profile menu helpers
+// -----------------------------
+function toggleUserMenu(event) {
+    const menu = document.getElementById('user-menu');
+    if (!menu) return;
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+}
+
+function closeUserMenu() {
+    const menu = document.getElementById('user-menu');
+    if (menu) menu.style.display = 'none';
+}
+
+function logout() {
+    // Basic logout behaviour: clear AppState.currentUser and navigate to a light landing page
+    AppState.currentUser = {
+        id: null,
+        name: 'Guest',
+        email: '',
+        role: '',
+        department: '',
+        status: 'Inactive',
+        created: ''
+    };
+
+    // Update avatar only (header no longer shows name/role)
+    const avatarEl = document.getElementById('header-user-avatar');
+    if (avatarEl) avatarEl.textContent = AppState.currentUser.name ? AppState.currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('') : '';
+
+    closeUserMenu();
+    showAlert('Logged out', 'info');
+
+    // Optionally navigate to a non-protected landing or login page
+    // For now, go to dashboard
+    navigateToPage('dashboard');
+}
+
+// Close user menu on outside click
+document.addEventListener('click', function (e) {
+    const menu = document.getElementById('user-menu');
+    const block = document.getElementById('header-user-block');
+    if (!menu || !block) return;
+    const menuDisplay = window.getComputedStyle(menu).display;
+    if (menuDisplay === 'none') return;
+
+    if (!menu.contains(e.target) && !block.contains(e.target)) {
+        menu.style.display = 'none';
+    }
+});
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function () {
     initializeNavigation();
@@ -2355,13 +2989,12 @@ function saveUser(userId) {
 
     // 2. Gather form data
     const userData = {
-        name: nameInput.value,
-        email: emailInput.value,
-        role: roleInput.value,
-        department: departmentInput.value,
+        name: nameInput ? nameInput.value : '',
+        email: emailInput ? emailInput.value : '',
+        role: roleInput ? roleInput.value : '',
+        department: departmentInput ? departmentInput.value : '',
         status: statusInput ? statusInput.value : 'Active',
-        // FIX: Ensure 'created' value defaults to today if empty.
-        created: createdInput.value || getTodayDateString()
+        created: createdInput ? (createdInput.value || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0]
     };
 
     if (!userId) {
@@ -2371,7 +3004,7 @@ function saveUser(userId) {
 
         // Robust ID generation
         const maxIdNum = window.MockData.users
-            .map(u => parseInt(u.id.replace('SA', '').replace('U', ''), 10))
+            .map(u => parseInt(String(u.id).replace(/\D/g, ''), 10))
             .filter(n => !isNaN(n))
             .reduce((max, current) => Math.max(max, current), 0);
 
@@ -2384,6 +3017,24 @@ function saveUser(userId) {
         };
 
         window.MockData.users.push(newUser);
+    } else if (userId === 'current') {
+        // Update AppState.currentUser
+        AppState.currentUser = {
+            ...AppState.currentUser,
+            ...userData
+        };
+
+        // Also update MockData user if exists
+        if (window.MockData && Array.isArray(window.MockData.users)) {
+            const idx = window.MockData.users.findIndex(u => u.id === AppState.currentUser.id);
+            if (idx !== -1) {
+                window.MockData.users[idx] = { ...window.MockData.users[idx], ...AppState.currentUser };
+            }
+        }
+
+        // Update avatar only (header no longer shows name/role)
+        const avatarEl = document.getElementById('header-user-avatar');
+        if (avatarEl) avatarEl.textContent = AppState.currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('');
     } else {
         // --- UPDATE EXISTING USER (EDIT) ---
         const existing = window.MockData.users.find(u => u.id === userId);
@@ -2430,7 +3081,9 @@ function openUserModal(mode = 'view', userId = null) {
     const modalContent = modal.querySelector('.modal-content');
 
     let userData = null;
-    if (userId && window.MockData && window.MockData.users) {
+    if (userId === 'current') {
+        userData = AppState.currentUser;
+    } else if (userId && window.MockData && window.MockData.users) {
         // Find user data for 'edit' or 'view' mode
         userData = window.MockData.users.find(u => u.id === userId);
     }
@@ -2582,6 +3235,68 @@ function generateUsersManagementPage() {
 
                 </tbody>
             </table>
+        </div>
+    `;
+}
+
+// ----------------------------- //
+// About Us Page               //
+// ----------------------------- //
+function generateAboutPage() {
+    const currentYear = new Date().getFullYear();
+    return `
+        <div class="page-header">
+            <div class="page-header-content">
+                <div>
+                    <h1 class="page-title">About Us</h1>
+                    <p class="page-subtitle">Learn more about the SPMO System and the team behind it</p>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="text-align:right;color:#6b7280;font-size:14px;">Updated: ${currentYear}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="card">
+                <h2 style="margin-top:0;">Our Mission</h2>
+                <p style="color:#374151;line-height:1.6;">The SPMO (Stock & Procurement Management Office) System is designed to streamline inventory, requisition, and procurement workflows for educational institutions. Our mission is to provide a reliable, easy-to-use platform that improves transparency, reduces manual work, and helps departments manage resources effectively.</p>
+            </div>
+
+            <div class="card" style="margin-top:16px;">
+                <h2 style="margin-top:0;">What We Do</h2>
+                <ul style="color:#374151;line-height:1.6;">
+                    <li>Centralize inventory and stock management</li>
+                    <li>Automate purchase order creation and tracking</li>
+                    <li>Generate reports for audits and planning</li>
+                </ul>
+            </div>
+
+            <div class="card" style="margin-top:16px;">
+                <h2 style="margin-top:0;">Contact & Support</h2>
+                <p style="color:#374151;line-height:1.6;">For questions, feature requests or to report issues, please contact the System Administrator:</p>
+                <p style="margin:0;font-weight:600;color:#111827;">Camarines Norte State College - SPMO</p>
+                <p style="margin:0;color:#6b7280;">Email: it-support@cnsc.edu.ph</p>
+                <p style="margin:0;color:#6b7280;">Phone: (054) 123-4567</p>
+            </div>
+
+            <div class="card" style="margin-top:16px;">
+                <h2 style="margin-top:0;">The Team</h2>
+                <div class="grid-3" style="gap:12px;">
+                    <div style="padding:12px;border-radius:6px;background:#fff;border:1px solid #eef2f7;">
+                        <p style="margin:0;font-weight:600;">Project Lead</p>
+                        <p style="margin:0;color:#6b7280;">Cherry Ann Quila</p>
+                    </div>
+                    <div style="padding:12px;border-radius:6px;background:#fff;border:1px solid #eef2f7;">
+                        <p style="margin:0;font-weight:600;">Developer</p>
+                        <p style="margin:0;color:#6b7280;">Vince Balce</p>
+                    </div>
+                    <div style="padding:12px;border-radius:6px;background:#fff;border:1px solid #eef2f7;">
+                        <p style="margin:0;font-weight:600;">QA / Documentation</p>
+                        <p style="margin:0;color:#6b7280;">Marinel Ledesma</p>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 }

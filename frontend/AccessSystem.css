@@ -102,3 +102,117 @@ body{
 
 .register{margin-top:1rem;color:#cfd3dc;font-size:.9rem}
 .register a{color:#76ff76;text-decoration:none}
+
+/* Enhanced dialog styling for login confirmation */
+:root{
+  --dialog-bg: #ffffff;
+  --dialog-accent: #c62828; /* red accent */
+  --dialog-accent-dark: #9b1f1f;
+  --dialog-text: #0b2435;
+  --dialog-muted: #50616a;
+}
+
+dialog.login-dialog{
+  border: none;
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem 1rem;
+  width: min(94%, 440px);
+  max-width: 440px;
+  box-shadow: 0 18px 50px rgba(6, 18, 28, 0.45), inset 0 1px 0 rgba(255,255,255,0.6);
+  font-family: inherit;
+  background: linear-gradient(180deg, var(--dialog-bg), #fbfdff);
+  color: var(--dialog-text);
+  transform-origin: center center;
+}
+
+dialog.login-dialog::backdrop{
+  background: rgba(3, 9, 14, 0.55);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+/* entrance animation */
+@keyframes dialog-pop-in {
+  from{opacity:0; transform: translate(-50%, -48%) scale(.98)}
+  to{opacity:1; transform: translate(-50%, -50%) scale(1)}
+}
+
+/* Center and animate when open */
+dialog[open].login-dialog{
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  animation: dialog-pop-in 180ms cubic-bezier(.2,.9,.2,1);
+}
+
+/* accessible reduced motion */
+@media (prefers-reduced-motion: reduce){
+  dialog[open].login-dialog{ animation: none }
+}
+
+/* heading with a small accent dot */
+dialog.login-dialog h3{
+  margin: 0 0 0.25rem 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--dialog-text);
+  display:flex; align-items:center; gap:0.6rem;
+}
+
+/* small accent circle before heading */
+dialog.login-dialog h3::before{
+  content: '';
+  width:12px; height:12px; border-radius:50%;
+  background: linear-gradient(180deg, var(--dialog-accent), var(--dialog-accent-dark));
+  box-shadow: 0 4px 12px rgba(198,40,40,0.18);
+  flex:0 0 12px;
+}
+
+dialog.login-dialog p#dialogText{
+  margin: 0.25rem 0 0.85rem 0;
+  color: var(--dialog-muted);
+  line-height: 1.35;
+  font-size: 0.95rem;
+}
+
+dialog.login-dialog menu{
+  display:flex; gap:0.5rem; justify-content:flex-end;
+  margin-top:0.35rem; padding-top:0.65rem; border-top:1px solid rgba(8,12,16,0.05);
+}
+
+dialog.login-dialog button{
+  min-width:96px; padding:0.55rem 0.9rem; border-radius:10px; border:none;
+  font-weight:700; cursor:pointer; transition: transform .12s ease, box-shadow .12s ease, opacity .12s;
+  box-shadow: 0 6px 18px rgba(4, 12, 24, 0.08);
+}
+
+dialog.login-dialog button[type="submit"][value="cancel"]{
+  background: #ffffff; /* white */
+  color: #0b2435;
+  opacity: 1;
+  border: 1px solid rgba(11,22,39,0.06);
+}
+
+dialog.login-dialog button[type="submit"][value="cancel"]:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(4,12,24,0.06);
+}
+
+dialog.login-dialog button[type="submit"][value="confirm"]{
+  background: linear-gradient(180deg,var(--dialog-accent), var(--dialog-accent-dark));
+  color: #fff;
+  border: none;
+}
+
+dialog.login-dialog button[type="submit"][value="confirm"]:hover{ transform: translateY(-2px); box-shadow: 0 10px 26px rgba(198,40,40,0.22) }
+
+dialog.login-dialog button:active{ transform: translateY(1px) }
+dialog.login-dialog button:focus{ outline: 3px solid rgba(198,40,40,0.14); }
+
+/* smaller screens tweak */
+@media (max-width:420px){
+  dialog.login-dialog{ padding:0.9rem 1rem }
+  dialog.login-dialog h3{ font-size:1rem }
+}

@@ -104,20 +104,98 @@
 
       // Basic validation: Check if all 6 PIN digits are entered
       if (userPin.length !== 6) {
-        // Use UI alert if available, otherwise fallback to native alert
-        if (typeof showAlert === 'function') showAlert("Please enter all 6 digits of your credentials.", 'error');
-        else alert("Please enter all 6 digits of your credentials.");
+        // Show modal alert dialog (fallbacks to native alert if not supported)
+        showAlertDialog("Please enter all 6 digits of your credentials.");
         otpInputs[0].focus(); // Focus on the first PIN box
         return; // Stop the login process
       }
 
       // --- In a real application, you would send userEmail and userPin to a server here ---
-      console.log(`Attempting login for Email: ${userEmail}, PIN: ${userPin}`);
-      // alert(`Login successful!\nEmail: ${userEmail}\nPIN: ${userPin}`); 
-      // ------------------------------------------------------------------------------------
+      // Show a modal dialog that confirms the attempted login instead of logging to the console
+      showLoginDialog(userEmail, userPin);
+    }
+  </script>
+  <!-- Login confirmation dialog -->
+  <dialog id="loginDialog" class="login-dialog">
+    <form method="dialog">
+      <h3>Confirm Sign in</h3>
+      <p id="dialogText">Checking...</p>
+      <menu>
+        <button id="cancelBtn" type="submit" value="cancel">Cancel</button>
+        <button id="confirmBtn" type="submit" value="confirm">Continue</button>
+      </menu>
+    </form>
+  </dialog>
 
-      // Redirect to the dashboard upon successful "login"
-      window.location.href = '../Dashboard/index.html';
+  <!-- Simple alert dialog used for validation messages -->
+  <dialog id="alertDialog" class="login-dialog" aria-live="polite">
+    <form method="dialog">
+      <h3>Attention</h3>
+      <p id="alertText">Message</p>
+      <menu>
+        <button id="alertOk" type="submit" value="ok">OK</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script>
+    // Mask the PIN for display (show only last 2 digits)
+    function maskPin(pin) {
+      if (!pin) return '';
+      if (pin.length <= 2) return '*'.repeat(pin.length);
+      return '*'.repeat(pin.length - 2) + pin.slice(-2);
+    }
+
+    function showLoginDialog(email, pin) {
+      const dialog = document.getElementById('loginDialog');
+      const text = document.getElementById('dialogText');
+      const masked = maskPin(pin);
+      text.textContent = `Sign in as ${email} with PIN ${masked}?`;
+
+      if (typeof dialog.showModal === 'function') {
+        dialog.showModal();
+        // Wire buttons
+        const confirm = document.getElementById('confirmBtn');
+        const cancel = document.getElementById('cancelBtn');
+
+        function onClose(e) {
+          // value is provided by <menu> button values
+          const val = dialog.returnValue;
+          dialog.removeEventListener('close', onClose);
+          if (val === 'confirm') {
+            // proceed to dashboard
+            window.location.href = '../Dashboard/index.html';
+          } else {
+            // allow user to edit PIN/email
+            otpInputs[0].focus();
+          }
+        }
+
+        dialog.addEventListener('close', onClose);
+      } else {
+        // Fallback: use confirm() dialog
+        const ok = confirm(`Sign in as ${email} with PIN ${masked}?`);
+        if (ok) window.location.href = '../Dashboard/index.html';
+        else otpInputs[0].focus();
+      }
+    }
+
+    // Show a simple alert dialog. Uses <dialog> if available, otherwise window.alert
+    function showAlertDialog(message) {
+      const ad = document.getElementById('alertDialog');
+      const text = document.getElementById('alertText');
+      text.textContent = message;
+      if (typeof ad.showModal === 'function') {
+        ad.showModal();
+        // focus OK button for accessibility
+        const ok = document.getElementById('alertOk');
+        ok.focus();
+        ad.addEventListener('close', function onClose() {
+          ad.removeEventListener('close', onClose);
+        });
+      } else {
+        alert(message);
+      }
     }
   </script>
 </body>
