@@ -147,8 +147,7 @@ function getBadgeClass(status, type = 'status') {
             'delivered': 'badge green',
             'completed': 'badge emerald',
             'cancelled': 'badge red',
-            'low-stock': 'badge orange',
-            'out-of-stock': 'badge red'
+
         },
         priority: {
             'urgent': 'badge red',
@@ -267,6 +266,12 @@ function escapeHtml(str) {
     return String(str).replace(/[&<>"]+/g, function (s) {
         return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[s];
     });
+}
+
+// Safe capitalization helper (handles undefined/null)
+function capitalize(s) {
+    if (!s) return '-';
+    return String(s).charAt(0).toUpperCase() + String(s).slice(1);
 }
 
 function renderNotifications() {
@@ -907,8 +912,7 @@ function generateProductsPage() {
                     </thead>
                     <tbody>
                         ${filteredProducts.map((product, index) => {
-        const isLow = (product.quantity || 0) <= (AppState.lowStockThreshold || 20);
-        const rowBg = isLow ? 'background-color: #fff7f0;' : (index % 2 === 0 ? 'background-color: white;' : 'background-color: #f9fafb;');
+        const rowBg = (index % 2 === 0) ? 'background-color: white;' : 'background-color: #f9fafb;';
         return `
                             <tr style="${rowBg}">
                                 <td style="font-weight: 500;">${product.id}</td>
@@ -1213,7 +1217,7 @@ function generateNewRequestPage() {
                             <td>${formatCurrency(request.totalAmount)}</td>
                             <td>
                                 <span class="${getBadgeClass(request.status)}">
-                                    ${request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                                    ${capitalize(request.status)}
                                 </span>
                             </td>
                             <td>${request.requestedBy}</td>
@@ -1345,7 +1349,7 @@ function generatePendingApprovalPage() {
                                     <td>${formatCurrency(request.totalAmount || 0)}</td>
                                     <td>
                                         <span class="${getBadgeClass(request.priority || 'low', 'priority')}">
-                                            ${request.priority ? (request.priority.charAt(0).toUpperCase() + request.priority.slice(1)) : 'Low'}
+                                            ${request.priority ? capitalize(request.priority) : 'Low'}
                                         </span>
                                     </td>
                                     <td>
@@ -1393,6 +1397,13 @@ function generatePendingApprovalPage() {
 
 
 function generateCompletedRequestPage() {
+    // Prepare lists (mirror the approach used in generatePendingApprovalPage)
+    const allCompleted = (AppState.completedRequests || []);
+    const completedList = allCompleted.filter(r => r.status === 'completed');
+    const deliveredList = allCompleted.filter(r => r.status === 'delivered');
+    const totalRequests = allCompleted.length;
+    const totalValue = allCompleted.reduce((sum, req) => sum + (req.totalAmount || 0), 0);
+
     return `
         <section class="page-header">
             <div class="page-header-content">
@@ -1401,8 +1412,8 @@ function generateCompletedRequestPage() {
                     <p class="page-subtitle">View completed and archived purchase requests</p>
                 </header>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="badge green">${(AppState.completedRequests || []).filter(r => r.status === 'completed').length} Completed</span>
-                    <span class="badge blue">${(AppState.completedRequests || []).filter(r => r.status === 'delivered').length} Delivered</span>
+                    <span class="badge green">${completedList.length} Completed</span>
+                    <span class="badge blue">${deliveredList.length} Delivered</span>
                 </div>
             </div>
         </section>
@@ -1427,14 +1438,7 @@ function generateCompletedRequestPage() {
                         <option value="cancelled">Cancelled</option>
                     </select>
 
-                    <!-- Payment Filter -->
-                    <label for="paymentFilter" class="visually-hidden">Filter by Payment Status</label>
-                    <select class="filter-dropdown" id="paymentFilter">
-                        <option value="">All Payment</option>
-                        <option value="paid">Paid</option>
-                        <option value="pending">Pending</option>
-                        <option value="partial">Partial</option>
-                    </select>
+                    <!-- payment filter removed -->
                 </div>
             </section>
 
@@ -1448,7 +1452,7 @@ function generateCompletedRequestPage() {
                             <th scope="col">Supplier</th>
                             <th scope="col">Total Amount</th>
                             <th scope="col">Status</th>
-                            <th scope="col">Payment Status</th>
+                            <!-- Payment Status column removed -->
                             <th scope="col">Requested By</th>
                             <th scope="col">Approved By</th>
                             <th scope="col">Delivered Date</th>
@@ -1469,15 +1473,11 @@ function generateCompletedRequestPage() {
                                     <td>${request.supplier}</td>
                                     <td>${formatCurrency(request.totalAmount)}</td>
                                     <td>
-                                        <span class="${getBadgeClass(request.status)}">
-                                            ${request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                                            <span class="${getBadgeClass(request.status)}">
+                                            ${capitalize(request.status)}
                                         </span>
                                     </td>
-                                    <td>
-                                        <span class="${getBadgeClass(request.paymentStatus, 'payment')}">
-                                            ${request.paymentStatus.charAt(0).toUpperCase() + request.paymentStatus.slice(1)}
-                                        </span>
-                                    </td>
+                                    <!-- Payment Status cell removed -->
                                     <td>${request.requestedBy}</td>
                                     <td>${request.approvedBy}</td>
                                     <td>${request.deliveredDate || '-'}</td>
@@ -1498,7 +1498,7 @@ function generateCompletedRequestPage() {
                             `).join('')
             : `
                                 <tr>
-                                    <td colspan="10" class="px-6 py-12 text-center text-gray-500">
+                                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
                                         <div class="flex flex-col items-center gap-2">
                                             <p>No completed requests found</p>
                                         </div>
@@ -1514,27 +1514,22 @@ function generateCompletedRequestPage() {
                     <div class="text-center">
                         <p style="font-size: 14px; color: #6b7280; margin: 0;">Total Requests</p>
                         <p style="font-size: 18px; font-weight: 600; color: #111827; margin: 0;">
-                            ${(AppState.completedRequests || []).length}
+                            ${totalRequests}
                         </p>
                     </div>
                     <div class="text-center">
                         <p style="font-size: 14px; color: #6b7280; margin: 0;">Total Value</p>
                         <p style="font-size: 18px; font-weight: 600; color: #111827; margin: 0;">
-                            ${formatCurrency((AppState.completedRequests || []).reduce((sum, req) => sum + (req.totalAmount || 0), 0))}
+                            ${formatCurrency(totalValue)}
                         </p>
                     </div>
                     <div class="text-center">
                         <p style="font-size: 14px; color: #6b7280; margin: 0;">Completed</p>
                         <p style="font-size: 18px; font-weight: 600; color: #16a34a; margin: 0;">
-                            ${(AppState.completedRequests || []).filter(r => r.status === 'completed').length}
+                            ${completedList.length}
                         </p>
                     </div>
-                    <div class="text-center">
-                        <p style="font-size: 14px; color: #6b7280; margin: 0;">Paid Orders</p>
-                        <p style="font-size: 18px; font-weight: 600; color: #2563eb; margin: 0;">
-                            ${(AppState.completedRequests || []).filter(r => r.paymentStatus === 'paid').length}
-                        </p>
-                    </div>
+                    <!-- Paid Orders summary removed -->
                 </aside>
             </section>
         </main>
@@ -1675,6 +1670,10 @@ function generateRequisitionReportsPage() {
                 </div>
             </div>
 
+            <div class="card" style="margin-top:12px;">
+                <canvas id="requisition-chart" width="800" height="240"></canvas>
+            </div>
+
             <div class="table-container" style="margin-top:16px;">
                 <table class="table" id="requisition-report-table">
                     <thead>
@@ -1741,6 +1740,7 @@ function generateStatusReportsPage() {
                         <tr>
                             <th>Status</th>
                             <th>Count</th>
+                            <th>Details</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1891,6 +1891,32 @@ function renderRequisitionReport() {
             <td><span class="${getBadgeClass(r.status || 'draft')}">${(r.status || 'Draft')}</span></td>
         </tr>
     `).join('');
+
+    // render requisition totals by supplier (bar chart)
+    const totalsBySupplier = all.reduce((acc, r) => {
+        const s = r.supplier || 'Unknown';
+        acc[s] = (acc[s] || 0) + (r.totalAmount || 0);
+        return acc;
+    }, {});
+
+    const reqLabels = Object.keys(totalsBySupplier);
+    const reqData = reqLabels.map(l => totalsBySupplier[l]);
+    renderRequisitionChart(reqLabels, reqData);
+}
+
+let __requisitionChartInstance = null;
+function renderRequisitionChart(labels, data) {
+    const ctx = document.getElementById('requisition-chart');
+    if (!ctx) return;
+    if (__requisitionChartInstance) __requisitionChartInstance.destroy();
+    __requisitionChartInstance = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{ label: 'Total Amount (₱)', data, backgroundColor: '#6366f1' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
 }
 
 function renderStatusReport() {
@@ -1918,7 +1944,70 @@ function renderStatusReport() {
 
     // render status chart
     renderStatusChart(Object.keys(summary), Object.values(summary));
+
+    // Replace tbody HTML with inline details for each status
+    const rowsHtml = Object.keys(summary).map(k => {
+        const matches = all.filter(r => (r.status || 'unknown') === k);
+        const detailHtml = matches.length ? matches.map(r => `
+            <div style="margin-bottom:6px;">
+                <a href="#" onclick="openPurchaseOrderModal('view','${r.id}'); return false;" style="color:#dc2626; text-decoration:underline;">${r.poNumber || r.id}</a>
+                ${r.supplier ? ` - ${r.supplier}` : ''}
+                <span style="margin-left:8px; color:#6b7280;">${formatCurrency(r.totalAmount || 0)}</span>
+            </div>
+        `).join('') : '<span style="color:#6b7280;">—</span>';
+
+        return `
+        <tr>
+            <td>${k}</td>
+            <td>${summary[k]}</td>
+            <td style="max-width:420px;">${detailHtml}</td>
+        </tr>
+        `;
+    }).join('');
+    tbody.innerHTML = rowsHtml;
 }
+
+function showStatusDetails(status) {
+    // Find matching requests
+    const all = [...(AppState.newRequests || []), ...(AppState.pendingRequests || []), ...(AppState.completedRequests || [])];
+    const matches = all.filter(r => (r.status || 'unknown') === status);
+
+    const modal = document.getElementById('purchase-order-modal');
+    const modalContent = modal.querySelector('.modal-content');
+
+    modalContent.innerHTML = `
+        <div class="modal-header">
+            <h2 class="modal-title">Requests: ${status}</h2>
+            <button class="modal-close" onclick="closePurchaseOrderModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <table class="table">
+                <thead><tr><th>Request ID</th><th>PO</th><th>Supplier</th><th>Amount</th><th>Action</th></tr></thead>
+                <tbody>
+                    ${matches.length ? matches.map(r => `
+                        <tr>
+                            <td>${r.id}</td>
+                            <td>${r.poNumber || '-'}</td>
+                            <td>${r.supplier || '-'}</td>
+                            <td>${formatCurrency(r.totalAmount || 0)}</td>
+                            <td><button class="btn btn-primary" onclick="openPurchaseOrderModal('view','${r.id}')">View</button></td>
+                        </tr>
+                    `).join('') : `<tr><td colspan="5">No requests with status ${status}</td></tr>`}
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closePurchaseOrderModal()">Close</button>
+        </div>
+    `;
+
+    modal.classList.add('active');
+    lucide.createIcons();
+}
+
+window.showStatusDetails = showStatusDetails;
 
 // Chart renderers
 let __inventoryChartInstance = null;
@@ -2354,15 +2443,15 @@ function renderPOItems() {
                           placeholder="Detailed specifications..."
                           ${isReadOnly ? 'readonly' : ''}>${item.detailedDescription}</textarea>
             </td>
-                <td style="padding: 12px;">
-                <input type="number" 
-                       value="${item.quantity || ''}" 
-                       onchange="updatePOItem('${item.id}', 'quantity', parseFloat(this.value) || 0)"
-                       class="form-input ${item.quantity > item.currentStock && item.currentStock > 0 ? 'border-red-300' : ''}" 
-                       style="height: 32px;" 
-                       placeholder="Qty"
-                       ${isReadOnly ? 'readonly' : ''}>
-            </td>
+          <td style="padding: 12px;">
+          <input type="number" 
+              value="${item.quantity || ''}" 
+              onchange="updatePOItem('${item.id}', 'quantity', parseFloat(this.value) || 0)"
+              class="form-input" 
+              style="height: 32px;" 
+              placeholder="Qty"
+              ${isReadOnly ? 'readonly' : ''}>
+         </td>
             <td style="padding: 12px;">
                 <input type="number" 
                        step="0.01"
@@ -2397,15 +2486,11 @@ function renderPOItems() {
 
 function updateStockSummary() {
     const summary = document.getElementById('stock-summary');
-    const exceedingStock = AppState.purchaseOrderItems.filter(item => item.quantity > item.currentStock && item.currentStock > 0).length;
     const newItems = AppState.purchaseOrderItems.filter(item => item.currentStock === 0 && item.stockPropertyNumber).length;
     const totalQuantity = AppState.purchaseOrderItems.reduce((sum, item) => sum + item.quantity, 0);
 
     summary.innerHTML = `
         <div>
-            <p style="font-size: 14px; color: #1e40af;">
-                <span style="font-weight: 500;">Items Exceeding Stock:</span> ${exceedingStock}
-            </p>
             <p style="font-size: 14px; color: #1e40af;">
                 <span style="font-weight: 500;">New Items (No Current Stock):</span> ${newItems}
             </p>
@@ -2669,8 +2754,7 @@ function updateProductsTable() {
     const tbody = document.querySelector('.table tbody');
     if (tbody) {
         tbody.innerHTML = filteredProducts.map((product, index) => {
-            const isLow = (product.quantity || 0) <= (AppState.lowStockThreshold || 20);
-            const rowBg = isLow ? 'background-color: #fff7f0;' : (index % 2 === 0 ? 'background-color: white;' : 'background-color: #f9fafb;');
+            const rowBg = (index % 2 === 0) ? 'background-color: white;' : 'background-color: #f9fafb;';
             return `
             <tr style="${rowBg}">
                 <td style="font-weight: 500;">${product.id}</td>
@@ -4128,7 +4212,7 @@ function initStatusManagement(filter = "all") {
                     <p>Track and manage request statuses across all departments</p>
                 </div>
                 <div class="actions">
-                    <button class="btn-export">Export</button>
+                    <button class="btn btn-secondary" id="export-status-btn">Export CSV</button>
                 </div>
             </div>
 
@@ -4178,6 +4262,8 @@ function initStatusManagement(filter = "all") {
     document.getElementById("deptInput").addEventListener("input", applyFilters);
     document.getElementById("deptSelect").addEventListener("change", applyFilters);
     document.getElementById("prioritySelect").addEventListener("change", applyFilters);
+    // Export handler (same behavior as Reports export)
+    document.getElementById('export-status-btn')?.addEventListener('click', exportStatusCSV);
 }
 
 // ===== Dummy Rows =====

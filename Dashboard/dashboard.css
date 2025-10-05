@@ -299,6 +299,67 @@ body {
     padding: 24px;
 }
 
+/* Status Management specific */
+.status-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.status-header .actions {
+    display: flex;
+    align-items: center;
+}
+
+.status-header .actions .btn {
+    /* Match the reports export button appearance (same as .btn.btn-secondary) */
+    padding: 8px 16px;
+    border-radius: 6px;
+    background-color: transparent;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.status-header .actions .btn:hover {
+    background-color: #f9fafb;
+}
+
+.status-cards {
+    display: flex;
+    gap: 12px;
+}
+
+.status-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px 16px;
+    flex: 1;
+}
+
+.request-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid #e5e7eb;
+}
+
+.request-table th, .request-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    text-align: left;
+}
+
+.request-table tbody td a {
+    color: #dc2626;
+    text-decoration: underline;
+}
+
+.status-inline-detail {
+    color: #6b7280;
+    font-size: 13px;
+}
+
 .card-header {
     margin-bottom: 24px;
 }
