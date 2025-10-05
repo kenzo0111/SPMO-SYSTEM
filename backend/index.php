@@ -1,0 +1,77 @@
+<?php
+
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory & Procurement Management System</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        <div class="logo">
+            <img src="../icons/cnscrefine.png" alt="School Logo">
+            <div class="logo-text">
+                <h1>Supply and Property Management</h1>
+                <hr>
+                <p>WEB - BASED INVENTORY AND PROCUREMENT MANAGEMENT SYSTEM</p>
+            </div>
+        </div>
+        <nav>
+            <a href="ContactSupport.html" class="support-btn">Contact Support</a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h2><span class="red">Inventory</span> & <span class="yellow">Procurement</span> Management</h2>
+            <p>Streamline your institutional operations with our
+                comprehensive inventory and procurement
+                management system designed for Camarines Norte
+                State College.</p>
+            <div class="buttons">
+                <a href="AccessSystem.html" class="btn red-btn">Access System</a>
+                <a href="#learn" class="btn yellow-btn">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="learn">
+        <h2>Powerful Features for Institutional Management</h2>
+        <p>Our system provides comprehensive tools to manage inventory, track procurement,
+            and ensure efficient operations across all management</p>
+        <div class="feature-grid">
+            <article class="feature-card">
+                <img src="../icons/inventory.png" alt="Inventory Icon">
+                <h3>Inventory</h3>
+            </article>
+            <article class="feature-card">
+                <img src="../icons/management.png" alt="Management Icon">
+                <h3>Management</h3>
+            </article>
+            <article class="feature-card">
+                <img src="../icons/procurement.png" alt="Procurement Icon">
+                <h3>Procurement</h3>
+            </article>
+            <article class="feature-card">
+                <img src="../icons/analytics.png" alt="Analytics Icon">
+                <h3>Analytics</h3>
+            </article>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Camarines Norte State College. All rights reserved.</p>
+    </footer>
+</body>
+
+</html>

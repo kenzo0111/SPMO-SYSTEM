@@ -4,67 +4,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SPMO Access System</title>
+  <title>SPMO Login</title>
   <link rel="stylesheet" href="AccessSystem.css" />
 </head>
 
 <body>
-  <header>
-    <div class="header-container">
-      <div class="logo">
-        <img src="cnscrefine.png" alt="CNSC Logo" />
-        <div class="logo-text">
-          <h1>Supply and Property Management</h1>
-          <hr />
-          <p>WEB-BASED INVENTORY AND PROCUREMENT MANAGEMENT SYSTEM</p>
-        </div>
-      </div>
+  <header class="header logo-text">
+    <img src="cnscrefine.png" alt="Logo" />
+    <div class="title">
+      <h1>Supply and Property Management</h1>
+      <hr />
+      <span>WEB - BASED INVENTORY AND PROCUREMENT MANAGEMENT SYSTEM</span>
     </div>
   </header>
 
-  <main class="access-main">
-    <div class="access-container">
-      <div class="access-content">
-        <div class="login-badge">
-          <span>One CNSC, One Goal</span>
-        </div>
+  <main class="wrap">
+    <form class="card" onsubmit="handleLogin(event)">
+      <h2>Sign in</h2>
+      <div class="sub">Sign in with open account</div>
 
-        <form class="login-card" onsubmit="handleLogin(event)">
-          <div class="login-header">
-            <h2>Welcome Back</h2>
-            <div class="login-subtitle">Sign in to access your account</div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="email">Email Address</label>
-            <input class="form-input" id="email" name="email" type="email" placeholder="cnsc.spmo@edu.ph" required />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Security PIN</label>
-            <div class="otp-container" id="otp">
-              <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 1">
-              <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 2">
-              <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 3">
-              <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 4">
-              <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 5">
-              <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 6">
-            </div>
-          </div>
-
-          <div class="form-extras">
-            <a href="#" class="forgot-link">Forgot your PIN?</a>
-          </div>
-
-          <input type="hidden" name="credentials" id="hiddenPin" />
-
-          <button class="login-btn" type="submit">
-            <span class="btn-text">Sign In</span>
-            <span class="btn-icon">→</span>
-          </button>
-        </form>
+      <div class="field">
+        <label class="label" for="email">Enter your E-mail</label>
+        <input class="input" id="email" name="email" type="email" placeholder="cnsc.spmo@edu.ph" required />
       </div>
-    </div>
+
+      <div class="field">
+        <label class="label">Enter your Credentials</label>
+        <div class="otp" id="otp">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 1">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 2">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 3">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 4">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 5">
+          <input type="password" inputmode="numeric" maxlength="1" aria-label="Digit 6">
+        </div>
+      </div>
+
+      <div class="extras"><a href="#">Forgot password ?</a></div>
+
+      <input type="hidden" name="credentials" id="hiddenPin" />
+
+      <button class="btn" type="submit">Sign in</button>
+    </form>
   </main>
 
   <script>
@@ -85,8 +66,8 @@
       } catch (e) { alert(message); }
     }
 
-    // OTP / PIN behavior (Updated for new class names)
-    const otpInputs = Array.from(document.querySelectorAll('.otp-container input'));
+    // OTP / PIN behavior (No changes needed here for the fix)
+    const otpInputs = Array.from(document.querySelectorAll('#otp input'));
     const hiddenPin = document.getElementById('hiddenPin');
     const emailInput = document.getElementById('email');
 
