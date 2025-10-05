@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
+
 <body>
     <div class="app" id="app">
         <!-- Sidebar -->
@@ -16,9 +18,9 @@
             <div class="sidebar-header">
                 <div class="logo-container">
                     <div class="logo-icon">
-                       <img src="cnscrefine.png" alt="Logo" class="icon-logo" />
+                        <img src="cnscrefine.png" alt="Logo" class="icon-logo" />
                     </div>
-                                        <div class="logo-text">
+                    <div class="logo-text">
                         <h1>CNSC Supply</h1>
                         <p>Management</p>
                     </div>
@@ -200,7 +202,7 @@
         </main>
     </div>
 
-   <!-- Purchase Order Modal -->
+    <!-- Purchase Order Modal -->
     <div class="modal-overlay" id="purchase-order-modal">
         <div class="modal-content">
             <!-- Modal content will be dynamically loaded here -->
@@ -236,7 +238,27 @@
         <div class="modal-content"></div>
     </div>
 
+    <!-- Confirmation Modal (used across the app to replace native confirm) -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+            <div class="modal-header">
+                <h2 class="modal-title" id="confirm-title">Confirm</h2>
+                <button class="modal-close" onclick="closeConfirm(false)" aria-label="Close confirmation dialog">
+                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">Are you sure?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="confirm-cancel">Cancel</button>
+                <button class="btn btn-primary" id="confirm-ok">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript -->
     <script src="dashboard.js"></script>
 </body>
+
 </html>

@@ -49,6 +49,23 @@
   </main>
 
   <script>
+    // Lightweight showAlert fallback for standalone pages
+    function showAlert(message, type = 'info', duration = 3500) {
+      try {
+        let container = document.getElementById('ui-alert-container');
+        if (!container) {
+          container = document.createElement('div');
+          container.id = 'ui-alert-container';
+          document.body.appendChild(container);
+        }
+        const el = document.createElement('div');
+        el.className = `ui-alert ui-alert-${type}`;
+        el.textContent = message;
+        container.appendChild(el);
+        setTimeout(() => { el.remove(); }, duration);
+      } catch (e) { alert(message); }
+    }
+
     // OTP / PIN behavior (No changes needed here for the fix)
     const otpInputs = Array.from(document.querySelectorAll('#otp input'));
     const hiddenPin = document.getElementById('hiddenPin');
@@ -87,7 +104,9 @@
 
       // Basic validation: Check if all 6 PIN digits are entered
       if (userPin.length !== 6) {
-        alert("Please enter all 6 digits of your credentials.");
+        // Use UI alert if available, otherwise fallback to native alert
+        if (typeof showAlert === 'function') showAlert("Please enter all 6 digits of your credentials.", 'error');
+        else alert("Please enter all 6 digits of your credentials.");
         otpInputs[0].focus(); // Focus on the first PIN box
         return; // Stop the login process
       }

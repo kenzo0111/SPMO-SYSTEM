@@ -150,6 +150,101 @@ function getBadgeClass(status, type = 'status') {
     return badgeClasses[type][status] || 'badge gray';
 }
 
+// UI Alert / Toast helper
+function showAlert(message, type = 'info', duration = 4000) {
+    try {
+        let container = document.getElementById('ui-alert-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'ui-alert-container';
+            document.body.appendChild(container);
+        }
+
+        const alertEl = document.createElement('div');
+        alertEl.className = `ui-alert ui-alert-${type}`;
+        alertEl.setAttribute('role', 'status');
+
+        const text = document.createElement('div');
+        text.className = 'ui-alert-text';
+        text.textContent = message;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'ui-alert-close';
+        closeBtn.innerHTML = '✕';
+        closeBtn.onclick = () => {
+            alertEl.classList.add('ui-alert-hide');
+            setTimeout(() => alertEl.remove(), 300);
+        };
+
+        alertEl.appendChild(text);
+        alertEl.appendChild(closeBtn);
+        container.appendChild(alertEl);
+
+        // Auto-remove after duration
+        setTimeout(() => {
+            if (!alertEl) return;
+            alertEl.classList.add('ui-alert-hide');
+            setTimeout(() => alertEl.remove(), 300);
+        }, duration);
+    } catch (e) {
+        // Fallback to native alert if something goes wrong
+        try { alert(message); } catch (err) { console.log('Alert:', message); }
+    }
+}
+
+// Confirmation modal helper that returns a Promise<boolean>
+function showConfirm(message, title = 'Confirm') {
+    return new Promise((resolve) => {
+        let modal = document.getElementById('confirm-modal');
+        if (!modal) {
+            // fallback to native confirm if modal markup isn't present
+            try { resolve(confirm(message)); } catch (e) { resolve(false); }
+            return;
+        }
+
+        const msgEl = modal.querySelector('#confirm-message');
+        const titleEl = modal.querySelector('#confirm-title');
+        const okBtn = modal.querySelector('#confirm-ok');
+        const cancelBtn = modal.querySelector('#confirm-cancel');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+
+        function cleanup(result) {
+            modal.classList.remove('active');
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+            document.removeEventListener('keydown', onKeyDown);
+            resolve(result);
+        }
+
+        function onOk() { cleanup(true); }
+        function onCancel() { cleanup(false); }
+
+        function onKeyDown(e) {
+            if (e.key === 'Escape') { cleanup(false); }
+            if (e.key === 'Enter') { cleanup(true); }
+        }
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        document.addEventListener('keydown', onKeyDown);
+
+        modal.classList.add('active');
+    });
+}
+
+// closeConfirm used by close button in markup
+function closeConfirm(value = false) {
+    const modal = document.getElementById('confirm-modal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    // trigger no-op: showConfirm's event listeners will resolve when removed
+}
+
+window.showConfirm = showConfirm;
+window.closeConfirm = closeConfirm;
+
 // Navigation Functions
 function initializeNavigation() {
     // Handle nav item clicks
@@ -385,7 +480,7 @@ function generateDashboardPage() {
                     <div class="metric-content">
                         <div class="metric-info">
                             <h3>Pending Requests</h3>
-                            <p class="value">18</p>
+                            <p class="value">${(AppState.newRequests || []).filter(r => ['submitted', 'pending', 'under-review', 'awaiting-approval'].includes(r.status)).length}</p>
                             <p class="change">Awaiting approval</p>
                         </div>
                         <div class="metric-icon yellow">
@@ -1035,6 +1130,10 @@ function generateNewRequestPage() {
 
 
 function generatePendingApprovalPage() {
+    // Build the pending list from newRequests (prefer newRequests as source of truth)
+    const pendingStatuses = ['submitted', 'pending', 'under-review', 'awaiting-approval'];
+    const pendingList = (AppState.newRequests || []).filter(r => pendingStatuses.includes(r.status));
+
     return `
         <section class="page-header">
             <div class="page-header-content">
@@ -1043,7 +1142,7 @@ function generatePendingApprovalPage() {
                     <p class="page-subtitle">Review and approve purchase requests</p>
                 </header>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="badge yellow">${MockData.pendingRequests.length} Pending Requests</span>
+                    <span class="badge yellow">${pendingList.length} Pending Requests</span>
                 </div>
             </div>
         </section>
@@ -1097,31 +1196,31 @@ function generatePendingApprovalPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${MockData.pendingRequests.length > 0
-            ? MockData.pendingRequests.map(request => `
+                        ${pendingList.length > 0
+            ? pendingList.map(request => `
                                 <tr>
                                     <td>${request.id}</td>
                                     <td>
                                         <button class="link" onclick="openPurchaseOrderModal('view', '${request.id}')"
                                             style="background: none; border: none; color: #dc2626; text-decoration: underline; cursor: pointer;">
-                                            ${request.poNumber}
+                                            ${request.poNumber || '-'}
                                         </button>
                                     </td>
-                                    <td>${request.supplier}</td>
-                                    <td>${formatCurrency(request.totalAmount)}</td>
+                                    <td>${request.supplier || '-'}</td>
+                                    <td>${formatCurrency(request.totalAmount || 0)}</td>
                                     <td>
-                                        <span class="${getBadgeClass(request.priority, 'priority')}">
-                                            ${request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
+                                        <span class="${getBadgeClass(request.priority || 'low', 'priority')}">
+                                            ${request.priority ? (request.priority.charAt(0).toUpperCase() + request.priority.slice(1)) : 'Low'}
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="${getBadgeClass(request.status)}">
-                                            ${request.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                        <span class="${getBadgeClass(request.status || 'pending')}">
+                                            ${(request.status || 'pending').replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                         </span>
                                     </td>
-                                    <td>${request.requestedBy}</td>
-                                    <td>${request.department}</td>
-                                    <td>${request.submittedDate}</td>
+                                    <td>${request.requestedBy || '-'}</td>
+                                    <td>${request.department || '-'}</td>
+                                    <td>${request.submittedDate || request.requestDate || '-'}</td>
                                     <td>
                                         <div class="table-actions">
                                             <button class="btn-outline-blue" onclick="openPurchaseOrderModal('view', '${request.id}')" title="View Details">
@@ -1167,8 +1266,8 @@ function generateCompletedRequestPage() {
                     <p class="page-subtitle">View completed and archived purchase requests</p>
                 </header>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="badge green">${MockData.completedRequests.filter(r => r.status === 'completed').length} Completed</span>
-                    <span class="badge blue">${MockData.completedRequests.filter(r => r.status === 'delivered').length} Delivered</span>
+                    <span class="badge green">${(AppState.completedRequests || []).filter(r => r.status === 'completed').length} Completed</span>
+                    <span class="badge blue">${(AppState.completedRequests || []).filter(r => r.status === 'delivered').length} Delivered</span>
                 </div>
             </div>
         </section>
@@ -1222,8 +1321,8 @@ function generateCompletedRequestPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${MockData.completedRequests.length > 0
-            ? MockData.completedRequests.map(request => `
+                        ${(AppState.completedRequests || []).length > 0
+            ? (AppState.completedRequests || []).map(request => `
                                 <tr>
                                     <td>${request.id}</td>
                                     <td>
@@ -1280,25 +1379,25 @@ function generateCompletedRequestPage() {
                     <div class="text-center">
                         <p style="font-size: 14px; color: #6b7280; margin: 0;">Total Requests</p>
                         <p style="font-size: 18px; font-weight: 600; color: #111827; margin: 0;">
-                            ${MockData.completedRequests.length}
+                            ${(AppState.completedRequests || []).length}
                         </p>
                     </div>
                     <div class="text-center">
                         <p style="font-size: 14px; color: #6b7280; margin: 0;">Total Value</p>
                         <p style="font-size: 18px; font-weight: 600; color: #111827; margin: 0;">
-                            ${formatCurrency(MockData.completedRequests.reduce((sum, req) => sum + req.totalAmount, 0))}
+                            ${formatCurrency((AppState.completedRequests || []).reduce((sum, req) => sum + (req.totalAmount || 0), 0))}
                         </p>
                     </div>
                     <div class="text-center">
                         <p style="font-size: 14px; color: #6b7280; margin: 0;">Completed</p>
                         <p style="font-size: 18px; font-weight: 600; color: #16a34a; margin: 0;">
-                            ${MockData.completedRequests.filter(r => r.status === 'completed').length}
+                            ${(AppState.completedRequests || []).filter(r => r.status === 'completed').length}
                         </p>
                     </div>
                     <div class="text-center">
                         <p style="font-size: 14px; color: #6b7280; margin: 0;">Paid Orders</p>
                         <p style="font-size: 18px; font-weight: 600; color: #2563eb; margin: 0;">
-                            ${MockData.completedRequests.filter(r => r.paymentStatus === 'paid').length}
+                            ${(AppState.completedRequests || []).filter(r => r.paymentStatus === 'paid').length}
                         </p>
                     </div>
                 </aside>
@@ -1744,16 +1843,9 @@ function updateStockSummary() {
     `;
 }
 
-function showStockLookup() {
-    document.getElementById('stock-lookup-popup').classList.remove('hidden');
-}
-
-function hideStockLookup() {
-    document.getElementById('stock-lookup-popup').classList.add('hidden');
-}
-
-function deleteRequest(requestId) {
-    if (!confirm("Are you sure you want to delete this request?")) return;
+async function deleteRequest(requestId) {
+    const ok = await showConfirm("Are you sure you want to delete this request?", 'Delete Request');
+    if (!ok) return;
 
     // Remove from newRequests
     AppState.newRequests = AppState.newRequests.filter(r => r.id !== requestId);
@@ -2032,34 +2124,98 @@ function updateProductsTable() {
 // Action functions
 function approveRequest(requestId) {
     console.log('Approving request:', requestId);
-    alert(`Request ${requestId} approved successfully!`);
-    loadPageContent(AppState.currentPage);
+
+    // Find in newRequests first
+    const idx = AppState.newRequests.findIndex(r => r.id === requestId);
+    let request = null;
+    if (idx !== -1) {
+        request = AppState.newRequests[idx];
+        // mark approved
+        request.status = 'approved';
+        request.approvedBy = 'Approver User';
+        request.approvedDate = new Date().toISOString().split('T')[0];
+
+        // Move to completedRequests
+        AppState.completedRequests.push(request);
+        AppState.newRequests.splice(idx, 1);
+    } else {
+        // try pendingRequests fallback
+        const pidx = AppState.pendingRequests.findIndex(r => r.id === requestId);
+        if (pidx !== -1) {
+            request = AppState.pendingRequests[pidx];
+            request.status = 'approved';
+            request.approvedBy = 'Approver User';
+            request.approvedDate = new Date().toISOString().split('T')[0];
+            AppState.completedRequests.push(request);
+            AppState.pendingRequests.splice(pidx, 1);
+        }
+    }
+
+    if (request) {
+        showAlert(`Request ${requestId} approved successfully!`, 'success');
+    } else {
+        showAlert(`Request ${requestId} not found.`, 'error');
+    }
+
+    // Refresh Pending Approval view
+    loadPageContent('pending-approval');
 }
 
-function rejectRequest(requestId) {
+async function rejectRequest(requestId) {
     console.log('Rejecting request:', requestId);
-    if (confirm(`Are you sure you want to reject request ${requestId}?`)) {
-        alert(`Request ${requestId} rejected.`);
-        loadPageContent(AppState.currentPage);
+    const ok = await showConfirm(`Are you sure you want to reject request ${requestId}?`, 'Reject Request');
+    if (!ok) return;
+
+    // Try to find and mark rejected
+    const idx = AppState.newRequests.findIndex(r => r.id === requestId);
+    let request = null;
+    if (idx !== -1) {
+        request = AppState.newRequests[idx];
+        request.status = 'rejected';
+        request.rejectedBy = 'Approver User';
+        request.rejectedDate = new Date().toISOString().split('T')[0];
+
+        // Move to completedRequests for record keeping
+        AppState.completedRequests.push(request);
+        AppState.newRequests.splice(idx, 1);
+    } else {
+        const pidx = AppState.pendingRequests.findIndex(r => r.id === requestId);
+        if (pidx !== -1) {
+            request = AppState.pendingRequests[pidx];
+            request.status = 'rejected';
+            request.rejectedBy = 'Approver User';
+            request.rejectedDate = new Date().toISOString().split('T')[0];
+            AppState.completedRequests.push(request);
+            AppState.pendingRequests.splice(pidx, 1);
+        }
     }
+
+    if (request) {
+        showAlert(`Request ${requestId} rejected.`, 'warning');
+    } else {
+        showAlert(`Request ${requestId} not found.`, 'error');
+    }
+
+    loadPageContent('pending-approval');
 }
 
 function downloadPO(requestId) {
     console.log('Downloading PO for request:', requestId);
-    alert(`Downloading PO for request ${requestId}...`);
+    showAlert(`Downloading PO for request ${requestId}...`, 'info');
 }
 
-function archiveRequest(requestId) {
+async function archiveRequest(requestId) {
     console.log('Archiving request:', requestId);
-    if (confirm(`Are you sure you want to archive request ${requestId}?`)) {
-        alert(`Request ${requestId} archived.`);
-        loadPageContent(AppState.currentPage);
-    }
+    const ok = await showConfirm(`Are you sure you want to archive request ${requestId}?`, 'Archive Request');
+    if (!ok) return;
+
+    showAlert(`Request ${requestId} archived.`, 'success');
+    loadPageContent(AppState.currentPage);
 }
 
 function openModal(type) {
     console.log('Opening modal for:', type);
-    alert(`${type} modal not yet implemented`);
+    showAlert(`${type} modal not yet implemented`, 'info');
 }
 
 // Modal close on outside click
@@ -2079,8 +2235,6 @@ window.closePurchaseOrderModal = closePurchaseOrderModal;
 window.addPOItem = addPOItem;
 window.removePOItem = removePOItem;
 window.updatePOItem = updatePOItem;
-window.showStockLookup = showStockLookup;
-window.hideStockLookup = hideStockLookup;
 window.savePurchaseOrder = savePurchaseOrder;
 window.approveRequest = approveRequest;
 window.rejectRequest = rejectRequest;
@@ -2245,11 +2399,11 @@ function saveUser(userId) {
 /**
  * REVISED: Delete member using the new table refresh function.
  */
-function deleteMember(memberId) {
-    if (confirm("Are you sure you want to delete this member?")) {
-        window.MockData.users = window.MockData.users.filter(u => u.id !== memberId);
-        refreshRolesTable(); // Refresh the table to reflect deletion
-    }
+async function deleteMember(memberId) {
+    const ok = await showConfirm("Are you sure you want to delete this member?", 'Delete Member');
+    if (!ok) return;
+    window.MockData.users = window.MockData.users.filter(u => u.id !== memberId);
+    refreshRolesTable(); // Refresh the table to reflect deletion
 }
 
 
@@ -2469,7 +2623,7 @@ function saveProduct(productId) {
     const quantity = parseInt(modal.querySelectorAll('input[type="number"]')[1].value) || 0;
     const date = modal.querySelector('input[type="date"]').value || new Date().toISOString().slice(0, 10);
 
-    if (!name) { alert('Product name is required'); return; }
+    if (!name) { showAlert('Product name is required', 'error'); return; }
 
     const totalValue = unitCost * quantity;
 
@@ -2499,8 +2653,9 @@ function saveProduct(productId) {
     loadPageContent('products'); // refresh list
 }
 
-function deleteProduct(productId) {
-    if (!confirm('Delete this product?')) return;
+async function deleteProduct(productId) {
+    const ok = await showConfirm('Delete this product?', 'Delete Product');
+    if (!ok) return;
     MockData.products = MockData.products.filter(p => p.id !== productId);
     loadPageContent('products');
 }
@@ -2675,7 +2830,7 @@ function saveCategory(categoryId) {
 
     // Basic validation
     if (!name || name.trim().length < 2) {
-        alert('Please enter a valid category name (at least 2 characters).');
+        showAlert('Please enter a valid category name (at least 2 characters).', 'error');
         return;
     }
 
@@ -2702,8 +2857,9 @@ function saveCategory(categoryId) {
     loadPageContent('categories'); // refresh table/page
 }
 
-function deleteCategory(categoryId) {
-    if (!confirm('Delete this category? This action cannot be undone.')) return;
+async function deleteCategory(categoryId) {
+    const ok = await showConfirm('Delete this category? This action cannot be undone.', 'Delete Category');
+    if (!ok) return;
     MockData.categories = MockData.categories.filter(c => c.id !== categoryId);
     loadPageContent('categories');
 }
@@ -2889,11 +3045,11 @@ function saveStockIn(stockId) {
     loadPageContent('stock-in'); // refresh stock-in page
 }
 
-function deleteStockIn(id) {
-    if (confirm('Are you sure you want to delete this stock in record?')) {
-        stockInData = stockInData.filter(r => r.id !== id);
-        loadPageContent('stock-in');
-    }
+async function deleteStockIn(id) {
+    const ok = await showConfirm('Are you sure you want to delete this stock in record?', 'Delete Stock In');
+    if (!ok) return;
+    stockInData = stockInData.filter(r => r.id !== id);
+    loadPageContent('stock-in');
 }
 
 function renderStockInRows() {
@@ -3192,21 +3348,22 @@ function renderStockOutRow(s) {
     `;
 }
 
-function deleteStockOut(id) {
-    if (!confirm('Delete this stock-out record?')) return;
+async function deleteStockOut(id) {
+    const ok = await showConfirm('Delete this stock-out record?', 'Delete Stock Out');
+    if (!ok) return;
     stockOutData = stockOutData.filter(s => s.id !== id);
     loadPageContent('stock-out');
 }
 
 function viewStockOutDetails(id) {
     const rec = stockOutData.find(s => s.id === id);
-    if (!rec) return alert('Record not found');
+    if (!rec) { showAlert('Record not found', 'error'); return; }
     openStockOutModal('view', rec);
 }
 
 function editStockOut(id) {
     const rec = stockOutData.find(s => s.id === id);
-    if (!rec) return alert('Record not found');
+    if (!rec) { showAlert('Record not found', 'error'); return; }
     openStockOutModal('edit', rec);
 }
 

@@ -1280,6 +1280,58 @@ textarea:focus {
     gap: 20px;
 }
 
+/* UI Alert / Toasts */
+#ui-alert-container {
+    position: fixed;
+    right: 20px;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 9999;
+}
+
+.ui-alert {
+    min-width: 240px;
+    max-width: 420px;
+    background: #fff;
+    color: #111827;
+    border-radius: 8px;
+    padding: 12px 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-left: 4px solid #2563eb;
+    opacity: 1;
+    transform: translateY(0);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.ui-alert-hide { opacity: 0; transform: translateY(-8px); }
+
+.ui-alert-text { flex: 1; font-size: 14px; }
+.ui-alert-close { background: transparent; border: none; cursor: pointer; color: #6b7280; font-size: 14px; }
+
+.ui-alert-info { border-left-color: #2563eb; }
+.ui-alert-success { border-left-color: #16a34a; }
+.ui-alert-warning { border-left-color: #ea580c; }
+.ui-alert-error { border-left-color: #dc2626; }
+
+/* Confirmation modal specific adjustments (uses existing modal classes) */
+#confirm-modal .modal-content {
+    max-width: 480px;
+    padding: 0;
+}
+
+#confirm-modal .modal-header { text-align: left; padding: 16px 24px; }
+#confirm-modal .modal-body { padding: 16px 24px; }
+#confirm-modal .modal-footer { padding: 12px 24px; }
+
+#confirm-modal .modal-title { margin: 0; font-size: 18px; }
+#confirm-modal #confirm-message { margin: 8px 0 0; font-size: 15px; color: #374151; }
+
 /* Cards Row */
 .status-cards {
     display: grid;
