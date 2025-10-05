@@ -131,6 +131,13 @@ dialog.login-dialog::backdrop{
   backdrop-filter: blur(4px);
 }
 
+/* Ensure alert dialog backdrop works the same */
+dialog#alertDialog::backdrop{
+  background: rgba(3, 9, 14, 0.55);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
 /* entrance animation */
 @keyframes dialog-pop-in {
   from{opacity:0; transform: translate(-50%, -48%) scale(.98)}
@@ -177,6 +184,14 @@ dialog.login-dialog p#dialogText{
   font-size: 0.95rem;
 }
 
+/* Alert dialog text styling */
+dialog.login-dialog p#alertText{
+  margin: 0.25rem 0 0.85rem 0;
+  color: var(--dialog-muted);
+  line-height: 1.35;
+  font-size: 0.95rem;
+}
+
 dialog.login-dialog menu{
   display:flex; gap:0.5rem; justify-content:flex-end;
   margin-top:0.35rem; padding-top:0.65rem; border-top:1px solid rgba(8,12,16,0.05);
@@ -208,8 +223,29 @@ dialog.login-dialog button[type="submit"][value="confirm"]{
 
 dialog.login-dialog button[type="submit"][value="confirm"]:hover{ transform: translateY(-2px); box-shadow: 0 10px 26px rgba(198,40,40,0.22) }
 
+/* Alert dialog OK button styling */
+dialog.login-dialog button[type="submit"][value="ok"]{
+  background: linear-gradient(180deg,var(--dialog-accent), var(--dialog-accent-dark));
+  color: #fff;
+  border: none;
+}
+
+dialog.login-dialog button[type="submit"][value="ok"]:hover{ 
+  transform: translateY(-2px); 
+  box-shadow: 0 10px 26px rgba(198,40,40,0.22);
+}
+
 dialog.login-dialog button:active{ transform: translateY(1px) }
 dialog.login-dialog button:focus{ outline: 3px solid rgba(198,40,40,0.14); }
+
+/* Alert dialog specific styling */
+dialog#alertDialog menu{
+  justify-content: center; /* center the single OK button */
+}
+
+dialog#alertDialog h3::before{
+  background: linear-gradient(180deg, #ff9800, #e65100); /* warning orange instead of red */
+}
 
 /* smaller screens tweak */
 @media (max-width:420px){

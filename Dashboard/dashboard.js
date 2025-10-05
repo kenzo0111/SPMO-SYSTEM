@@ -2366,6 +2366,7 @@ function addPOItem() {
         amount: 0
     };
     AppState.purchaseOrderItems.push(newItem);
+    showAlert('New item added to purchase order!', 'info');
     renderPOItems();
 }
 
@@ -2622,6 +2623,13 @@ function savePurchaseOrder(existingId = null) {
             items: [...AppState.purchaseOrderItems]
         };
         AppState.newRequests.push(newRequest);
+    }
+
+    // Show success alert
+    if (existingId) {
+        showAlert('Purchase order updated successfully!', 'success');
+    } else {
+        showAlert(`New purchase order ${poNumber} created successfully!`, 'success');
     }
 
     // Refresh UI and close modal
@@ -3101,6 +3109,7 @@ function saveUser(userId) {
         };
 
         window.MockData.users.push(newUser);
+        showAlert(`New user ${userData.name} added successfully!`, 'success');
     } else if (userId === 'current') {
         // Update AppState.currentUser
         AppState.currentUser = {
@@ -3119,11 +3128,13 @@ function saveUser(userId) {
         // Update avatar only (header no longer shows name/role)
         const avatarEl = document.getElementById('header-user-avatar');
         if (avatarEl) avatarEl.textContent = AppState.currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('');
+        showAlert('Profile updated successfully!', 'success');
     } else {
         // --- UPDATE EXISTING USER (EDIT) ---
         const existing = window.MockData.users.find(u => u.id === userId);
         if (existing) {
             Object.assign(existing, userData);
+            showAlert(`User ${userData.name} updated successfully!`, 'success');
         }
     }
 
@@ -3435,6 +3446,7 @@ function saveProduct(productId) {
 
         const newProduct = { id: newId, name, description, quantity, unitCost, totalValue, date, type: category };
         MockData.products.push(newProduct);
+        showAlert(`Product "${name}" (${newId}) added successfully!`, 'success');
     } else {
         const existing = MockData.products.find(p => p.id === productId);
         if (existing) {
@@ -3445,6 +3457,7 @@ function saveProduct(productId) {
             existing.totalValue = totalValue;
             existing.date = date;
             existing.type = category;
+            showAlert(`Product "${name}" updated successfully!`, 'success');
         }
     }
 
@@ -3643,12 +3656,14 @@ function saveCategory(categoryId) {
             description: description.trim()
         };
         MockData.categories.push(newCategory);
+        showAlert(`Category "${name.trim()}" added successfully!`, 'success');
     } else {
         // Update existing
         const existing = MockData.categories.find(c => c.id === categoryId);
         if (existing) {
             existing.name = name.trim();
             existing.description = description.trim();
+            showAlert(`Category "${name.trim()}" updated successfully!`, 'success');
         }
     }
 
@@ -3832,10 +3847,12 @@ function saveStockIn(stockId) {
         if (index !== -1) {
             newRecord.transactionId = stockInData[index].transactionId;
             stockInData[index] = newRecord;
+            showAlert(`Stock In record ${newRecord.transactionId} updated successfully!`, 'success');
         }
     } else {
         newRecord.transactionId = generateTransactionId();
         stockInData.push(newRecord);
+        showAlert(`New Stock In record ${newRecord.transactionId} added successfully!`, 'success');
     }
 
     console.log("Saving stock-in record:", newRecord);
@@ -4078,11 +4095,14 @@ function saveStockOut(stockId) {
         const idx = stockOutData.findIndex(s => s.id === stockId);
         if (idx !== -1) {
             stockOutData[idx] = record;
+            showAlert(`Stock Out record ${record.issueId} updated successfully!`, 'success');
         } else {
             stockOutData.push(record);
+            showAlert(`New Stock Out record ${record.issueId} added successfully!`, 'success');
         }
     } else {
         stockOutData.push(record);
+        showAlert(`New Stock Out record ${record.issueId} added successfully!`, 'success');
     }
 
     // Update DOM if Stock Out table is present to avoid full page reload
