@@ -2928,13 +2928,30 @@ function openStockInModal(mode = 'create', stockId = null) {
     const modalContent = modal.querySelector('.modal-content');
 
     let stockData = null;
-    if (stockId) {
-        stockData = MockData.stockIn.find(r => r.id === stockId);
+    if (stockId && mode === 'edit') {
+        stockData = stockInData.find(r => r.id === stockId);
     }
 
     modalContent.innerHTML = generateStockInModal(mode, stockData);
     modal.classList.add('active');
     lucide.createIcons();
+
+    const isReadOnly = mode === 'view';
+    if (!isReadOnly) {
+        const qtyInput = document.getElementById('qty-input');
+        const ucInput = document.getElementById('uc-input');
+        const totalInput = document.getElementById('total-input');
+
+        function updateTotal() {
+            const q = parseFloat(qtyInput.value) || 0;
+            const u = parseFloat(ucInput.value) || 0;
+            totalInput.value = formatCurrency(q * u);
+        }
+
+        qtyInput.addEventListener('input', updateTotal);
+        ucInput.addEventListener('input', updateTotal);
+        updateTotal();
+    }
 }
 
 function closeStockInModal() {
@@ -2945,6 +2962,9 @@ function closeStockInModal() {
 function generateStockInModal(mode = 'create', stockData = null) {
     const title = mode === 'create' ? 'STOCK IN' : 'STOCK IN DETAILS';
     const isReadOnly = mode === 'view';
+    const dateValue = stockData?.date || (mode === 'create' ? new Date().toISOString().split('T')[0] : '');
+    const unitCostValue = (stockData?.unitCost || 0).toFixed(2);
+    const totalValue = stockData ? formatCurrency(stockData.totalCost || 0) : formatCurrency(0);
 
     return `
         <div class="modal-header">
@@ -2958,13 +2978,13 @@ function generateStockInModal(mode = 'create', stockData = null) {
             <div class="grid-2">
                 <div class="form-group">
                     <label class="form-label">Date</label>
-                    <input type="date" class="form-input"
-                           value="${stockData?.date || ''}"
+                    <input type="date" class="form-input" id="date-input"
+                           value="${dateValue}"
                            ${isReadOnly ? 'readonly' : ''}>
                 </div>
                 <div class="form-group">
                     <label class="form-label">SKU</label>
-                    <input type="text" class="form-input"
+                    <input type="text" class="form-input" id="sku-input"
                            value="${stockData?.sku || ''}"
                            placeholder="E001"
                            ${isReadOnly ? 'readonly' : ''}>
@@ -2973,7 +2993,7 @@ function generateStockInModal(mode = 'create', stockData = null) {
 
             <div class="form-group">
                 <label class="form-label">Product Name</label>
-                <input type="text" class="form-input"
+                <input type="text" class="form-input" id="product-input"
                        value="${stockData?.productName || ''}"
                        placeholder="Enter product name"
                        ${isReadOnly ? 'readonly' : ''}>
@@ -2982,7 +3002,7 @@ function generateStockInModal(mode = 'create', stockData = null) {
             <div class="grid-2">
                 <div class="form-group">
                     <label class="form-label">Quantity</label>
-                    <input type="number" class="form-input"
+                    <input type="number" class="form-input" id="qty-input"
                            min="1"
                            value="${stockData?.quantity || ''}"
                            placeholder="Enter quantity"
@@ -2990,24 +3010,24 @@ function generateStockInModal(mode = 'create', stockData = null) {
                 </div>
                 <div class="form-group">
                     <label class="form-label">Unit Cost</label>
-                    <input type="number" class="form-input"
+                    <input type="number" class="form-input" id="uc-input"
                            step="0.01" min="0"
-                           value="${stockData?.unitCost || ''}"
-                           placeholder="₱0.00"
+                           value="${unitCostValue}"
+                           placeholder="0.00"
                            ${isReadOnly ? 'readonly' : ''}>
                 </div>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Total Cost</label>
-                <input type="text" class="form-input"
-                       value="${stockData ? formatCurrency(stockData.totalCost || 0) : '₱0.00'}"
+                <input type="text" class="form-input" id="total-input"
+                       value="${totalValue}"
                        readonly>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Supplier</label>
-                <input type="text" class="form-input"
+                <input type="text" class="form-input" id="supplier-input"
                        value="${stockData?.supplier || ''}"
                        placeholder="Enter supplier name"
                        ${isReadOnly ? 'readonly' : ''}>
@@ -3015,7 +3035,7 @@ function generateStockInModal(mode = 'create', stockData = null) {
 
             <div class="form-group">
                 <label class="form-label">Received By</label>
-                <input type="text" class="form-input"
+                <input type="text" class="form-input" id="receivedby-input"
                        value="${stockData?.receivedBy || ''}"
                        placeholder="Enter receiver name"
                        ${isReadOnly ? 'readonly' : ''}>
@@ -3039,23 +3059,60 @@ function generateUniqueId() {
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
 }
 
+function saveStockIn(stockId) {
+    const date = document.getElementById('date-input').value;
+    const sku = document.getElementById('sku-input').value;
+    const productName = document.getElementById('product-input').value;
+    const quantity = parseInt(document.getElementById('qty-input').value) || 0;
+    const unitCost = parseFloat(document.getElementById('uc-input').value) || 0;
+    const totalCost = quantity * unitCost;
+    const supplier = document.getElementById('supplier-input').value;
+    const receivedBy = document.getElementById('receivedby-input').value;
 
-    function saveStockIn(stockId) {
-        const modal = document.getElementById('stockin-modal');
-        const inputs = modal.querySelectorAll('.form-input');
+    const newRecord = {
+        id: stockId || generateUniqueId(),
+        date,
+        productName,
+        sku,
+        quantity,
+        unitCost,
+        totalCost,
+        supplier,
+        receivedBy
+    };
 
-        const values = {};
-        inputs.forEach(input => {
-            const label = input.previousElementSibling?.innerText || '';
-            values[label] = input.value;
-        });
-
-        console.log("Saving stock-in record:", values);
-
-        closeStockInModal();
-        loadPageContent('stockin'); // refresh stock-in page
+    if (stockId) {
+        const index = stockInData.findIndex(r => r.id === stockId);
+        if (index !== -1) {
+            newRecord.transactionId = stockInData[index].transactionId;
+            stockInData[index] = newRecord;
+        }
+    } else {
+        newRecord.transactionId = generateTransactionId();
+        stockInData.push(newRecord);
     }
 
+    console.log("Saving stock-in record:", newRecord);
+
+    closeStockInModal();
+    loadPageContent('stockin'); // refresh stock-in page
+}
+
+function deleteStockIn(id) {
+    if (confirm('Are you sure you want to delete this stock in record?')) {
+        stockInData = stockInData.filter(r => r.id !== id);
+        loadPageContent('stockin');
+    }
+}
+
+function generateTransactionId() {
+    const year = new Date().getFullYear();
+    const existingNums = stockInData
+        .filter(r => r.transactionId.startsWith(`SI-${year}-`))
+        .map(r => parseInt(r.transactionId.split('-')[2]) || 0);
+    const nextNum = Math.max(...existingNums, 0) + 1;
+    return `SI-${year}-${nextNum.toString().padStart(3, '0')}`;
+}
 
 // -----------------------------//
 // Stock Out Modal and Functions //
