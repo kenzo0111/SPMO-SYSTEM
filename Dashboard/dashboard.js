@@ -3040,21 +3040,21 @@ function generateUniqueId() {
 }
 
 
-function saveStockIn(stockId) {
-    const modal = document.getElementById('stockin-modal');
-    const inputs = modal.querySelectorAll('.form-input');
+    function saveStockIn(stockId) {
+        const modal = document.getElementById('stockin-modal');
+        const inputs = modal.querySelectorAll('.form-input');
 
-    const values = {};
-    inputs.forEach(input => {
-        const label = input.previousElementSibling?.innerText || '';
-        values[label] = input.value;
-    });
+        const values = {};
+        inputs.forEach(input => {
+            const label = input.previousElementSibling?.innerText || '';
+            values[label] = input.value;
+        });
 
-    console.log("Saving stock-in record:", values);
+        console.log("Saving stock-in record:", values);
 
-    closeStockInModal();
-    loadPageContent('stockin'); // refresh stock-in page
-}
+        closeStockInModal();
+        loadPageContent('stockin'); // refresh stock-in page
+    }
 
 
 // -----------------------------//
