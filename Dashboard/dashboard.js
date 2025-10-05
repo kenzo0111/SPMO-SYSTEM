@@ -105,6 +105,13 @@ const MockData = {
     ]
 };
 
+// In-memory Stock In records (rendered in Stock In page)
+let stockInData = [
+    { id: generateUniqueId(), transactionId: 'SI-2025-001', date: '2025-01-15', productName: 'Bond Paper A4', sku: 'E001', quantity: 20, unitCost: 250.00, totalCost: 5000.00, supplier: 'ABC Office Supplies', receivedBy: 'John Doe' },
+    { id: generateUniqueId(), transactionId: 'SI-2025-002', date: '2025-01-14', productName: 'Ballpoint Pen Blue', sku: 'E015', quantity: 50, unitCost: 25.00, totalCost: 1250.00, supplier: 'ABC Office Supplies', receivedBy: 'Jane Smith' },
+    { id: generateUniqueId(), transactionId: 'SI-2025-003', date: '2025-01-13', productName: 'Desktop Computer', sku: 'NE001', quantity: 2, unitCost: 35000.00, totalCost: 70000.00, supplier: 'Tech Solutions Inc.', receivedBy: 'Mike Johnson' }
+];
+
 // Utility Functions
 function formatCurrency(amount) {
     return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
@@ -562,7 +569,7 @@ function generateCategoriesPage() {
         <div class="page-content">
             <div class="table-container">
                 <table class="table">
-                    <thead>
+                            <thead>
                         <tr>
                             <th style="padding: 16px 24px;">Category ID</th>
                             <th style="padding: 16px 24px;">Category Name</th>
@@ -697,18 +704,18 @@ function generateProductsPage() {
                 </table>
                 
                 <!-- Enhanced Pagination -->
-                <div class="enhanced-pagination">
-                    <div class="pagination-left">
-                        Showing 1 to ${filteredProducts.length}
+                <nav class="enhanced-pagination" aria-label="Pagination">
+                    <div class="pagination-left" style="margin-left: 16px">
+                        Showing 1 to ${filteredProducts.length} of ${filteredProducts.length} entries
                     </div>
-                    <div class="pagination-right">
+                    <div class="pagination-right" style="margin-right: 16px">
                         <button class="pagination-btn" disabled>Previous</button>
                         <button class="pagination-btn active">1</button>
                         <button class="pagination-btn">2</button>
                         <button class="pagination-btn">3</button>
                         <button class="pagination-btn">Next</button>
                     </div>
-                </div>
+                </nav>
             </div>
         </div>
     `;
@@ -773,77 +780,15 @@ function generateStockInPage() {
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr style="background-color: white;">
-                            <td style="font-weight: 500;">SI-2025-001</td>
-                            <td>2025-01-15</td>
-                            <td style="font-weight: 500;">Bond Paper A4</td>
-                            <td style="color: #6b7280;">E001</td>
-                            <td>20</td>
-                            <td>₱250.00</td>
-                            <td style="font-weight: 500;">₱5,000.00</td>
-                            <td style="color: #6b7280;">ABC Office Supplies</td>
-                            <td style="color: #6b7280;">John Doe</td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
-                                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                                    </button>
-                                    <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
-                                        <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr style="background-color: #f9fafb;">
-                            <td style="font-weight: 500;">SI-2025-002</td>
-                            <td>2025-01-14</td>
-                            <td style="font-weight: 500;">Ballpoint Pen Blue</td>
-                            <td style="color: #6b7280;">E015</td>
-                            <td>50</td>
-                            <td>₱25.00</td>
-                            <td style="font-weight: 500;">₱1,250.00</td>
-                            <td style="color: #6b7280;">ABC Office Supplies</td>
-                            <td style="color: #6b7280;">Jane Smith</td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
-                                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                                    </button>
-                                    <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
-                                        <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr style="background-color: white;">
-                            <td style="font-weight: 500;">SI-2025-003</td>
-                            <td>2025-01-13</td>
-                            <td style="font-weight: 500;">Desktop Computer</td>
-                            <td style="color: #6b7280;">NE001</td>
-                            <td>2</td>
-                            <td>₱35,000.00</td>
-                            <td style="font-weight: 500;">₱70,000.00</td>
-                            <td style="color: #6b7280;">Tech Solutions Inc.</td>
-                            <td style="color: #6b7280;">Mike Johnson</td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
-                                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                                    </button>
-                                    <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
-                                        <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                    <tbody id="stock-in-table-body">
+                        ${renderStockInRows()}
                     </tbody>
                 </table>
                 
                 <!-- 🔹 Pagination -->
                 <nav class="enhanced-pagination" aria-label="Pagination">
                     <div class="pagination-left" style="margin-left: 16px">
-                        Showing 1 to 3 of 3 entries
+                        Showing 1 to ${stockInData.length} of ${stockInData.length} entries
                     </div>
                     <div class="pagination-right" style="margin-right: 16px">
                         <button class="pagination-btn" disabled>Previous</button>
@@ -933,164 +878,15 @@ function generateStockOutPage() {
                                 <th class="text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td class="font-semibold">SO-2025-001</td>
-                                <td>2025-01-16</td>
-                                <td>Ballpoint Pen</td>
-                                <td class="text-sm text-gray-600">E002</td>
-                                <td>50</td>
-                                <td>₱15.00</td>
-                                <td class="font-semibold">₱750.00</td>
-                                <td>
-                                    <span class="badge blue">Administration</span>
-                                </td>
-                                <td>Jane Smith</td>
-                                <td>John Doe</td>
-                                <td>
-                                    <span class="badge green">Completed</span>
-                                </td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('SO-2025-001')">
-                                            <i data-lucide="eye" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-orange" title="Edit" onclick="editStockOut('SO-2025-001')">
-                                            <i data-lucide="edit" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('SO-2025-001')">
-                                            <i data-lucide="trash-2" class="icon"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="font-semibold">SO-2025-002</td>
-                                <td>2025-01-15</td>
-                                <td>A4 Bond Paper</td>
-                                <td class="text-sm text-gray-600">P001</td>
-                                <td>20</td>
-                                <td>₱250.00</td>
-                                <td class="font-semibold">₱5,000.00</td>
-                                <td>
-                                    <span class="badge purple">IT Department</span>
-                                </td>
-                                <td>Mike Johnson</td>
-                                <td>Sarah Wilson</td>
-                                <td>
-                                    <span class="badge yellow">Pending</span>
-                                </td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('SO-2025-002')">
-                                            <i data-lucide="eye" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-orange" title="Edit" onclick="editStockOut('SO-2025-002')">
-                                            <i data-lucide="edit" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('SO-2025-002')">
-                                            <i data-lucide="trash-2" class="icon"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="font-semibold">SO-2025-003</td>
-                                <td>2025-01-14</td>
-                                <td>Marker Pen (Black)</td>
-                                <td class="text-sm text-gray-600">E015</td>
-                                <td>12</td>
-                                <td>₱35.00</td>
-                                <td class="font-semibold">₱420.00</td>
-                                <td>
-                                    <span class="badge green">Academic Affairs</span>
-                                </td>
-                                <td>Dr. Maria Santos</td>
-                                <td>John Doe</td>
-                                <td>
-                                    <span class="badge green">Completed</span>
-                                </td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('SO-2025-003')">
-                                            <i data-lucide="eye" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-orange" title="Edit" onclick="editStockOut('SO-2025-003')">
-                                            <i data-lucide="edit" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('SO-2025-003')">
-                                            <i data-lucide="trash-2" class="icon"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="font-semibold">SO-2025-004</td>
-                                <td>2025-01-13</td>
-                                <td>USB Flash Drive 32GB</td>
-                                <td class="text-sm text-gray-600">T008</td>
-                                <td>5</td>
-                                <td>₱800.00</td>
-                                <td class="font-semibold">₱4,000.00</td>
-                                <td>
-                                    <span class="badge orange">Finance</span>
-                                </td>
-                                <td>Robert Lee</td>
-                                <td>Sarah Wilson</td>
-                                <td>
-                                    <span class="badge red">Cancelled</span>
-                                </td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('SO-2025-004')">
-                                            <i data-lucide="eye" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-orange" title="Edit" onclick="editStockOut('SO-2025-004')">
-                                            <i data-lucide="edit" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('SO-2025-004')">
-                                            <i data-lucide="trash-2" class="icon"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="font-semibold">SO-2025-005</td>
-                                <td>2025-01-12</td>
-                                <td>Stapler (Heavy Duty)</td>
-                                <td class="text-sm text-gray-600">E025</td>
-                                <td>3</td>
-                                <td>₱450.00</td>
-                                <td class="font-semibold">₱1,350.00</td>
-                                <td>
-                                    <span class="badge indigo">HR Department</span>
-                                </td>
-                                <td>Lisa Chen</td>
-                                <td>John Doe</td>
-                                <td>
-                                    <span class="badge green">Completed</span>
-                                </td>
-                                <td>
-                                    <div class="table-actions">
-                                        <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('SO-2025-005')">
-                                            <i data-lucide="eye" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-orange" title="Edit" onclick="editStockOut('SO-2025-005')">
-                                            <i data-lucide="edit" class="icon"></i>
-                                        </button>
-                                        <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('SO-2025-005')">
-                                            <i data-lucide="trash-2" class="icon"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                        <tbody id="stock-out-table-body">
+                            ${renderStockOutRows()}
                         </tbody>
                     </table>
                     
                     <!-- 🔹 Pagination -->
                     <nav class="enhanced-pagination" aria-label="Pagination">
                         <div class="pagination-left" style="margin-left: 16px">
-                            Showing 1 to 5 of 5 entries
+                            Showing 1 to ${stockOutData.length} of ${stockOutData.length} entries
                         </div>
                         <div class="pagination-right" style="margin-right: 16px">
                             <button class="pagination-btn" disabled>Previous</button>
@@ -1171,7 +967,8 @@ function generateNewRequestPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${AppState.newRequests.map(request => `
+                        ${AppState.newRequests && AppState.newRequests.length > 0
+            ? AppState.newRequests.map(request => `
                         <tr>
                             <td>${request.id}</td>
                             <td>
@@ -1193,6 +990,9 @@ function generateNewRequestPage() {
                             <td>${request.department}</td>
                             <td>
                                 <div class="table-actions">
+                                    <button class="btn-outline-blue" onclick="openPurchaseOrderModal('view', '${request.id}')" title="View">
+                                        <i data-lucide="eye" class="icon"></i>
+                                    </button>
                                     <button class="btn-outline-orange" onclick="openPurchaseOrderModal('edit', '${request.id}')" title="Edit">
                                         <i data-lucide="edit" class="icon"></i>
                                     </button>
@@ -1202,9 +1002,8 @@ function generateNewRequestPage() {
                                 </div>
                             </td>
                         </tr>
-                    `).join('')}
-
-                        <!-- If no data -->
+                    `).join('')
+            : `
                         <tr>
                             <td colspan="10" class="px-6 py-12 text-center text-gray-500">
                                 <div class="flex flex-col items-center gap-2">
@@ -1212,13 +1011,14 @@ function generateNewRequestPage() {
                                 </div>
                             </td>
                         </tr>
+                    `}
                     </tbody>
                 </table>
 
                 <!-- 🔹 Pagination -->
                 <nav class="enhanced-pagination" aria-label="Pagination">
                     <div class="pagination-left" style="margin-left: 16px">
-                        Showing 1 to 3 of 3 entries
+                        ${AppState.newRequests && AppState.newRequests.length > 0 ? `Showing 1 to ${AppState.newRequests.length} of ${AppState.newRequests.length} entries` : 'Showing 0 entries'}
                     </div>
                     <div class="pagination-right" style="margin-right: 16px">
                         <button class="pagination-btn" disabled>Previous</button>
@@ -1699,7 +1499,6 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                                 <th>Unit</th>
                                 <th>Description</th>
                                 <th>Detailed Description</th>
-                                <th>Current Stock</th>
                                 <th>Quantity</th>
                                 <th>Unit Cost</th>
                                 <th>Amount</th>
@@ -1709,7 +1508,7 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                         <tbody id="po-items-tbody"></tbody>
                         <tfoot>
                             <tr style="border-top: 1px solid #e5e7eb; background-color: #f9fafb;">
-                                <td colspan="${isReadOnly ? '7' : '8'}" style="text-align: right; font-weight: 600;">Grand Total:</td>
+                                <td colspan="${isReadOnly ? '6' : '7'}" style="text-align: right; font-weight: 600;">Grand Total:</td>
                                 <td style="font-weight: 700; color: #dc2626;" id="grand-total">
                                     ${requestData ? formatCurrency(requestData.totalAmount || 0) : '₱0.00'}
                                 </td>
@@ -1878,15 +1677,7 @@ function renderPOItems() {
                           placeholder="Detailed specifications..."
                           ${isReadOnly ? 'readonly' : ''}>${item.detailedDescription}</textarea>
             </td>
-            <td style="padding: 12px;">
-                <div style="display: flex; align-items: center; gap: 4px;">
-                    <span style="font-size: 14px; font-weight: 500;">${item.currentStock}</span>
-                    <span style="font-size: 12px; color: #6b7280;">${item.unit}</span>
-                </div>
-                ${item.quantity > item.currentStock && item.currentStock > 0 ?
-            '<div class="stock-warning">Exceeds stock</div>' : ''}
-            </td>
-            <td style="padding: 12px;">
+                <td style="padding: 12px;">
                 <input type="number" 
                        value="${item.quantity || ''}" 
                        onchange="updatePOItem('${item.id}', 'quantity', parseFloat(this.value) || 0)"
@@ -3095,14 +2886,45 @@ function saveStockIn(stockId) {
     console.log("Saving stock-in record:", newRecord);
 
     closeStockInModal();
-    loadPageContent('stockin'); // refresh stock-in page
+    loadPageContent('stock-in'); // refresh stock-in page
 }
 
 function deleteStockIn(id) {
     if (confirm('Are you sure you want to delete this stock in record?')) {
         stockInData = stockInData.filter(r => r.id !== id);
-        loadPageContent('stockin');
+        loadPageContent('stock-in');
     }
+}
+
+function renderStockInRows() {
+    if (!stockInData || stockInData.length === 0) return '<tr><td colspan="10">No records found</td></tr>';
+    return stockInData.map((r, i) => renderStockInRow(r, i)).join('');
+}
+
+function renderStockInRow(r, index) {
+    return `
+        <tr data-id="${r.id}" style="${index % 2 === 0 ? 'background-color: white;' : 'background-color: #f9fafb;'}">
+            <td style="font-weight: 500;">${r.transactionId}</td>
+            <td>${r.date}</td>
+            <td style="font-weight: 500;">${r.productName}</td>
+            <td style="color: #6b7280;">${r.sku}</td>
+            <td>${r.quantity}</td>
+            <td>${formatCurrency(Number(r.unitCost) || 0)}</td>
+            <td style="font-weight: 500;">${formatCurrency(Number(r.totalCost) || 0)}</td>
+            <td style="color: #6b7280;">${r.supplier}</td>
+            <td style="color: #6b7280;">${r.receivedBy}</td>
+            <td>
+                <div class="table-actions">
+                    <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="deleteStockIn('${r.id}')">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                    </button>
+                    <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="openStockInModal('edit','${r.id}')">
+                        <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
 }
 
 function generateTransactionId() {
@@ -3124,12 +2946,32 @@ function openStockOutModal(mode = 'create', stockId = null) {
 
     let stockData = null;
     if (stockId) {
-        stockData = MockData.stockOut.find(r => r.id === stockId);
+        // support passing either an id or the full record
+        stockData = stockOutData.find(r => r.id === stockId) || (typeof stockId === 'object' ? stockId : null);
     }
 
     modalContent.innerHTML = generateStockOutModal(mode, stockData);
     modal.classList.add('active');
     lucide.createIcons();
+
+    const isReadOnly = mode === 'view';
+    if (!isReadOnly) {
+        const qty = modal.querySelector('#so-qty');
+        const uc = modal.querySelector('#so-uc');
+        const total = modal.querySelector('#so-total');
+
+        function updateTotal() {
+            const q = parseFloat(qty.value) || 0;
+            const u = parseFloat(uc.value) || 0;
+            total.value = formatCurrency(q * u);
+        }
+
+        if (qty && uc && total) {
+            qty.addEventListener('input', updateTotal);
+            uc.addEventListener('input', updateTotal);
+            updateTotal();
+        }
+    }
 }
 
 function closeStockOutModal() {
@@ -3153,13 +2995,13 @@ function generateStockOutModal(mode = 'create', stockData = null) {
             <div class="grid-2">
                 <div class="form-group">
                     <label class="form-label">Date</label>
-                    <input type="date" class="form-input"
+                    <input id="so-date" type="date" class="form-input"
                            value="${stockData?.date || ''}"
                            ${isReadOnly ? 'readonly' : ''}>
                 </div>
                 <div class="form-group">
                     <label class="form-label">SKU</label>
-                    <input type="text" class="form-input"
+                    <input id="so-sku" type="text" class="form-input"
                            value="${stockData?.sku || ''}"
                            placeholder="E002"
                            ${isReadOnly ? 'readonly' : ''}>
@@ -3168,7 +3010,7 @@ function generateStockOutModal(mode = 'create', stockData = null) {
 
             <div class="form-group">
                 <label class="form-label">Product Name</label>
-                <input type="text" class="form-input"
+                <input id="so-product" type="text" class="form-input"
                        value="${stockData?.productName || ''}"
                        placeholder="Enter product name"
                        ${isReadOnly ? 'readonly' : ''}>
@@ -3177,7 +3019,7 @@ function generateStockOutModal(mode = 'create', stockData = null) {
             <div class="grid-2">
                 <div class="form-group">
                     <label class="form-label">Quantity</label>
-                    <input type="number" class="form-input"
+                    <input id="so-qty" type="number" class="form-input"
                            min="1"
                            value="${stockData?.quantity || ''}"
                            placeholder="Enter quantity"
@@ -3185,7 +3027,7 @@ function generateStockOutModal(mode = 'create', stockData = null) {
                 </div>
                 <div class="form-group">
                     <label class="form-label">Unit Cost</label>
-                    <input type="number" class="form-input"
+                    <input id="so-uc" type="number" class="form-input"
                            step="0.01" min="0"
                            value="${stockData?.unitCost || ''}"
                            placeholder="₱0.00"
@@ -3195,14 +3037,14 @@ function generateStockOutModal(mode = 'create', stockData = null) {
 
             <div class="form-group">
                 <label class="form-label">Total Cost</label>
-                <input type="text" class="form-input"
+                <input id="so-total" type="text" class="form-input"
                        value="${stockData ? formatCurrency(stockData.totalCost || 0) : '₱0.00'}"
                        readonly>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Department</label>
-                <input type="text" class="form-input"
+                <input id="so-dept" type="text" class="form-input"
                        value="${stockData?.department || ''}"
                        placeholder="Enter department"
                        ${isReadOnly ? 'readonly' : ''}>
@@ -3211,14 +3053,14 @@ function generateStockOutModal(mode = 'create', stockData = null) {
             <div class="grid-2">
                 <div class="form-group">
                     <label class="form-label">Issued To</label>
-                    <input type="text" class="form-input"
+                    <input id="so-issued-to" type="text" class="form-input"
                            value="${stockData?.issuedTo || ''}"
                            placeholder="Employee / Person"
                            ${isReadOnly ? 'readonly' : ''}>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Issued By</label>
-                    <input type="text" class="form-input"
+                    <input id="so-issued-by" type="text" class="form-input"
                            value="${stockData?.issuedBy || ''}"
                            placeholder="Staff / Officer"
                            ${isReadOnly ? 'readonly' : ''}>
@@ -3227,11 +3069,11 @@ function generateStockOutModal(mode = 'create', stockData = null) {
 
             <div class="form-group">
                 <label class="form-label">Status</label>
-                <select class="form-select" ${isReadOnly ? 'disabled' : ''}>
-                    <option ${!stockData?.status ? 'selected' : ''}>Select status</option>
-                    <option ${stockData?.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                    <option ${stockData?.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                    <option ${stockData?.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                <select id="so-status" class="form-select" ${isReadOnly ? 'disabled' : ''}>
+                    <option value="">Select status</option>
+                    <option value="Completed" ${stockData?.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                    <option value="Pending" ${stockData?.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                    <option value="Cancelled" ${stockData?.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                 </select>
             </div>
         </div>
@@ -3250,19 +3092,129 @@ function generateStockOutModal(mode = 'create', stockData = null) {
 }
 
 function saveStockOut(stockId) {
-    const modal = document.getElementById('stockout-modal');
-    const inputs = modal.querySelectorAll('.form-input, .form-select');
+    // Read inputs by ID
+    const date = document.getElementById('so-date') ? document.getElementById('so-date').value : (document.querySelector('#stockout-modal input[type="date"]')?.value || '');
+    const sku = document.getElementById('so-sku') ? document.getElementById('so-sku').value : (document.querySelector('#stockout-modal input[placeholder="E002"]')?.value || '');
+    const productName = document.getElementById('so-product') ? document.getElementById('so-product').value : (document.querySelector('#stockout-modal input[placeholder="Enter product name"]')?.value || '');
+    const quantity = parseInt(document.getElementById('so-qty').value) || 0;
+    const unitCost = parseFloat(document.getElementById('so-uc').value) || 0;
+    const totalCost = quantity * unitCost;
+    const department = document.getElementById('so-dept').value || '';
+    const issuedTo = document.getElementById('so-issued-to').value || '';
+    const issuedBy = document.getElementById('so-issued-by').value || '';
+    const status = document.getElementById('so-status').value || '';
 
-    const values = {};
-    inputs.forEach(input => {
-        const label = input.previousElementSibling?.innerText || '';
-        values[label] = input.value;
-    });
+    const record = {
+        id: stockId || generateUniqueId(),
+        issueId: stockId ? (stockOutData.find(s => s.id === stockId)?.issueId || generateStockOutIssueId()) : generateStockOutIssueId(),
+        date,
+        productName,
+        sku,
+        quantity,
+        unitCost,
+        totalCost,
+        department,
+        issuedTo,
+        issuedBy,
+        status
+    };
 
-    console.log("Saving stock-out record:", values);
+    if (stockId) {
+        const idx = stockOutData.findIndex(s => s.id === stockId);
+        if (idx !== -1) {
+            stockOutData[idx] = record;
+        } else {
+            stockOutData.push(record);
+        }
+    } else {
+        stockOutData.push(record);
+    }
+
+    // Update DOM if Stock Out table is present to avoid full page reload
+    const tbody = document.getElementById('stock-out-table-body');
+    if (tbody) {
+        const existingRow = tbody.querySelector(`tr[data-id="${record.id}"]`);
+        if (existingRow) {
+            // replace existing row
+            existingRow.outerHTML = renderStockOutRow(record);
+        } else {
+            // append new row
+            tbody.insertAdjacentHTML('beforeend', renderStockOutRow(record));
+        }
+        // re-render icons in new content
+        if (window.lucide) lucide.createIcons();
+    } else {
+        // If tbody not present (different view), reload the Stock Out page to reflect changes
+        loadPageContent('stock-out');
+    }
     closeStockOutModal();
-    loadPageContent('stockout'); // refresh stock-out page
+}
 
+// In-memory stock-out records (initialize from MockData if available)
+var stockOutData = (window.MockData && Array.isArray(window.MockData.stockOut)) ? window.MockData.stockOut.slice() : [
+    // sample entry kept minimal
+    { id: generateUniqueId(), issueId: 'SO-2025-001', date: '2025-01-16', productName: 'Ballpoint Pen', sku: 'E002', quantity: 50, unitCost: 15.0, totalCost: 750.0, department: 'Administration', issuedTo: 'Jane Smith', issuedBy: 'John Doe', status: 'Completed' }
+];
+
+function renderStockOutRows() {
+    if (!stockOutData || stockOutData.length === 0) return '<tr><td colspan="12">No records found</td></tr>';
+    return stockOutData.map(s => renderStockOutRow(s)).join('');
+}
+
+function renderStockOutRow(s) {
+    return `
+        <tr data-id="${s.id}">
+            <td class="font-semibold">${s.issueId}</td>
+            <td>${s.date}</td>
+            <td>${s.productName}</td>
+            <td class="text-sm text-gray-600">${s.sku}</td>
+            <td>${s.quantity}</td>
+            <td>${formatCurrency(Number(s.unitCost) || 0)}</td>
+            <td class="font-semibold">${formatCurrency(Number(s.totalCost) || 0)}</td>
+            <td><span class="badge">${s.department}</span></td>
+            <td>${s.issuedTo}</td>
+            <td>${s.issuedBy}</td>
+            <td><span class="badge ${s.status === 'Completed' ? 'green' : s.status === 'Pending' ? 'yellow' : s.status === 'Cancelled' ? 'red' : ''}">${s.status}</span></td>
+            <td>
+                <div class="table-actions">
+                    <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('${s.id}')">
+                        <i data-lucide="eye" class="icon"></i>
+                    </button>
+                    <button class="btn-outline-orange" title="Edit" onclick="editStockOut('${s.id}')">
+                        <i data-lucide="edit" class="icon"></i>
+                    </button>
+                    <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('${s.id}')">
+                        <i data-lucide="trash-2" class="icon"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+function deleteStockOut(id) {
+    if (!confirm('Delete this stock-out record?')) return;
+    stockOutData = stockOutData.filter(s => s.id !== id);
+    loadPageContent('stock-out');
+}
+
+function viewStockOutDetails(id) {
+    const rec = stockOutData.find(s => s.id === id);
+    if (!rec) return alert('Record not found');
+    openStockOutModal('view', rec);
+}
+
+function editStockOut(id) {
+    const rec = stockOutData.find(s => s.id === id);
+    if (!rec) return alert('Record not found');
+    openStockOutModal('edit', rec);
+}
+
+function generateStockOutIssueId() {
+    const year = new Date().getFullYear();
+    const existing = stockOutData.filter(r => r.issueId && r.issueId.startsWith(`SO-${year}-`)).map(r => parseInt(r.issueId.split('-')[2]) || 0);
+    const next = Math.max(...existing, 0) + 1;
+    return `SO-${year}-${String(next).padStart(3, '0')}`;
 }
 
 // ===== STATUS MANAGEMENT =====
@@ -3368,7 +3320,7 @@ function renderStatusRows(status) {
                 <td><span style="color:red;font-weight:bold;">High</span></td>
                 <td>1/15/2024</td>
                 <td>Review Required</td>
-                <td>$1,200</td>
+                <td>₱1,200</td>
             </tr>
             <tr>
                 <td>REQ-2024-005</td>
@@ -3378,7 +3330,7 @@ function renderStatusRows(status) {
                 <td><span style="color:red;font-weight:bold;">High</span></td>
                 <td>1/16/2024</td>
                 <td>Pending Approval</td>
-                <td>$400</td>
+                <td>₱400</td>
             </tr>`,
         finished: `
             <tr>
@@ -3389,7 +3341,7 @@ function renderStatusRows(status) {
                 <td>Medium</td>
                 <td>1/10/2024</td>
                 <td>Completed</td>
-                <td>$300</td>
+                <td>₱300</td>
             </tr>`,
         cancelled: `
             <tr>
@@ -3400,7 +3352,7 @@ function renderStatusRows(status) {
                 <td>Low</td>
                 <td>1/12/2024</td>
                 <td>Cancelled</td>
-                <td>$500</td>
+                <td>₱500</td>
             </tr>`,
         rejected: `
             <tr>
@@ -3411,7 +3363,7 @@ function renderStatusRows(status) {
                 <td>Medium</td>
                 <td>1/14/2024</td>
                 <td>Rejected</td>
-                <td>$700</td>
+                <td>₱700</td>
             </tr>`
     };
 
