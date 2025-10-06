@@ -32,7 +32,8 @@ body {
     position: absolute;
     left: calc(var(--po-step-size) / 2);
     right: calc(var(--po-step-size) / 2);
-    top: 50%;
+    /* Center the line relative to the circle, not the total wrapper (labels) */
+    top: calc(var(--po-step-size) / 2);
     height: 4px;
     background: linear-gradient(90deg, #f3f4f6, #e5e7eb);
     transform: translateY(-50%);
@@ -62,7 +63,8 @@ body {
     color: #fff;
     border-color: #dc2626;
     box-shadow: 0 6px 14px -2px rgba(220,38,38,0.45), 0 3px 6px rgba(0,0,0,0.12);
-    transform: translateY(-2px) scale(1.05);
+    /* Remove vertical shift so baseline stays centered */
+    transform: scale(1.06);
 }
 
 .po-step.completed:not(.active) {
@@ -102,7 +104,7 @@ body {
 .po-progress-bar-fill {
     position: absolute;
     left: calc(var(--po-step-size) / 2);
-    top: 50%;
+    top: calc(var(--po-step-size) / 2);
     height: 4px;
     background: linear-gradient(90deg,#dc2626,#ef4444,#f59e0b);
     border-radius: 2px;

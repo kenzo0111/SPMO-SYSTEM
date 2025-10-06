@@ -40,6 +40,8 @@ const AppState = {
     ],
     // Wizard step for multi-step PO creation (1-4)
     purchaseOrderWizardStep: 1,
+    // Temp storage for multi-step PO wizard field values so they persist between steps
+    purchaseOrderDraft: {},
 
     // ✅ add these for real data
     newRequests: [],
@@ -174,6 +176,7 @@ function showAlert(message, type = 'info', duration = 4000) {
         if (!container) {
             container = document.createElement('div');
             container.id = 'ui-alert-container';
+            container.className = 'ui-alert-container';
             document.body.appendChild(container);
         }
 
@@ -197,7 +200,7 @@ function showAlert(message, type = 'info', duration = 4000) {
         alertEl.appendChild(closeBtn);
         container.appendChild(alertEl);
 
-        // Auto-remove after duration
+        // Auto remove
         setTimeout(() => {
             if (!alertEl) return;
             alertEl.classList.add('ui-alert-hide');
@@ -214,8 +217,8 @@ function showConfirm(message, title = 'Confirm') {
     return new Promise((resolve) => {
         let modal = document.getElementById('confirm-modal');
         if (!modal) {
-            // fallback to native confirm if modal markup isn't present
-            try { resolve(confirm(message)); } catch (e) { resolve(false); }
+            // Fallback quickly
+            try { resolve(window.confirm(message)); } catch (e) { resolve(false); }
             return;
         }
 
@@ -1327,6 +1330,7 @@ function generatePendingApprovalPage() {
                             <th scope="col">Request ID</th>
                             <th scope="col">P.O. Number</th>
                             <th scope="col">Supplier</th>
+                            <th scope="col">Delivery Date</th>
                             <th scope="col">Total Amount</th>
                             <th scope="col">Priority</th>
                             <th scope="col">Status</th>
@@ -1348,6 +1352,7 @@ function generatePendingApprovalPage() {
                                         </button>
                                     </td>
                                     <td>${request.supplier || '-'}</td>
+                                    <td>${request.deliveryDate || '-'}</td>
                                     <td>${formatCurrency(request.totalAmount || 0)}</td>
                                     <td>
                                         <span class="${getBadgeClass(request.priority || 'low', 'priority')}">
@@ -2090,6 +2095,7 @@ function openPurchaseOrderModal(mode = 'create', requestId = null) {
     // Reset wizard step if creating new
     if (mode === 'create') {
         AppState.purchaseOrderWizardStep = 1;
+        AppState.purchaseOrderDraft = {}; // reset draft on fresh create
     }
 
     // Load existing request if not create mode
@@ -2181,11 +2187,11 @@ function renderPurchaseOrderWizardStep(requestData) {
                     <div class="grid-2">
                         <div class="form-group">
                             <label class="form-label">Supplier<span style="color:#dc2626"> *</span></label>
-                            <input type="text" class="form-input" id="po-supplier" placeholder="e.g. ABC Office Supplies">
+                            <input type="text" class="form-input" id="po-supplier" placeholder="e.g. ABC Office Supplies" value="${AppState.purchaseOrderDraft.supplier || ''}">
                         </div>
                         <div class="form-group">
                             <label class="form-label">P.O. Number</label>
-                            <input type="text" class="form-input" id="po-number" placeholder="Auto generated" readonly>
+                            <input type="text" class="form-input" id="po-number" placeholder="Auto generated" value="${AppState.purchaseOrderDraft.poNumber || ''}" readonly>
                         </div>
                     </div>
                 </div>
@@ -2194,11 +2200,11 @@ function renderPurchaseOrderWizardStep(requestData) {
                     <div class="grid-2">
                         <div class="form-group">
                             <label class="form-label">Supplier Address</label>
-                            <textarea class="form-textarea" id="po-supplier-address" placeholder="Street, City, Province"></textarea>
+                            <textarea class="form-textarea" id="po-supplier-address" placeholder="Street, City, Province">${AppState.purchaseOrderDraft.supplierAddress || ''}</textarea>
                         </div>
                         <div class="form-group">
                             <label class="form-label">TIN Number</label>
-                            <input type="text" class="form-input" id="po-supplier-tin" placeholder="000-000-000-000">
+                            <input type="text" class="form-input" id="po-supplier-tin" placeholder="000-000-000-000" value="${AppState.purchaseOrderDraft.supplierTIN || ''}">
                         </div>
                     </div>
                 </div>
@@ -2207,7 +2213,12 @@ function renderPurchaseOrderWizardStep(requestData) {
         footer.innerHTML = footerButtons(true, 'Next');
         // Pre-fill PO number
         const poInput = document.getElementById('po-number');
-        if (poInput) poInput.value = generateNewPONumber();
+        if (poInput && !poInput.value) {
+            // generate once and persist in draft
+            const gen = generateNewPONumber();
+            poInput.value = gen;
+            AppState.purchaseOrderDraft.poNumber = gen;
+        }
     }
     else if (step === 2) {
         const departments = [
@@ -2234,12 +2245,12 @@ function renderPurchaseOrderWizardStep(requestData) {
                             <label class="form-label">Department<span style=\"color:#dc2626\"> *</span></label>
                             <select class="form-select" id="po-department">
                                 <option value="">Select Department</option>
-                                ${departments.map(d => `<option value="${d.value}">${d.label}</option>`).join('')}
+                                ${departments.map(d => `<option value="${d.value}" ${AppState.purchaseOrderDraft.department === d.value ? 'selected' : ''}>${d.label}</option>`).join('')}
                             </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Date of Purchase</label>
-                            <input type="date" class="form-input" id="po-date">
+                            <input type="date" class="form-input" id="po-date" value="${AppState.purchaseOrderDraft.purchaseDate || ''}">
                         </div>
                     </div>
                 </div>
@@ -2250,14 +2261,14 @@ function renderPurchaseOrderWizardStep(requestData) {
                             <label class="form-label">Mode of Procurement</label>
                             <select class="form-select" id="po-mode">
                                 <option value="">Select payment mode</option>
-                                <option>Small Value Procurement</option>
-                                <option>Medium Value Procurement</option>
-                                <option>High Value Procurement</option>
+                                <option ${AppState.purchaseOrderDraft.procurementMode === 'Small Value Procurement' ? 'selected' : ''}>Small Value Procurement</option>
+                                <option ${AppState.purchaseOrderDraft.procurementMode === 'Medium Value Procurement' ? 'selected' : ''}>Medium Value Procurement</option>
+                                <option ${AppState.purchaseOrderDraft.procurementMode === 'High Value Procurement' ? 'selected' : ''}>High Value Procurement</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Gentlemen Clause</label>
-                            <textarea class="form-textarea" id="po-gentlemen" placeholder="Please furnish this office ..."></textarea>
+                            <textarea class="form-textarea" id="po-gentlemen" placeholder="Please furnish this office ...">${AppState.purchaseOrderDraft.gentlemen || ''}</textarea>
                         </div>
                     </div>
                 </div>
@@ -2266,19 +2277,19 @@ function renderPurchaseOrderWizardStep(requestData) {
                     <div class="grid-2">
                         <div class="form-group">
                             <label class="form-label">Place of Delivery</label>
-                            <input type="text" class="form-input" id="po-place" placeholder="Campus / Building / Room">
+                            <input type="text" class="form-input" id="po-place" placeholder="Campus / Building / Room" value="${AppState.purchaseOrderDraft.placeOfDelivery || ''}">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Date of Delivery</label>
-                            <input type="text" class="form-input" id="po-delivery-date" placeholder="e.g. Within 30 days">
+                            <input type="text" class="form-input" id="po-delivery-date" placeholder="e.g. Within 30 days" value="${AppState.purchaseOrderDraft.deliveryDate || ''}">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Delivery Term</label>
-                            <input type="text" class="form-input" id="po-delivery-term" placeholder="e.g. Partial / Complete">
+                            <input type="text" class="form-input" id="po-delivery-term" placeholder="e.g. Partial / Complete" value="${AppState.purchaseOrderDraft.deliveryTerm || ''}">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Payment Term</label>
-                            <input type="text" class="form-input" id="po-payment-term" placeholder="e.g. Net 30">
+                            <input type="text" class="form-input" id="po-payment-term" placeholder="e.g. Net 30" value="${AppState.purchaseOrderDraft.paymentTerm || ''}">
                         </div>
                     </div>
                 </div>
@@ -2287,8 +2298,6 @@ function renderPurchaseOrderWizardStep(requestData) {
         footer.innerHTML = footerButtons(true, 'Next');
     }
     else if (step === 3) {
-        // Initialize items state
-        initializePurchaseOrderModal(null);
         body.innerHTML = `
             <div class="po-wizard">
                 ${progress}
@@ -2328,8 +2337,10 @@ function renderPurchaseOrderWizardStep(requestData) {
                 </div>
             </div>
         `;
-        footer.innerHTML = footerButtons(AppState.purchaseOrderItems.length > 0, 'Next');
+        // Initialize after table exists
+        initializePurchaseOrderModal(null, { skipRender: true });
         renderPOItems();
+        footer.innerHTML = footerButtons(AppState.purchaseOrderItems.length > 0, 'Next');
         lucide.createIcons();
     }
     else if (step === 4) {
@@ -2344,6 +2355,23 @@ function renderPurchaseOrderWizardStep(requestData) {
                 <div class="review-box" style="background:#f9fafb;border:1px solid #e5e7eb;padding:14px 16px;border-radius:10px;margin-bottom:18px;">
                     <p style="margin:0 0 4px;font-weight:600;color:#111827;">Summary</p>
                     <p style="margin:0;font-size:14px;color:#374151;">Items: ${AppState.purchaseOrderItems.length} • Total: <strong style="color:#dc2626;">${formatCurrency(totalAmount)}</strong></p>
+                </div>
+                <div class="po-fieldset">
+                    <h4>Funding</h4>
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label class="form-label">Fund Cluster</label>
+                            <input type="text" class="form-input" id="po-fund-cluster" placeholder="e.g. 01" value="${AppState.purchaseOrderDraft.fundCluster || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Funds Available (Optional)</label>
+                            <input type="text" class="form-input" id="po-funds-available" placeholder="e.g. ₱0.00" value="${AppState.purchaseOrderDraft.fundsAvailable || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Notes (Optional)</label>
+                            <input type="text" class="form-input" id="po-notes" placeholder="Short note" value="${AppState.purchaseOrderDraft.notes || ''}">
+                        </div>
+                    </div>
                 </div>
                 <div class="po-fieldset">
                     <h4>ORS / BURS</h4>
@@ -2362,6 +2390,24 @@ function renderPurchaseOrderWizardStep(requestData) {
                         </div>
                     </div>
                 </div>
+                <div class="po-fieldset">
+                    <h4>Forms Required</h4>
+                    <p class="po-help" style="margin-top:4px;">Select supporting documents to prepare with this Purchase Order.</p>
+                    <div style="display:flex;flex-wrap:wrap;gap:22px;margin-top:8px;font-size:13px;">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                            <input type="checkbox" id="po-gen-ics" ${AppState.purchaseOrderDraft.generateICS ? 'checked' : ''}> ICS
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                            <input type="checkbox" id="po-gen-ris" ${AppState.purchaseOrderDraft.generateRIS ? 'checked' : ''}> RIS
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                            <input type="checkbox" id="po-gen-par" ${AppState.purchaseOrderDraft.generatePAR ? 'checked' : ''}> PAR
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                            <input type="checkbox" id="po-gen-iar" ${AppState.purchaseOrderDraft.generateIAR ? 'checked' : ''}> IAR
+                        </label>
+                    </div>
+                </div>
             </div>
         `;
         footer.innerHTML = footerButtons(true, 'Create');
@@ -2369,6 +2415,8 @@ function renderPurchaseOrderWizardStep(requestData) {
 }
 
 function nextPurchaseOrderStep() {
+    // persist current step form values into draft
+    persistCurrentWizardStep();
     if (AppState.purchaseOrderWizardStep < 4) {
         AppState.purchaseOrderWizardStep++;
         renderPurchaseOrderWizardStep();
@@ -2377,6 +2425,7 @@ function nextPurchaseOrderStep() {
 }
 
 function prevPurchaseOrderStep() {
+    persistCurrentWizardStep();
     if (AppState.purchaseOrderWizardStep > 1) {
         AppState.purchaseOrderWizardStep--;
         renderPurchaseOrderWizardStep();
@@ -2384,25 +2433,63 @@ function prevPurchaseOrderStep() {
     }
 }
 
+function persistCurrentWizardStep() {
+    const step = AppState.purchaseOrderWizardStep;
+    const modal = document.getElementById('purchase-order-modal');
+    if (!modal) return;
+    if (step === 1) {
+        AppState.purchaseOrderDraft.supplier = modal.querySelector('#po-supplier')?.value || '';
+        AppState.purchaseOrderDraft.supplierAddress = modal.querySelector('#po-supplier-address')?.value || '';
+        AppState.purchaseOrderDraft.supplierTIN = modal.querySelector('#po-supplier-tin')?.value || '';
+        AppState.purchaseOrderDraft.poNumber = modal.querySelector('#po-number')?.value || AppState.purchaseOrderDraft.poNumber;
+    } else if (step === 2) {
+        AppState.purchaseOrderDraft.department = modal.querySelector('#po-department')?.value || '';
+        AppState.purchaseOrderDraft.purchaseDate = modal.querySelector('#po-date')?.value || '';
+        AppState.purchaseOrderDraft.procurementMode = modal.querySelector('#po-mode')?.value || '';
+        AppState.purchaseOrderDraft.gentlemen = modal.querySelector('#po-gentlemen')?.value || '';
+        AppState.purchaseOrderDraft.placeOfDelivery = modal.querySelector('#po-place')?.value || '';
+        AppState.purchaseOrderDraft.deliveryDate = modal.querySelector('#po-delivery-date')?.value || '';
+        AppState.purchaseOrderDraft.deliveryTerm = modal.querySelector('#po-delivery-term')?.value || '';
+        AppState.purchaseOrderDraft.paymentTerm = modal.querySelector('#po-payment-term')?.value || '';
+    } else if (step === 4) {
+        AppState.purchaseOrderDraft.orsNo = modal.querySelector('#po-ors-no')?.value || '';
+        AppState.purchaseOrderDraft.orsDate = modal.querySelector('#po-ors-date')?.value || '';
+        AppState.purchaseOrderDraft.orsAmount = modal.querySelector('#po-ors-amount')?.value || '';
+        AppState.purchaseOrderDraft.fundCluster = modal.querySelector('#po-fund-cluster')?.value || '';
+        AppState.purchaseOrderDraft.fundsAvailable = modal.querySelector('#po-funds-available')?.value || '';
+        AppState.purchaseOrderDraft.notes = modal.querySelector('#po-notes')?.value || '';
+        AppState.purchaseOrderDraft.generateICS = modal.querySelector('#po-gen-ics')?.checked || false;
+        AppState.purchaseOrderDraft.generateRIS = modal.querySelector('#po-gen-ris')?.checked || false;
+        AppState.purchaseOrderDraft.generatePAR = modal.querySelector('#po-gen-par')?.checked || false;
+        AppState.purchaseOrderDraft.generateIAR = modal.querySelector('#po-gen-iar')?.checked || false;
+    }
+}
+
 function finalizePurchaseOrderCreation() {
     // Gather data from wizard fields
     const modal = document.getElementById('purchase-order-modal');
     if (!modal) return;
-    const supplier = modal.querySelector('#po-supplier')?.value || '';
-    const supplierAddress = modal.querySelector('#po-supplier-address')?.value || '';
-    const supplierTIN = modal.querySelector('#po-supplier-tin')?.value || '';
-    const poNumber = modal.querySelector('#po-number')?.value || generateNewPONumber();
-    const department = modal.querySelector('#po-department')?.value || '';
-    const purchaseDate = modal.querySelector('#po-date')?.value || '';
-    const procurementMode = modal.querySelector('#po-mode')?.value || '';
-    const gentlemen = modal.querySelector('#po-gentlemen')?.value || '';
-    const placeOfDelivery = modal.querySelector('#po-place')?.value || '';
-    const deliveryDate = modal.querySelector('#po-delivery-date')?.value || '';
-    const deliveryTerm = modal.querySelector('#po-delivery-term')?.value || '';
-    const paymentTerm = modal.querySelector('#po-payment-term')?.value || '';
-    const orsNo = modal.querySelector('#po-ors-no')?.value || '';
-    const orsDate = modal.querySelector('#po-ors-date')?.value || '';
-    const orsAmount = modal.querySelector('#po-ors-amount')?.value || '';
+    // ensure latest review inputs saved
+    persistCurrentWizardStep();
+    const draft = AppState.purchaseOrderDraft || {};
+    const supplier = draft.supplier || '';
+    const supplierAddress = draft.supplierAddress || '';
+    const supplierTIN = draft.supplierTIN || '';
+    const poNumber = draft.poNumber || generateNewPONumber();
+    const department = draft.department || '';
+    const purchaseDate = draft.purchaseDate || '';
+    const procurementMode = draft.procurementMode || '';
+    const gentlemen = draft.gentlemen || '';
+    const placeOfDelivery = draft.placeOfDelivery || '';
+    const deliveryDate = draft.deliveryDate || '';
+    const deliveryTerm = draft.deliveryTerm || '';
+    const paymentTerm = draft.paymentTerm || '';
+    const orsNo = draft.orsNo || '';
+    const orsDate = draft.orsDate || '';
+    const orsAmount = draft.orsAmount || '';
+    const fundCluster = draft.fundCluster || '';
+    const fundsAvailable = draft.fundsAvailable || '';
+    const notes = draft.notes || '';
     const totalAmount = AppState.purchaseOrderItems.reduce((s, i) => s + i.amount, 0);
 
     const newRequestId = generateNextRequestId();
@@ -2414,6 +2501,7 @@ function finalizePurchaseOrderCreation() {
         supplierTIN,
         requestDate: new Date().toISOString().split('T')[0],
         deliveryDate,
+        deliveredDate: '', // will be set when actually delivered; keep separate from planned deliveryDate
         purchaseDate,
         procurementMode,
         gentlemen,
@@ -2423,10 +2511,17 @@ function finalizePurchaseOrderCreation() {
         orsNo,
         orsDate,
         orsAmount,
+        fundCluster,
+        fundsAvailable,
+        notes,
         totalAmount,
         status: 'submitted',
         requestedBy: 'Current User',
         department,
+        generateICS: !!draft.generateICS,
+        generateRIS: !!draft.generateRIS,
+        generatePAR: !!draft.generatePAR,
+        generateIAR: !!draft.generateIAR,
         items: [...AppState.purchaseOrderItems]
     };
     AppState.newRequests.push(newRequest);
@@ -2620,9 +2715,28 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                 </div>
             </div>
 
+            <!-- Funding Information (moved below Items) -->
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 24px;" class="space-y-4">
+                <label style="font-size: 18px; font-weight: 600; color: #dc2626;">Funding</label>
+                <div class="grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Fund Cluster</label>
+                        <input type="text" class="form-input" value="${requestData?.fundCluster || ''}" placeholder="e.g. 01" ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Funds Available (Optional)</label>
+                        <input type="text" class="form-input" value="${requestData?.fundsAvailable || ''}" placeholder="e.g. ₱0.00" ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes (Optional)</label>
+                        <input type="text" class="form-input" value="${requestData?.notes || ''}" placeholder="Short note" ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                </div>
+            </div>
+
             <!-- ORS/BURS Information -->
             <div style="border-top: 1px solid #e5e7eb; padding-top: 24px;">
-                <label style="font-size: 18px; font-weight: 600; color: #dc2626;">ORS/BURS Information</label>
+                <label style="font-size: 18px; font-weight: 600; color: #dc2626; margin:0; display:block;">ORS/BURS Information</label>
                 <div class="grid-3 mt-4">
                     <div class="form-group">
                         <label class="form-label">ORS/BURS No:</label>
@@ -2644,6 +2758,26 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                     </div>
                 </div>
             </div>
+
+            <!-- Forms Required -->
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 24px;">
+                <label style="font-size: 18px; font-weight: 600; color: #dc2626;">Forms Required</label>
+                <p class="po-help" style="margin-top:4px;font-size:12px;color:#374151;">Selected supporting documents for this Purchase Order.</p>
+                <div style="display:flex;flex-wrap:wrap;gap:22px;margin-top:8px;font-size:13px;">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;${isReadOnly ? 'opacity:0.8;' : ''}">
+                        <input type="checkbox" ${requestData?.generateICS ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''}> ICS
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;${isReadOnly ? 'opacity:0.8;' : ''}">
+                        <input type="checkbox" ${requestData?.generateRIS ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''}> RIS
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;${isReadOnly ? 'opacity:0.8;' : ''}">
+                        <input type="checkbox" ${requestData?.generatePAR ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''}> PAR
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;${isReadOnly ? 'opacity:0.8;' : ''}">
+                        <input type="checkbox" ${requestData?.generateIAR ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''}> IAR
+                    </label>
+                </div>
+            </div>
         </div>
 
         <!-- Modal Footer -->
@@ -2662,7 +2796,8 @@ function generatePurchaseOrderModal(mode, requestData = null) {
 }
 
 // Purchase Order Modal item management
-function initializePurchaseOrderModal(requestData = null) {
+function initializePurchaseOrderModal(requestData = null, options = {}) {
+    const { skipRender = false } = options;
     if (requestData && requestData.items) {
         // load items from request
         AppState.purchaseOrderItems = requestData.items.map(item => ({ ...item }));
@@ -2681,7 +2816,9 @@ function initializePurchaseOrderModal(requestData = null) {
         }];
     }
 
-    renderPOItems();
+    if (!skipRender) {
+        renderPOItems();
+    }
 }
 
 
@@ -2716,7 +2853,6 @@ function updatePOItem(id, field, value) {
     const item = AppState.purchaseOrderItems[itemIndex];
     item[field] = value;
 
-    // Auto-populate stock info when stock property number is entered
     if (field === 'stockPropertyNumber') {
         const stockItem = MockData.inventory.find(inv => inv.stockNumber === value);
         if (stockItem) {
@@ -2726,9 +2862,8 @@ function updatePOItem(id, field, value) {
         }
     }
 
-    // Calculate amount when quantity or unit cost changes
     if (field === 'quantity' || field === 'unitCost') {
-        item.amount = item.quantity * item.unitCost;
+        item.amount = (item.quantity || 0) * (item.unitCost || 0);
     }
 
     AppState.purchaseOrderItems[itemIndex] = item;
@@ -3206,9 +3341,169 @@ async function rejectRequest(requestId) {
     loadPageContent('pending-approval');
 }
 
-function downloadPO(requestId) {
-    console.log('Downloading PO for request:', requestId);
-    showAlert(`Downloading PO for request ${requestId}...`, 'info');
+// Enhanced: added optional second parameter for clean print (removes toolbar & page title)
+// Usage: downloadPO('PO-123'); // clean by default
+//        downloadPO('PO-123', { clean: false }); // old behaviour with toolbar
+function downloadPO(requestId, opts = {}) {
+    const clean = opts.clean !== undefined ? !!opts.clean : true; // default to clean output
+    // Locate request in any collection
+    const request = (AppState.newRequests || []).concat(AppState.pendingRequests || [], AppState.completedRequests || [])
+        .find(r => r.id === requestId);
+    if (!request) {
+        showAlert(`Purchase Order ${requestId} not found.`, 'error');
+        return;
+    }
+
+    const currentUser = AppState.currentUser || {};
+    const poNumber = request.poNumber || 'PO-UNKNOWN';
+
+    const poData = {
+        supplier: request.supplier || '',
+        poNumber: request.poNumber || '',
+        address: request.supplierAddress || '',
+        dateOfPurchase: request.purchaseDate || request.requestDate || '',
+        tinNumber: request.supplierTIN || '',
+        modeOfPayment: request.procurementMode || '',
+        placeOfDelivery: request.placeOfDelivery || '',
+        deliveryTerm: request.deliveryTerm || '',
+        dateOfDelivery: request.deliveryDate || '',
+        paymentTerm: request.paymentTerm || '',
+        fundCluster: request.fundCluster || '',
+        orsBursNo: request.orsNo || '',
+        fundsAvailable: request.fundsAvailable || '',
+        orsBursDate: request.orsDate || '',
+        orsBursAmount: request.orsAmount || '',
+        notes: request.notes || '',
+        items: (request.items || []).map(it => ({
+            stockPropertyNumber: it.stockPropertyNumber || '',
+            unit: it.unit || '',
+            description: it.description || it.detailedDescription || '',
+            quantity: it.quantity || 0,
+            unitCost: it.unitCost || 0,
+            amount: it.amount || ((it.quantity || 0) * (it.unitCost || 0))
+        }))
+    };
+
+    const signatures = {
+        authorization: currentUser.role && /president/i.test(currentUser.role) ? currentUser.name : '________________________',
+        accountant: currentUser.role && /accountant/i.test(currentUser.role) ? currentUser.name : '________________________',
+        supplier: '________________________'
+    };
+
+    function esc(str) { return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function fmtMoney(v) { if (v === undefined || v === null || v === '') return ''; return '₱' + Number(v).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function fmtDate(d) { if (!d) return ''; const dt = new Date(d); if (isNaN(dt)) return esc(d); return dt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); }
+
+    function buildItems(poData) {
+        const rows = poData.items.map(it => `
+            <tr>
+                <td class=\"table-cell-border text-center h-8\">${esc(it.stockPropertyNumber)}</td>
+                <td class=\"table-cell-border text-center h-8\">${esc(it.unit)}</td>
+                <td class=\"table-cell-border h-8\">${esc(it.description)}</td>
+                <td class=\"table-cell-border text-center h-8\">${esc(it.quantity)}</td>
+                <td class=\"table-cell-border text-right h-8\">${it.unitCost ? fmtMoney(it.unitCost) : ''}</td>
+                <td class=\"table-cell-border-top text-right h-8\">${it.amount ? fmtMoney(it.amount) : ''}</td>
+            </tr>`).join('');
+        const min = 8 - poData.items.length;
+        const fillers = min > 0 ? Array.from({ length: min }).map(() => '<tr><td class=\"table-cell-border h-8\">&nbsp;</td><td class=\"table-cell-border h-8\">&nbsp;</td><td class=\"table-cell-border h-8\">&nbsp;</td><td class=\"table-cell-border h-8\">&nbsp;</td><td class=\"table-cell-border h-8\">&nbsp;</td><td class=\"table-cell-border-top h-8\">&nbsp;</td></tr>').join('') : '';
+        return rows + fillers;
+    }
+
+    const grandTotal = poData.items.reduce((s, it) => s + (it.amount || 0), 0);
+
+    function buildHTML(filename) {
+        const titleText = clean ? '' : esc(filename);
+        const toolbarHTML = clean ? '' : `
+                <div class=\"toolbar\">
+                    <span style=\"font-weight:600;\">Purchase Order Export</span>
+                    <label>Filename: <input id=\"po-filename-input\" value='${esc(filename)}' style='width:180px'></label>
+                    <button class=\"secondary\" onclick=\"window.print()\">Print / PDF</button>
+                </div>`;
+        return `<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>${titleText}</title><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/><style>
+                @page { size: A4 portrait; margin: 16mm 14mm 18mm 14mm; }
+                html, body { height:100%; }
+                body{margin:0;font-family:'Times New Roman',Times,serif;font-size:10px;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+                .page-wrapper{max-width:210mm;margin:0 auto;}
+                .purchase-order-doc{background:#fff;padding:14px 16px;box-sizing:border-box;}
+                table{border-collapse:collapse;width:100%;}
+                td{vertical-align:top;}
+                .table-cell-border{border-right:1px solid #000;border-top:1px solid #000;padding:4px;}
+                .table-cell-border-right{border-right:1px solid #000;padding:4px;}
+                .table-cell-border-top{border-top:1px solid #000;padding:4px;}
+                .table-border-2{border:2px solid #000;}
+                .text-center{text-align:center;}
+                .font-semibold{font-weight:600;}
+                .font-bold{font-weight:700;}
+                .h-8{height:1.5rem;}
+                .toolbar{position:sticky;top:0;background:#f3f4f6;border-bottom:1px solid #d1d5db;padding:8px 12px;display:flex;gap:8px;align-items:center;font-family:system-ui,Arial,sans-serif;font-size:12px;}
+                .toolbar button{background:#dc2626;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px;}
+                .toolbar button.secondary{background:#374151;}
+                .toolbar input{padding:4px 6px;font-size:12px;border:1px solid #d1d5db;border-radius:4px;}
+                @media print{.toolbar{display:none!important}.purchase-order-doc{border:none;padding:0;}.purchase-order-container{padding:0;margin:0;} body{margin:0;} }
+                /* Attempt to neutralize default print headers (user must still disable in dialog for full removal) */
+                </style></head><body>
+                ${toolbarHTML}
+                <div class=\"purchase-order-container page-wrapper\" style=\"padding:0 2mm;\">
+                    <div class=\"purchase-order-doc table-border-2\" style=\"border:1px solid #ccc;font-size:12px;\">
+                        <div style=\"text-align:center;margin-bottom:16px;\"><h1 style=\"font-size:14px;font-weight:700;margin:0 0 6px;\">PURCHASE ORDER</h1><p style=\"font-size:12px;text-decoration:underline;margin:0 0 3px;\">Camarines Norte State College</p><p style=\"font-size:10px;font-style:italic;margin:0;color:#444\">Entity Name</p></div>
+                        <div class=\"table-border-2\" style=\"border:2px solid #000;\"><table style=\"font-size:11px;\"><tbody>
+              <tr><td class=\"table-cell-border-right\" style=\"width:15%;font-weight:700;\">Supplier:</td><td colspan=\"3\" class=\"table-cell-border-right\" style=\"width:45%;\">${esc(poData.supplier)}</td><td class=\"table-cell-border-right\" style=\"width:15%;font-weight:700;\">P.O. No.:</td><td style=\"width:25%;padding:4px;\">${esc(poData.poNumber)}</td></tr>
+              <tr><td class=\"table-cell-border\" style=\"font-weight:700;\">Address:</td><td colspan=\"3\" class=\"table-cell-border-right table-cell-border-top\">${esc(poData.address)}</td><td class=\"table-cell-border-right table-cell-border-top\" style=\"font-weight:700;\">Date:</td><td class=\"table-cell-border-top\">${fmtDate(poData.dateOfPurchase)}</td></tr>
+              <tr><td class=\"table-cell-border\" style=\"font-weight:700;\">TIN:</td><td colspan=\"3\" class=\"table-cell-border-right table-cell-border-top\">${esc(poData.tinNumber)}</td><td class=\"table-cell-border-right table-cell-border-top\" style=\"font-weight:700;\">Mode of Procurement:</td><td class=\"table-cell-border-top\">${esc(poData.modeOfPayment)}</td></tr>
+              <tr><td colspan=\"6\" class=\"table-cell-border-top\" style=\"padding:12px;\"><strong style=\"font-size:12px;\">Gentlemen:</strong><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Please furnish this Office the following articles subject to the terms and conditions contained herein:</td></tr>
+              <tr><td class=\"table-cell-border\" style=\"font-weight:700;\">Place of Delivery:</td><td colspan=\"2\" class=\"table-cell-border-right table-cell-border-top\">${esc(poData.placeOfDelivery)}</td><td class=\"table-cell-border-right table-cell-border-top\" style=\"font-weight:700;\">Delivery Term:</td><td colspan=\"2\" class=\"table-cell-border-top\">${esc(poData.deliveryTerm)}</td></tr>
+              <tr><td class=\"table-cell-border\" style=\"font-weight:700;\">Date of Delivery:</td><td colspan=\"2\" class=\"table-cell-border-right table-cell-border-top\">${fmtDate(poData.dateOfDelivery)}</td><td class=\"table-cell-border-right table-cell-border-top\" style=\"font-weight:700;\">Payment Term:</td><td colspan=\"2\" class=\"table-cell-border-top\">${esc(poData.paymentTerm)}</td></tr>
+              <tr><td class=\"table-cell-border text-center font-semibold\" style=\"width:13%;\">Stock/Property Number</td><td class=\"table-cell-border text-center font-semibold\" style=\"width:8%;\">Unit</td><td class=\"table-cell-border text-center font-semibold\" style=\"width:39%;\">Description</td><td class=\"table-cell-border text-center font-semibold\" style=\"width:10%;\">Quantity</td><td class=\"table-cell-border text-center font-semibold\" style=\"width:15%;\">Unit Cost</td><td class=\"table-cell-border-top text-center font-semibold\" style=\"width:15%;\">Amount</td></tr>
+              ${buildItems(poData)}
+              <tr><td colspan=\"5\" class=\"table-cell-border text-right font-semibold\">Grand Total:</td><td class=\"table-cell-border-top text-right font-bold\">${grandTotal ? fmtMoney(grandTotal) : ''}</td></tr>
+              ${poData.notes ? `<tr><td class='table-cell-border font-semibold'>Note:</td><td colspan='5' class='table-cell-border-top'>${esc(poData.notes)}</td></tr>` : ''}
+                            <tr>
+                                <td colspan=\"3\" class=\"table-cell-border text-center\" style=\"padding:16px;height:160px;vertical-align:top;\">
+                                    <p style=\"margin-bottom:8px;font-style:italic;font-size:10px;\">In case of failure to make the total delivery within the time specified above, a penalty of one percent (1%) of the total contract price shall be imposed for each day of delay, until the obligation is fully complied with.</p>
+                                    <p style=\"margin-bottom:8px;font-style:italic;font-size:10px;\">Conforme:</p>
+                                    <div style=\"width:192px;margin:0 auto 8px;height:48px;border-bottom:2px solid #dc2626;\"></div>
+                                    <p style=\"font-size:10px;font-style:italic;\">signature over printed name of supplier</p>
+                                    <div style=\"margin-top:12px;display:flex;align-items:center;justify-content:center;\"><span style=\"font-size:10px;margin-right:8px;\">Date:</span><span style=\"border-bottom:1px solid black;display:inline-block;width:80px;padding-bottom:2px;\"></span></div>
+                                </td>
+                                <td colspan=\"3\" class=\"table-cell-border-top text-center\" style=\"padding:16px;height:160px;vertical-align:top;\">
+                                    <div style=\"text-align:center;margin-top:48px;\">
+                                        <p style=\"margin-bottom:8px;font-style:italic;font-size:10px;\">Very truly yours,</p>
+                                        <div style=\"width:192px;margin:0 auto 8px;height:48px;border-bottom:2px solid #dc2626;\"></div>
+                                        <p style=\"font-size:10px;font-style:italic;\">signature over printed name of authorization</p>
+                                        <p style=\"font-size:10px;font-style:italic;\">College President</p>
+                                    </div>
+                                </td>
+                            </tr>
+              <tr><td class=\"table-cell-border font-semibold\" style=\"width:15%;\">Fund Cluster:</td><td class=\"table-cell-border-right table-cell-border-top\" style=\"width:35%;\">${esc(poData.fundCluster)}</td><td class=\"table-cell-border font-semibold\" style=\"width:15%;\">ORS/BURS No.:</td><td colspan=\"3\" class=\"table-cell-border-top\">${esc(poData.orsBursNo)}</td></tr>
+              <tr><td class=\"table-cell-border font-semibold\">Funds Available:</td><td class=\"table-cell-border-right table-cell-border-top\">${esc(poData.fundsAvailable)}</td><td class=\"table-cell-border font-semibold text-center\">Date of ORS/BURS:</td><td class=\"table-cell-border\">${fmtDate(poData.orsBursDate)}</td><td class=\"table-cell-border font-semibold text-center\">Amount:</td><td class=\"table-cell-border-top\">${esc(poData.orsBursAmount)}</td></tr>
+              <tr><td colspan=\"6\" class=\"table-cell-border-top text-center\" style=\"padding:16px;height:80px;vertical-align:bottom;\"><div style=\"height:48px;border-bottom:2px solid #dc2626;margin:0 auto 4px;width:192px;display:flex;align-items:flex-end;justify-content:center;font-size:10px;\">${esc(signatures.accountant)}</div><p style=\"font-size:10px;font-weight:700;margin:4px 0 0;\">Accountant's Signature</p></td></tr>
+            </tbody></table></div>
+          </div>
+        </div>
+        </body></html>`;
+    }
+
+    try {
+        const filenameBase = poNumber || 'purchase-order';
+        const html = buildHTML(filenameBase);
+        const w = window.open('', '_blank');
+        if (!w) {
+            showAlert('Popup blocked. Please allow popups for preview.', 'warning');
+            return;
+        }
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+        if (clean) {
+            try { w.document.title = ''; } catch (e) { /* ignore */ }
+            // Optionally auto-trigger print for clean mode
+            setTimeout(() => { w.print(); }, 300);
+        }
+        showAlert('PO preview opened. Use Print / PDF.', 'success');
+    } catch (e) {
+        console.error('PO preview failed', e);
+        showAlert('Failed to open PO preview.', 'error');
+    }
 }
 
 async function archiveRequest(requestId) {
