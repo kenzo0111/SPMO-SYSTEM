@@ -38,6 +38,8 @@ const AppState = {
             amount: 0
         }
     ],
+    // Wizard step for multi-step PO creation (1-4)
+    purchaseOrderWizardStep: 1,
 
     // ✅ add these for real data
     newRequests: [],
@@ -2085,6 +2087,10 @@ function openPurchaseOrderModal(mode = 'create', requestId = null) {
     const modalContent = modal.querySelector('.modal-content');
 
     AppState.currentModal = { mode, requestId };
+    // Reset wizard step if creating new
+    if (mode === 'create') {
+        AppState.purchaseOrderWizardStep = 1;
+    }
 
     // Load existing request if not create mode
     let requestData = null;
@@ -2094,11 +2100,19 @@ function openPurchaseOrderModal(mode = 'create', requestId = null) {
             AppState.completedRequests.find(r => r.id === requestId);
     }
 
-    modalContent.innerHTML = generatePurchaseOrderModal(mode, requestData);
+    // Use wizard wrapper if create mode, otherwise legacy single view for view mode
+    if (mode === 'create') {
+        modalContent.innerHTML = generatePurchaseOrderWizardShell(requestData);
+        renderPurchaseOrderWizardStep(requestData);
+    } else {
+        modalContent.innerHTML = generatePurchaseOrderModal(mode, requestData);
+    }
     modal.classList.add('active');
 
     lucide.createIcons();
-    initializePurchaseOrderModal(requestData);
+    if (mode === 'view') {
+        initializePurchaseOrderModal(requestData);
+    }
 }
 
 
@@ -2107,6 +2121,324 @@ function closePurchaseOrderModal() {
     modal.classList.remove('active');
     AppState.currentModal = null;
 }
+
+// ---------------------- //
+// Purchase Order Wizard  //
+// ---------------------- //
+
+function generatePurchaseOrderWizardShell(requestData) {
+    return `
+        <div class="modal-header">
+            <h2 class="modal-title">NEW PURCHASE ORDER</h2>
+            <p class="modal-subtitle">Camarines Norte State College</p>
+            <p style="font-size: 12px; color: #6b7280; margin: 0;">Entity Name</p>
+            <button class="modal-close" onclick="closePurchaseOrderModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="po-wizard-body"></div>
+        <div class="modal-footer" id="po-wizard-footer"></div>
+    `;
+}
+
+function renderPurchaseOrderWizardStep(requestData) {
+    const body = document.getElementById('po-wizard-body');
+    const footer = document.getElementById('po-wizard-footer');
+    if (!body || !footer) return;
+    const step = AppState.purchaseOrderWizardStep;
+
+    const totalSteps = 4;
+    const stepLabels = ['Supplier', 'Details', 'Items', 'Review'];
+    const progress = (() => {
+        const parts = [];
+        for (let i = 1; i <= totalSteps; i++) {
+            const cls = i < step ? 'po-step completed' : (i === step ? 'po-step active' : 'po-step');
+            parts.push(`<div class="po-step-wrap"><div class="${cls}">${i}</div><div class="po-step-label">${stepLabels[i - 1]}</div></div>`);
+        }
+        const fillPct = ((step - 1) / (totalSteps - 1)) * 100;
+        return `<div class="po-progress"><div class="po-progress-bar-fill" style="width:${fillPct}%;"></div>${parts.join('')}</div>`;
+    })();
+
+    function footerButtons(extraNextCondition = true, nextLabel = 'Next') {
+        return `
+            <button class="btn-secondary" onclick="closePurchaseOrderModal()">Cancel</button>
+            ${step > 1 ? `<button class="btn-secondary" onclick="prevPurchaseOrderStep()">Back</button>` : ''}
+            ${step < totalSteps ? `<button class="btn btn-primary" ${!extraNextCondition ? 'disabled' : ''} onclick="nextPurchaseOrderStep()">${nextLabel}</button>` :
+                `<button class="btn btn-primary" onclick="finalizePurchaseOrderCreation()">Create Purchase Order</button>`}
+        `;
+    }
+
+    if (step === 1) {
+        body.innerHTML = `
+            <div class="po-wizard">
+                ${progress}
+                <div class="po-step-head">
+                    <h3 class="section-title">Supplier Information</h3>
+                    <p class="po-help">Provide accurate supplier identity and tax details. These fields are used for validation and downstream financial references.</p>
+                </div>
+                <div class="po-fieldset">
+                    <h4>Primary</h4>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Supplier<span style="color:#dc2626"> *</span></label>
+                            <input type="text" class="form-input" id="po-supplier" placeholder="e.g. ABC Office Supplies">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">P.O. Number</label>
+                            <input type="text" class="form-input" id="po-number" placeholder="Auto generated" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="po-fieldset">
+                    <h4>Additional</h4>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Supplier Address</label>
+                            <textarea class="form-textarea" id="po-supplier-address" placeholder="Street, City, Province"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">TIN Number</label>
+                            <input type="text" class="form-input" id="po-supplier-tin" placeholder="000-000-000-000">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        footer.innerHTML = footerButtons(true, 'Next');
+        // Pre-fill PO number
+        const poInput = document.getElementById('po-number');
+        if (poInput) poInput.value = generateNewPONumber();
+    }
+    else if (step === 2) {
+        const departments = [
+            { value: 'COENG', label: 'College of Engineering' },
+            { value: 'CBPA', label: 'College of Business and Public Administration' },
+            { value: 'CAS', label: 'College of Arts and Sciences' },
+            { value: 'CCMS', label: 'College of Computing and Multimedia Studies' },
+            { value: 'OP', label: 'Office of the President' },
+            { value: 'OVPAA', label: 'Office of the Vice President for Academic Affairs' },
+            { value: 'OVPRE', label: 'Office of the Vice President for Research and Extension' },
+            { value: 'OVPFA', label: 'Office of the Vice President for Finance Affairs' }
+        ];
+        body.innerHTML = `
+            <div class="po-wizard">
+                ${progress}
+                <div class="po-step-head">
+                    <h3 class="section-title">Procurement & Delivery Details</h3>
+                    <p class="po-help">Specify contextual information that defines how and when the goods will be procured and delivered.</p>
+                </div>
+                <div class="po-fieldset">
+                    <h4>Core Details</h4>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Department<span style=\"color:#dc2626\"> *</span></label>
+                            <select class="form-select" id="po-department">
+                                <option value="">Select Department</option>
+                                ${departments.map(d => `<option value="${d.value}">${d.label}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date of Purchase</label>
+                            <input type="date" class="form-input" id="po-date">
+                        </div>
+                    </div>
+                </div>
+                <div class="po-fieldset">
+                    <h4>Procurement Context</h4>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Mode of Procurement</label>
+                            <select class="form-select" id="po-mode">
+                                <option value="">Select payment mode</option>
+                                <option>Small Value Procurement</option>
+                                <option>Medium Value Procurement</option>
+                                <option>High Value Procurement</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Gentlemen Clause</label>
+                            <textarea class="form-textarea" id="po-gentlemen" placeholder="Please furnish this office ..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="po-fieldset">
+                    <h4>Logistics</h4>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Place of Delivery</label>
+                            <input type="text" class="form-input" id="po-place" placeholder="Campus / Building / Room">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date of Delivery</label>
+                            <input type="text" class="form-input" id="po-delivery-date" placeholder="e.g. Within 30 days">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Delivery Term</label>
+                            <input type="text" class="form-input" id="po-delivery-term" placeholder="e.g. Partial / Complete">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Payment Term</label>
+                            <input type="text" class="form-input" id="po-payment-term" placeholder="e.g. Net 30">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        footer.innerHTML = footerButtons(true, 'Next');
+    }
+    else if (step === 3) {
+        // Initialize items state
+        initializePurchaseOrderModal(null);
+        body.innerHTML = `
+            <div class="po-wizard">
+                ${progress}
+                <div class="po-step-head">
+                    <h3 class="section-title">Items</h3>
+                    <p class="po-help">List each item clearly. Descriptions will auto-fill if the stock property number matches existing inventory.</p>
+                </div>
+                <div class="po-fieldset" style="padding-top:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 14px 0;">
+                        <p style="margin:0;font-size:13px;color:#374151;">Add the materials or assets to be procured.</p>
+                        <button class="btn btn-primary" type="button" onclick="addPOItem()"><i data-lucide="plus" class="icon"></i>Add Item</button>
+                    </div>
+                    <div class="table-container" style="max-height:300px;overflow:auto;">
+                        <table class="table" id="po-items-table">
+                            <thead>
+                                <tr>
+                                    <th>Stock #</th>
+                                    <th>Unit</th>
+                                    <th>Description</th>
+                                    <th>Detailed Description</th>
+                                    <th>Qty</th>
+                                    <th>Unit Cost</th>
+                                    <th>Amount</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="po-items-tbody"></tbody>
+                            <tfoot>
+                                <tr style="border-top:1px solid #e5e7eb;background:#f9fafb;">
+                                    <td colspan="6" style="text-align:right;font-weight:600;">Grand Total:</td>
+                                    <td style="font-weight:700;color:#dc2626;" id="grand-total">₱0.00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        footer.innerHTML = footerButtons(AppState.purchaseOrderItems.length > 0, 'Next');
+        renderPOItems();
+        lucide.createIcons();
+    }
+    else if (step === 4) {
+        const totalAmount = AppState.purchaseOrderItems.reduce((s, i) => s + i.amount, 0);
+        body.innerHTML = `
+            <div class="po-wizard">
+                ${progress}
+                <div class="po-step-head">
+                    <h3 class="section-title">Review & ORS/BURS</h3>
+                    <p class="po-help">Confirm all details. Once created, edits will require opening the order in edit mode.</p>
+                </div>
+                <div class="review-box" style="background:#f9fafb;border:1px solid #e5e7eb;padding:14px 16px;border-radius:10px;margin-bottom:18px;">
+                    <p style="margin:0 0 4px;font-weight:600;color:#111827;">Summary</p>
+                    <p style="margin:0;font-size:14px;color:#374151;">Items: ${AppState.purchaseOrderItems.length} • Total: <strong style="color:#dc2626;">${formatCurrency(totalAmount)}</strong></p>
+                </div>
+                <div class="po-fieldset">
+                    <h4>ORS / BURS</h4>
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label class="form-label">ORS/BURS No:</label>
+                            <input type="text" class="form-input" id="po-ors-no" placeholder="Part ORS/BURS number">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date of the ORS/BURS:</label>
+                            <input type="date" class="form-input" id="po-ors-date">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount:</label>
+                            <input type="text" class="form-input" id="po-ors-amount" placeholder="₱0.00">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        footer.innerHTML = footerButtons(true, 'Create');
+    }
+}
+
+function nextPurchaseOrderStep() {
+    if (AppState.purchaseOrderWizardStep < 4) {
+        AppState.purchaseOrderWizardStep++;
+        renderPurchaseOrderWizardStep();
+        lucide.createIcons();
+    }
+}
+
+function prevPurchaseOrderStep() {
+    if (AppState.purchaseOrderWizardStep > 1) {
+        AppState.purchaseOrderWizardStep--;
+        renderPurchaseOrderWizardStep();
+        lucide.createIcons();
+    }
+}
+
+function finalizePurchaseOrderCreation() {
+    // Gather data from wizard fields
+    const modal = document.getElementById('purchase-order-modal');
+    if (!modal) return;
+    const supplier = modal.querySelector('#po-supplier')?.value || '';
+    const supplierAddress = modal.querySelector('#po-supplier-address')?.value || '';
+    const supplierTIN = modal.querySelector('#po-supplier-tin')?.value || '';
+    const poNumber = modal.querySelector('#po-number')?.value || generateNewPONumber();
+    const department = modal.querySelector('#po-department')?.value || '';
+    const purchaseDate = modal.querySelector('#po-date')?.value || '';
+    const procurementMode = modal.querySelector('#po-mode')?.value || '';
+    const gentlemen = modal.querySelector('#po-gentlemen')?.value || '';
+    const placeOfDelivery = modal.querySelector('#po-place')?.value || '';
+    const deliveryDate = modal.querySelector('#po-delivery-date')?.value || '';
+    const deliveryTerm = modal.querySelector('#po-delivery-term')?.value || '';
+    const paymentTerm = modal.querySelector('#po-payment-term')?.value || '';
+    const orsNo = modal.querySelector('#po-ors-no')?.value || '';
+    const orsDate = modal.querySelector('#po-ors-date')?.value || '';
+    const orsAmount = modal.querySelector('#po-ors-amount')?.value || '';
+    const totalAmount = AppState.purchaseOrderItems.reduce((s, i) => s + i.amount, 0);
+
+    const newRequestId = generateNextRequestId();
+    const newRequest = {
+        id: newRequestId,
+        poNumber,
+        supplier,
+        supplierAddress,
+        supplierTIN,
+        requestDate: new Date().toISOString().split('T')[0],
+        deliveryDate,
+        purchaseDate,
+        procurementMode,
+        gentlemen,
+        placeOfDelivery,
+        deliveryTerm,
+        paymentTerm,
+        orsNo,
+        orsDate,
+        orsAmount,
+        totalAmount,
+        status: 'submitted',
+        requestedBy: 'Current User',
+        department,
+        items: [...AppState.purchaseOrderItems]
+    };
+    AppState.newRequests.push(newRequest);
+    showAlert(`New purchase order ${poNumber} created successfully!`, 'success');
+    loadPageContent('new-request');
+    closePurchaseOrderModal();
+}
+
+// Expose wizard functions
+window.nextPurchaseOrderStep = nextPurchaseOrderStep;
+window.prevPurchaseOrderStep = prevPurchaseOrderStep;
+window.finalizePurchaseOrderCreation = finalizePurchaseOrderCreation;
 
 function generatePurchaseOrderModal(mode, requestData = null) {
     const title = mode === 'create' ? 'NEW PURCHASE ORDER' : 'PURCHASE ORDER';
