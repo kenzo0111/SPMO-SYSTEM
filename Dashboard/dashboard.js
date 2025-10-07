@@ -4927,14 +4927,7 @@ function initStatusManagement(filter = "all") {
     // Export handler (same behavior as Reports export)
     document.getElementById('export-status-btn')?.addEventListener('click', exportStatusCSV);
     // Card click events to switch filters
-    mainContent.querySelectorAll('.status-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const s = card.getAttribute('data-status');
-            AppState.currentStatusFilter = s;
-            document.getElementById('status-table-body').innerHTML = renderStatusRows(s);
-            applyFilters();
-        });
-    });
+
     refreshStatusCards();
 }
 
