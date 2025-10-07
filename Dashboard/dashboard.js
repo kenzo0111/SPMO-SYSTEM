@@ -3836,83 +3836,174 @@ function closeUserModal() {
     modal.classList.remove('active');
 }
 
-// Your existing generateUserModal (included for context)
+// Enhanced User Modal with better design
 function generateUserModal(mode = 'view', userData = null) {
-    const title = mode === 'create' ? 'ADD NEW USER' :
-        mode === 'edit' ? 'EDIT USER' :
-            'USER DETAILS';
+    const title = mode === 'create' ? 'Add New User' :
+        mode === 'edit' ? 'Edit User Profile' :
+            'User Profile';
+
+    const subtitle = mode === 'create' ? 'Create a new user account' :
+        mode === 'edit' ? 'Update user information' :
+            'View user details';
 
     const isReadOnly = mode === 'view';
 
+    // Generate initials for avatar
+    const initials = userData?.name ?
+        userData.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() :
+        'NU';
+
     return `
-        <div class="modal-header">
-            <h2 class="modal-title">${title}</h2>
-            <button class="modal-close" onclick="closeUserModal()">
+        <div class="modal-header" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; border-bottom: none; padding: 32px 24px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                ${mode !== 'create' ? `
+                    <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 600; backdrop-filter: blur(10px);">
+                        ${initials}
+                    </div>
+                ` : ''}
+                <div style="flex: 1;">
+                    <h2 class="modal-title" style="color: white; font-size: 24px; margin-bottom: 4px;">${title}</h2>
+                    <p class="modal-subtitle" style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0;">${subtitle}</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeUserModal()" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                 <i data-lucide="x" style="width: 20px; height: 20px;"></i>
             </button>
         </div>
 
-        <div class="modal-body space-y-6">
-            <div class="form-group">
-                <label class="form-label">Name</label>
-                <input type="text" class="form-input" id="userName"
-                       value="${userData?.name || ''}"
-                       placeholder="Enter full name"
-                       ${isReadOnly ? 'readonly' : ''}>
+        <div class="modal-body" style="padding: 32px 24px; background: #f9fafb;">
+            <!-- Personal Information Section -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="user" style="width: 18px; height: 18px; color: #dc2626;"></i>
+                    Personal Information
+                </h3>
+                
+                <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="user-circle" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Full Name
+                        </label>
+                        <input type="text" class="form-input" id="userName"
+                               value="${userData?.name || ''}"
+                               placeholder="Enter full name"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="mail" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Email Address
+                        </label>
+                        <input type="email" class="form-input" id="userEmail"
+                               value="${userData?.email || ''}"
+                               placeholder="user@cnsc.edu.ph"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-input" id="userEmail"
-                       value="${userData?.email || ''}"
-                       placeholder="Enter email"
-                       ${isReadOnly ? 'readonly' : ''}>
+            <!-- Role & Department Section -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="briefcase" style="width: 18px; height: 18px; color: #dc2626;"></i>
+                    Role & Department
+                </h3>
+                
+                <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="shield" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Role
+                        </label>
+                        ${isReadOnly ? `
+                            <input type="text" class="form-input" value="${userData?.role || ''}" readonly style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; background: #f9fafb;">
+                        ` : `
+                            <select class="form-select" id="userRole" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                                <option value="">Select role</option>
+                                <option ${userData?.role === 'Admin' ? 'selected' : ''}>Admin</option>
+                                <option ${userData?.role === 'Manager' ? 'selected' : ''}>Manager</option>
+                                <option ${userData?.role === 'User' ? 'selected' : ''}>User</option>
+                                <option ${userData?.role === 'Student Assistant' ? 'selected' : ''}>Student Assistant</option>
+                                <option ${userData?.role === 'Viewer' ? 'selected' : ''}>Viewer</option>
+                            </select>
+                        `}
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="building" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Department
+                        </label>
+                        ${isReadOnly ? `
+                            <input type="text" class="form-input" value="${userData?.department || ''}" readonly style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; background: #f9fafb;">
+                        ` : `
+                            <select class="form-select" id="userDepartment" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                                <option value="">Select department</option>
+                                <option ${userData?.department === 'IT' ? 'selected' : ''}>IT</option>
+                                <option ${userData?.department === 'Procurement' ? 'selected' : ''}>Procurement</option>
+                                <option ${userData?.department === 'Finance' ? 'selected' : ''}>Finance</option>
+                                <option ${userData?.department === 'HR' ? 'selected' : ''}>HR</option>
+                                <option ${userData?.department === 'Admin' ? 'selected' : ''}>Admin</option>
+                                <option ${userData?.department === 'Operations' ? 'selected' : ''}>Operations</option>
+                            </select>
+                        `}
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Role</label>
-                <input type="text" class="form-input" id="userRole"
-                       value="${userData?.role || ''}"
-                       placeholder="Enter role"
-                       ${isReadOnly ? 'readonly' : ''}>
-            </div>
+            <!-- Account Status Section -->
+            <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="settings" style="width: 18px; height: 18px; color: #dc2626;"></i>
+                    Account Status
+                </h3>
+                
+                <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="activity" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Status
+                        </label>
+                        ${isReadOnly ? `
+                            <span class="badge ${userData?.status === 'Active' ? 'green' : 'red'}" style="display: inline-flex; padding: 8px 16px; font-size: 14px;">
+                                <i data-lucide="${userData?.status === 'Active' ? 'check-circle' : 'x-circle'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                                ${userData?.status || 'Inactive'}
+                            </span>
+                        ` : `
+                            <select class="form-select" id="userStatus" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                                <option value="Active" ${userData?.status === 'Active' ? 'selected' : ''}>Active</option>
+                                <option value="Inactive" ${userData?.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                            </select>
+                        `}
+                    </div>
 
-            <div class="form-group">
-                <label class="form-label">Department</label>
-                <input type="text" class="form-input" id="userDepartment"
-                       value="${userData?.department || ''}"
-                       placeholder="Enter department"
-                       ${isReadOnly ? 'readonly' : ''}>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                ${isReadOnly
-            ? `<span class="status-badge ${userData?.status === 'Active' ? 'green' : 'red'}">${userData?.status || 'Inactive'}</span>`
-            : `
-                        <select class="form-select" id="userStatus">
-                            <option ${userData?.status === 'Active' ? 'selected' : ''}>Active</option>
-                            <option ${userData?.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
-                        </select>
-                    `
-        }
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Created</label>
-                <input type="date" class="form-input" id="userCreated"
-                       value="${userData?.created || ''}"
-                       ${isReadOnly ? 'readonly' : ''}>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            ${mode === 'create' ? 'Join Date' : 'Created Date'}
+                        </label>
+                        <input type="date" class="form-input" id="userCreated"
+                               value="${userData?.created || new Date().toISOString().split('T')[0]}"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s; ${isReadOnly ? 'background: #f9fafb;' : ''}"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeUserModal()">
+        <div class="modal-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 24px; display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn-secondary" onclick="closeUserModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
+                <i data-lucide="${isReadOnly ? 'x' : 'arrow-left'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
                 ${isReadOnly ? 'Close' : 'Cancel'}
             </button>
             ${!isReadOnly ? `
-                <button class="btn btn-primary" onclick="saveUser('${userData?.id || ''}')">
-                    ${mode === 'create' ? 'Add User' : 'Update User'}
+                <button class="btn btn-primary" onclick="saveUser('${userData?.id || ''}')" style="padding: 10px 24px; font-weight: 500; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 4px 6px rgba(220, 38, 38, 0.25); transition: all 0.2s;">
+                    <i data-lucide="${mode === 'create' ? 'user-plus' : 'save'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                    ${mode === 'create' ? 'Add User' : 'Save Changes'}
                 </button>
             ` : ''}
         </div>
@@ -4113,94 +4204,175 @@ async function deleteProduct(productId) {
     loadPageContent('products');
 }
 
+// Enhanced Product Modal with modern design
 function generateProductModal(mode = 'create', productData = null) {
-    const title = mode === 'create' ? 'ADD NEW PRODUCT' : 'PRODUCT DETAILS';
+    const title = mode === 'create' ? 'Add New Product' :
+        mode === 'edit' ? 'Edit Product' : 'Product Details';
+    const subtitle = mode === 'create' ? 'Add a new product to inventory' :
+        mode === 'edit' ? 'Update product information' :
+            'View product details';
     const isReadOnly = mode === 'view';
 
+    // Product icon based on type
+    const getProductIcon = (type) => {
+        if (type === 'expendable') return 'package';
+        if (type === 'semi-expendable') return 'box';
+        if (type === 'non-expendable') return 'archive';
+        return 'package-plus';
+    };
+
+    const productIcon = getProductIcon(productData?.type);
+
     return `
-        <div class="modal-header">
-            <h2 class="modal-title">${title}</h2>
-            <p class="modal-subtitle">Manage Inventory</p>
-            <button class="modal-close" onclick="closeProductModal()">
+        <div class="modal-header" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; border-bottom: none; padding: 32px 24px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                ${mode !== 'create' && productData ? `
+                    <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                        <i data-lucide="${productIcon}" style="width: 32px; height: 32px; color: white;"></i>
+                    </div>
+                ` : ''}
+                <div style="flex: 1;">
+                    <h2 class="modal-title" style="color: white; font-size: 24px; margin-bottom: 4px;">${title}</h2>
+                    <p class="modal-subtitle" style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0;">${subtitle}</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeProductModal()" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                 <i data-lucide="x" style="width: 20px; height: 20px;"></i>
             </button>
         </div>
 
-        <div class="modal-body space-y-6">
-            <!-- Basic Product Info -->
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Product Name</label>
-                    <input type="text" class="form-input"
-                           value="${productData?.name || ''}"
-                           placeholder="Enter product name"
-                           ${isReadOnly ? 'readonly' : ''}>
+        <div class="modal-body" style="padding: 32px 24px; background: #f9fafb;">
+            <!-- Basic Product Information -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="info" style="width: 18px; height: 18px; color: #dc2626;"></i>
+                    Basic Information
+                </h3>
+                
+                <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="package" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Product Name
+                        </label>
+                        <input type="text" class="form-input" id="productName"
+                               value="${productData?.name || ''}"
+                               placeholder="e.g., Bond Paper A4"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="layers" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Category
+                        </label>
+                        <select class="form-select" id="productCategory" ${isReadOnly ? 'disabled' : ''} style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s; ${isReadOnly ? 'background: #f9fafb;' : ''}">
+                            <option value="">Select category</option>
+                            <option value="expendable" ${productData?.type === 'expendable' ? 'selected' : ''}>Expendable</option>
+                            <option value="semi-expendable" ${productData?.type === 'semi-expendable' ? 'selected' : ''}>Semi-Expendable</option>
+                            <option value="non-expendable" ${productData?.type === 'non-expendable' ? 'selected' : ''}>Non-Expendable</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Category</label>
-                    <select class="form-select" ${isReadOnly ? 'disabled' : ''}>
-                        <option value="">Select category</option>
-                        <option value="expendable" ${productData?.type === 'expendable' ? 'selected' : ''}>Expendable</option>
-                        <option value="semi-expendable" ${productData?.type === 'semi-expendable' ? 'selected' : ''}>Semi-Expendable</option>
-                        <option value="non-expendable" ${productData?.type === 'non-expendable' ? 'selected' : ''}>Non-Expendable</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Description</label>
-                <textarea class="form-textarea"
-                          placeholder="Enter description"
-                          ${isReadOnly ? 'readonly' : ''}>${productData?.description || ''}</textarea>
-            </div>
-
-            <!-- Pricing & Quantity -->
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Unit Cost</label>
-                    <input type="number" class="form-input"
-                           step="0.01" min="0"
-                           value="${productData?.unitCost || ''}"
-                           placeholder="Enter unit cost"
-                           ${isReadOnly ? 'readonly' : ''}>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Quantity</label>
-                    <input type="number" class="form-input"
-                           min="1"
-                           value="${productData?.quantity || ''}"
-                           placeholder="Enter quantity"
-                           ${isReadOnly ? 'readonly' : ''}>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="file-text" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Description
+                    </label>
+                    <textarea class="form-textarea" id="productDescription"
+                              placeholder="Provide detailed product description..."
+                              style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; min-height: 100px; transition: all 0.2s; ${isReadOnly ? 'background: #f9fafb;' : ''}"
+                              ${isReadOnly ? 'readonly' : ''}>${productData?.description || ''}</textarea>
                 </div>
             </div>
 
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Date</label>
-                    <input type="date" class="form-input"
-                           value="${productData?.date || ''}"
-                           ${isReadOnly ? 'readonly' : ''}>
+            <!-- Pricing & Inventory -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="dollar-sign" style="width: 18px; height: 18px; color: #dc2626;"></i>
+                    Pricing & Inventory
+                </h3>
+                
+                <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="tag" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Unit Cost
+                        </label>
+                        <input type="number" class="form-input" id="productUnitCost"
+                               step="0.01" min="0"
+                               value="${productData?.unitCost || ''}"
+                               placeholder="0.00"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="hash" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Quantity
+                        </label>
+                        <input type="number" class="form-input" id="productQuantity"
+                               min="1"
+                               value="${productData?.quantity || ''}"
+                               placeholder="1"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Total Value</label>
-                    <input type="text" class="form-input"
-                           value="${productData ? formatCurrency(productData.totalValue || 0) : '₱0.00'}"
-                           readonly>
+                <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Date Added
+                        </label>
+                        <input type="date" class="form-input" id="productDate"
+                               value="${productData?.date || new Date().toISOString().split('T')[0]}"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s; ${isReadOnly ? 'background: #f9fafb;' : ''}"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="calculator" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Total Value
+                        </label>
+                        <input type="text" class="form-input" id="productTotalValue"
+                               value="${productData ? formatCurrency(productData.totalValue || 0) : '₱0.00'}"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; background: #f9fafb; font-weight: 600; color: #059669;"
+                               readonly>
+                    </div>
                 </div>
             </div>
+
+            <!-- Product Info Box -->
+            ${productData?.id ? `
+                <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 12px; padding: 20px; border-left: 4px solid #2563eb;">
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <i data-lucide="info" style="width: 20px; height: 20px; color: #1e40af; flex-shrink: 0; margin-top: 2px;"></i>
+                        <div>
+                            <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #1e3a8a;">Product ID: ${productData.id}</h4>
+                            <p style="margin: 0; font-size: 13px; color: #1e40af; line-height: 1.5;">
+                                This product is categorized as <strong>${productData.type ? productData.type.charAt(0).toUpperCase() + productData.type.slice(1) : 'N/A'}</strong> and is currently ${productData.quantity > 0 ? 'in stock' : 'out of stock'}.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
         </div>
 
-        <!-- Modal Footer -->
-        <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeProductModal()">
+        <div class="modal-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 24px; display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn-secondary" onclick="closeProductModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
+                <i data-lucide="${isReadOnly ? 'x' : 'arrow-left'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
                 ${isReadOnly ? 'Close' : 'Cancel'}
             </button>
             ${!isReadOnly ? `
-                <button class="btn btn-primary" onclick="saveProduct('${productData?.id || ''}')">
-                    ${mode === 'create' ? 'Add Product' : 'Update Product'}
+                <button class="btn btn-primary" onclick="saveProduct('${productData?.id || ''}')" style="padding: 10px 24px; font-weight: 500; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 4px 6px rgba(220, 38, 38, 0.25); transition: all 0.2s;">
+                    <i data-lucide="${mode === 'create' ? 'plus-circle' : 'save'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                    ${mode === 'create' ? 'Add Product' : 'Save Changes'}
                 </button>
             ` : ''}
         </div>
@@ -4233,42 +4405,106 @@ function closeCategoryModal() {
 
 
 // Open the Category Modal
+// Enhanced Category Modal with modern design
 function generateCategoryModal(mode = 'create', categoryData = null) {
-    const title = mode === 'create' ? 'ADD NEW CATEGORY' : 'CATEGORY DETAILS';
+    const title = mode === 'create' ? 'Add New Category' :
+        mode === 'edit' ? 'Edit Category' : 'Category Details';
+    const subtitle = mode === 'create' ? 'Create a new inventory category' :
+        mode === 'edit' ? 'Update category information' :
+            'View category details';
     const isReadOnly = mode === 'view';
 
+    // Category icon based on category name
+    const getCategoryIcon = (name) => {
+        if (!name) return 'folder-plus';
+        const lowerName = name.toLowerCase();
+        if (lowerName.includes('expendable')) return 'package';
+        if (lowerName.includes('semi')) return 'box';
+        if (lowerName.includes('non')) return 'archive';
+        return 'folder';
+    };
+
+    const categoryIcon = getCategoryIcon(categoryData?.name);
+
     return `
-        <div class="modal-header">
-            <h2 class="modal-title">${title}</h2>
-            <button class="modal-close" onclick="closeCategoryModal()">
+        <div class="modal-header" style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; border-bottom: none; padding: 32px 24px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                ${mode !== 'create' ? `
+                    <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                        <i data-lucide="${categoryIcon}" style="width: 32px; height: 32px; color: white;"></i>
+                    </div>
+                ` : ''}
+                <div style="flex: 1;">
+                    <h2 class="modal-title" style="color: white; font-size: 24px; margin-bottom: 4px;">${title}</h2>
+                    <p class="modal-subtitle" style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0;">${subtitle}</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeCategoryModal()" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                 <i data-lucide="x" style="width: 20px; height: 20px;"></i>
             </button>
         </div>
 
-        <div class="modal-body space-y-6">
-            <div class="form-group">
-                <label class="form-label">Category Name</label>
-                <input type="text" class="form-input"
-                       value="${categoryData?.name || ''}"
-                       placeholder="Enter category name"
-                       ${isReadOnly ? 'readonly' : ''}>
+        <div class="modal-body" style="padding: 32px 24px; background: #f9fafb;">
+            <!-- Category Information Section -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="tag" style="width: 18px; height: 18px; color: #dc2626;"></i>
+                    Category Information
+                </h3>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="bookmark" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Category Name
+                    </label>
+                    <input type="text" class="form-input" id="categoryName"
+                           value="${categoryData?.name || ''}"
+                           placeholder="e.g., Expendable, Semi-Expendable, Non-Expendable"
+                           style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="file-text" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Description
+                    </label>
+                    <textarea class="form-textarea" id="categoryDescription"
+                              placeholder="Describe the purpose and criteria for this category..."
+                              style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; min-height: 120px; transition: all 0.2s; ${isReadOnly ? 'background: #f9fafb;' : ''}"
+                              ${isReadOnly ? 'readonly' : ''}>${categoryData?.description || ''}</textarea>
+                    <p style="margin: 6px 0 0 0; font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 4px;">
+                        <i data-lucide="info" style="width: 12px; height: 12px;"></i>
+                        Provide clear guidelines for items that belong to this category
+                    </p>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Description</label>
-                <textarea class="form-textarea"
-                          placeholder="Enter description"
-                          ${isReadOnly ? 'readonly' : ''}>${categoryData?.description || ''}</textarea>
-            </div>
+            <!-- Category Guidelines (shown in view/edit mode) -->
+            ${categoryData?.id ? `
+                <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 20px; border-left: 4px solid #f59e0b;">
+                    <div style="display: flex; align-items: start; gap: 12px;">
+                        <i data-lucide="lightbulb" style="width: 20px; height: 20px; color: #d97706; flex-shrink: 0; margin-top: 2px;"></i>
+                        <div>
+                            <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #92400e;">Category ID: ${categoryData.id}</h4>
+                            <p style="margin: 0; font-size: 13px; color: #78350f; line-height: 1.5;">
+                                This category helps organize inventory items based on their type, value, and lifecycle management requirements.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
         </div>
 
-        <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeCategoryModal()">
+        <div class="modal-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 24px; display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn-secondary" onclick="closeCategoryModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
+                <i data-lucide="${isReadOnly ? 'x' : 'arrow-left'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
                 ${isReadOnly ? 'Close' : 'Cancel'}
             </button>
             ${!isReadOnly ? `
-                <button class="btn btn-primary" onclick="saveCategory('${categoryData?.id || ''}')">
-                    ${mode === 'create' ? 'Add Category' : 'Update Category'}
+                <button class="btn btn-primary" onclick="saveCategory('${categoryData?.id || ''}')" style="padding: 10px 24px; font-weight: 500; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 4px 6px rgba(220, 38, 38, 0.25); transition: all 0.2s;">
+                    <i data-lucide="${mode === 'create' ? 'plus-circle' : 'save'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                    ${mode === 'create' ? 'Add Category' : 'Save Changes'}
                 </button>
             ` : ''}
         </div>
@@ -4276,10 +4512,13 @@ function generateCategoryModal(mode = 'create', categoryData = null) {
 }
 
 function saveCategory(categoryId) {
-    // Grab input values
+    // Grab input values using the IDs
     const modal = document.getElementById('category-modal');
-    const name = modal.querySelector('input').value;
-    const description = modal.querySelector('textarea').value;
+    const nameInput = modal.querySelector('#categoryName');
+    const descriptionInput = modal.querySelector('#categoryDescription');
+
+    const name = nameInput ? nameInput.value : '';
+    const description = descriptionInput ? descriptionInput.value : '';
 
     // Basic validation
     if (!name || name.trim().length < 2) {
@@ -4361,96 +4600,169 @@ function closeStockInModal() {
     modal.classList.remove('active');
 }
 
+// Enhanced Stock In Modal with modern design
 function generateStockInModal(mode = 'create', stockData = null) {
-    const title = mode === 'create' ? 'STOCK IN' : 'STOCK IN DETAILS';
+    const title = mode === 'create' ? 'Stock In Entry' :
+        mode === 'edit' ? 'Edit Stock In' : 'Stock In Details';
+    const subtitle = mode === 'create' ? 'Record incoming inventory' :
+        mode === 'edit' ? 'Update stock in transaction' :
+            'View stock in details';
     const isReadOnly = mode === 'view';
     const dateValue = stockData?.date || (mode === 'create' ? new Date().toISOString().split('T')[0] : '');
     const unitCostValue = (stockData?.unitCost || 0).toFixed(2);
     const totalValue = stockData ? formatCurrency(stockData.totalCost || 0) : formatCurrency(0);
 
     return `
-        <div class="modal-header">
-            <h2 class="modal-title">${title}</h2>
-            <button class="modal-close" onclick="closeStockInModal()">
+        <div class="modal-header" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; border-bottom: none; padding: 32px 24px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                    <i data-lucide="arrow-down-circle" style="width: 32px; height: 32px; color: white;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h2 class="modal-title" style="color: white; font-size: 24px; margin-bottom: 4px;">${title}</h2>
+                    <p class="modal-subtitle" style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0;">${subtitle}</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeStockInModal()" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                 <i data-lucide="x" style="width: 20px; height: 20px;"></i>
             </button>
         </div>
 
-        <div class="modal-body space-y-6">
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Date</label>
-                    <input type="date" class="form-input" id="date-input"
-                           value="${dateValue}"
+        <div class="modal-body" style="padding: 32px 24px; background: #f9fafb;">
+            <!-- Transaction Information -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="clipboard-list" style="width: 18px; height: 18px; color: #16a34a;"></i>
+                    Transaction Details
+                </h3>
+                
+                <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Date
+                        </label>
+                        <input type="date" class="form-input" id="date-input"
+                               value="${dateValue}"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="barcode" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            SKU
+                        </label>
+                        <input type="text" class="form-input" id="sku-input"
+                               value="${stockData?.sku || ''}"
+                               placeholder="e.g., E001, SE01, N001"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="package" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Product Name
+                    </label>
+                    <input type="text" class="form-input" id="product-input"
+                           value="${stockData?.productName || ''}"
+                           placeholder="Enter product name"
+                           style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
                            ${isReadOnly ? 'readonly' : ''}>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">SKU</label>
-                    <input type="text" class="form-input" id="sku-input"
-                           value="${stockData?.sku || ''}"
-                           placeholder="E001"
-                           ${isReadOnly ? 'readonly' : ''}>
+            </div>
+
+            <!-- Quantity & Pricing -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="calculator" style="width: 18px; height: 18px; color: #16a34a;"></i>
+                    Quantity & Pricing
+                </h3>
+                
+                <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="hash" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Quantity
+                        </label>
+                        <input type="number" class="form-input" id="qty-input"
+                               min="1"
+                               value="${stockData?.quantity || ''}"
+                               placeholder="1"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="tag" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Unit Cost
+                        </label>
+                        <input type="number" class="form-input" id="uc-input"
+                               step="0.01" min="0"
+                               value="${unitCostValue}"
+                               placeholder="0.00"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="dollar-sign" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Total Cost
+                    </label>
+                    <input type="text" class="form-input" id="total-input"
+                           value="${totalValue}"
+                           style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; background: #f0fdf4; font-weight: 600; color: #16a34a;"
+                           readonly>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Product Name</label>
-                <input type="text" class="form-input" id="product-input"
-                       value="${stockData?.productName || ''}"
-                       placeholder="Enter product name"
-                       ${isReadOnly ? 'readonly' : ''}>
-            </div>
-
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Quantity</label>
-                    <input type="number" class="form-input" id="qty-input"
-                           min="1"
-                           value="${stockData?.quantity || ''}"
-                           placeholder="Enter quantity"
+            <!-- Supplier & Receiver -->
+            <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="users" style="width: 18px; height: 18px; color: #16a34a;"></i>
+                    Supplier & Receiver
+                </h3>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="truck" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Supplier
+                    </label>
+                    <input type="text" class="form-input" id="supplier-input"
+                           value="${stockData?.supplier || ''}"
+                           placeholder="Enter supplier name"
+                           style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
                            ${isReadOnly ? 'readonly' : ''}>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Unit Cost</label>
-                    <input type="number" class="form-input" id="uc-input"
-                           step="0.01" min="0"
-                           value="${unitCostValue}"
-                           placeholder="0.00"
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="user-check" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Received By
+                    </label>
+                    <input type="text" class="form-input" id="receivedby-input"
+                           value="${stockData?.receivedBy || ''}"
+                           placeholder="Enter receiver name"
+                           style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
                            ${isReadOnly ? 'readonly' : ''}>
                 </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Total Cost</label>
-                <input type="text" class="form-input" id="total-input"
-                       value="${totalValue}"
-                       readonly>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Supplier</label>
-                <input type="text" class="form-input" id="supplier-input"
-                       value="${stockData?.supplier || ''}"
-                       placeholder="Enter supplier name"
-                       ${isReadOnly ? 'readonly' : ''}>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Received By</label>
-                <input type="text" class="form-input" id="receivedby-input"
-                       value="${stockData?.receivedBy || ''}"
-                       placeholder="Enter receiver name"
-                       ${isReadOnly ? 'readonly' : ''}>
             </div>
         </div>
 
-        <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeStockInModal()">
+        <div class="modal-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 24px; display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn-secondary" onclick="closeStockInModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
+                <i data-lucide="${isReadOnly ? 'x' : 'arrow-left'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
                 ${isReadOnly ? 'Close' : 'Cancel'}
             </button>
             ${!isReadOnly ? `
-                <button class="btn btn-primary" onclick="saveStockIn('${stockData?.id || ''}')">
-                    ${mode === 'create' ? 'Add Stock In' : 'Update Stock In'}
+                <button class="btn btn-primary" onclick="saveStockIn('${stockData?.id || ''}')" style="padding: 10px 24px; font-weight: 500; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); box-shadow: 0 4px 6px rgba(22, 163, 74, 0.25); transition: all 0.2s;">
+                    <i data-lucide="${mode === 'create' ? 'plus-circle' : 'save'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                    ${mode === 'create' ? 'Add Stock In' : 'Save Changes'}
                 </button>
             ` : ''}
         </div>
@@ -4592,112 +4904,193 @@ function closeStockOutModal() {
     modal.classList.remove('active');
 }
 
+// Enhanced Stock Out Modal with modern design
 function generateStockOutModal(mode = 'create', stockData = null) {
-    const title = mode === 'create' ? 'STOCK OUT' : 'STOCK OUT DETAILS';
+    const title = mode === 'create' ? 'Stock Out Entry' :
+        mode === 'edit' ? 'Edit Stock Out' : 'Stock Out Details';
+    const subtitle = mode === 'create' ? 'Record outgoing inventory' :
+        mode === 'edit' ? 'Update stock out transaction' :
+            'View stock out details';
     const isReadOnly = mode === 'view';
 
     return `
-        <div class="modal-header">
-            <h2 class="modal-title">${title}</h2>
-            <button class="modal-close" onclick="closeStockOutModal()">
+        <div class="modal-header" style="background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); color: white; border-bottom: none; padding: 32px 24px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                    <i data-lucide="arrow-up-circle" style="width: 32px; height: 32px; color: white;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h2 class="modal-title" style="color: white; font-size: 24px; margin-bottom: 4px;">${title}</h2>
+                    <p class="modal-subtitle" style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0;">${subtitle}</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeStockOutModal()" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                 <i data-lucide="x" style="width: 20px; height: 20px;"></i>
             </button>
         </div>
 
-        <div class="modal-body space-y-6">
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Date</label>
-                    <input id="so-date" type="date" class="form-input"
-                           value="${stockData?.date || ''}"
-                           ${isReadOnly ? 'readonly' : ''}>
+        <div class="modal-body" style="padding: 32px 24px; background: #f9fafb;">
+            <!-- Transaction Information -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="clipboard-list" style="width: 18px; height: 18px; color: #ea580c;"></i>
+                    Transaction Details
+                </h3>
+                
+                <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Date
+                        </label>
+                        <input id="so-date" type="date" class="form-input"
+                               value="${stockData?.date || new Date().toISOString().split('T')[0]}"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="barcode" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            SKU
+                        </label>
+                        <input id="so-sku" type="text" class="form-input"
+                               value="${stockData?.sku || ''}"
+                               placeholder="e.g., E001, SE01, N001"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">SKU</label>
-                    <input id="so-sku" type="text" class="form-input"
-                           value="${stockData?.sku || ''}"
-                           placeholder="E002"
-                           ${isReadOnly ? 'readonly' : ''}>
-                </div>
-            </div>
 
-            <div class="form-group">
-                <label class="form-label">Product Name</label>
-                <input id="so-product" type="text" class="form-input"
-                       value="${stockData?.productName || ''}"
-                       placeholder="Enter product name"
-                       ${isReadOnly ? 'readonly' : ''}>
-            </div>
-
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Quantity</label>
-                    <input id="so-qty" type="number" class="form-input"
-                           min="1"
-                           value="${stockData?.quantity || ''}"
-                           placeholder="Enter quantity"
-                           ${isReadOnly ? 'readonly' : ''}>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Unit Cost</label>
-                    <input id="so-uc" type="number" class="form-input"
-                           step="0.01" min="0"
-                           value="${stockData?.unitCost || ''}"
-                           placeholder="₱0.00"
-                           ${isReadOnly ? 'readonly' : ''}>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Total Cost</label>
-                <input id="so-total" type="text" class="form-input"
-                       value="${stockData ? formatCurrency(stockData.totalCost || 0) : '₱0.00'}"
-                       readonly>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Department</label>
-                <input id="so-dept" type="text" class="form-input"
-                       value="${stockData?.department || ''}"
-                       placeholder="Enter department"
-                       ${isReadOnly ? 'readonly' : ''}>
-            </div>
-
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Issued To</label>
-                    <input id="so-issued-to" type="text" class="form-input"
-                           value="${stockData?.issuedTo || ''}"
-                           placeholder="Employee / Person"
-                           ${isReadOnly ? 'readonly' : ''}>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Issued By</label>
-                    <input id="so-issued-by" type="text" class="form-input"
-                           value="${stockData?.issuedBy || ''}"
-                           placeholder="Staff / Officer"
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="package" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Product Name
+                    </label>
+                    <input id="so-product" type="text" class="form-input"
+                           value="${stockData?.productName || ''}"
+                           placeholder="Enter product name"
+                           style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
                            ${isReadOnly ? 'readonly' : ''}>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                <select id="so-status" class="form-select" ${isReadOnly ? 'disabled' : ''}>
-                    <option value="">Select status</option>
-                    <option value="Completed" ${stockData?.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                    <option value="Pending" ${stockData?.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                    <option value="Cancelled" ${stockData?.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                </select>
+            <!-- Quantity & Pricing -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="calculator" style="width: 18px; height: 18px; color: #ea580c;"></i>
+                    Quantity & Pricing
+                </h3>
+                
+                <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="hash" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Quantity
+                        </label>
+                        <input id="so-qty" type="number" class="form-input"
+                               min="1"
+                               value="${stockData?.quantity || ''}"
+                               placeholder="1"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="tag" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Unit Cost
+                        </label>
+                        <input id="so-uc" type="number" class="form-input"
+                               step="0.01" min="0"
+                               value="${stockData?.unitCost || ''}"
+                               placeholder="0.00"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="dollar-sign" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Total Cost
+                    </label>
+                    <input id="so-total" type="text" class="form-input"
+                           value="${stockData ? formatCurrency(stockData.totalCost || 0) : '₱0.00'}"
+                           style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; background: #fff7ed; font-weight: 600; color: #ea580c;"
+                           readonly>
+                </div>
+            </div>
+
+            <!-- Department & Personnel -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="building" style="width: 18px; height: 18px; color: #ea580c;"></i>
+                    Department & Personnel
+                </h3>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="building-2" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Department
+                    </label>
+                    <input id="so-dept" type="text" class="form-input"
+                           value="${stockData?.department || ''}"
+                           placeholder="Enter department name"
+                           style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                           ${isReadOnly ? 'readonly' : ''}>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="user" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Issued To
+                        </label>
+                        <input id="so-issued-to" type="text" class="form-input"
+                               value="${stockData?.issuedTo || ''}"
+                               placeholder="Employee / Person"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="user-check" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Issued By
+                        </label>
+                        <input id="so-issued-by" type="text" class="form-input"
+                               value="${stockData?.issuedBy || ''}"
+                               placeholder="Staff / Officer"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="activity" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Status
+                    </label>
+                    <select id="so-status" class="form-select" ${isReadOnly ? 'disabled' : ''} style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s; ${isReadOnly ? 'background: #f9fafb;' : ''}">
+                        <option value="">Select status</option>
+                        <option value="Completed" ${stockData?.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        <option value="Pending" ${stockData?.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Cancelled" ${stockData?.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                    </select>
+                </div>
             </div>
         </div>
 
-        <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeStockOutModal()">
+        <div class="modal-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 24px; display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn-secondary" onclick="closeStockOutModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
+                <i data-lucide="${isReadOnly ? 'x' : 'arrow-left'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
                 ${isReadOnly ? 'Close' : 'Cancel'}
             </button>
             ${!isReadOnly ? `
-                <button class="btn btn-primary" onclick="saveStockOut('${stockData?.id || ''}')">
-                    ${mode === 'create' ? 'Add Stock Out' : 'Update Stock Out'}
+                <button class="btn btn-primary" onclick="saveStockOut('${stockData?.id || ''}')" style="padding: 10px 24px; font-weight: 500; background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); box-shadow: 0 4px 6px rgba(234, 88, 12, 0.25); transition: all 0.2s;">
+                    <i data-lucide="${mode === 'create' ? 'plus-circle' : 'save'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                    ${mode === 'create' ? 'Add Stock Out' : 'Save Changes'}
                 </button>
             ` : ''}
         </div>
