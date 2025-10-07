@@ -54,11 +54,11 @@ const AppState = {
     ],
     // Unified status list (replaces hardcoded table rows in status management)
     statusRequests: [
-        { id: 'REQ-2024-001', requester: 'John Smith', department: 'IT Department', item: 'Laptop Computer', priority: 'high', updatedAt: '2024-01-15', status: 'received', cost: 1200 },
-        { id: 'REQ-2024-005', requester: 'David Brown', department: 'Operations', item: 'Safety Equipment', priority: 'high', updatedAt: '2024-01-16', status: 'received', cost: 400 },
-        { id: 'REQ-2024-002', requester: 'Alice Green', department: 'Finance', item: 'Printer', priority: 'medium', updatedAt: '2024-01-10', status: 'finished', cost: 300 },
-        { id: 'REQ-2024-003', requester: 'Bob Lee', department: 'HR', item: 'Office Chairs', priority: 'low', updatedAt: '2024-01-12', status: 'cancelled', cost: 500 },
-        { id: 'REQ-2024-004', requester: 'Emily Davis', department: 'Marketing', item: 'Projector', priority: 'medium', updatedAt: '2024-01-14', status: 'rejected', cost: 700 }
+        { id: 'REQ-2025-001', requester: 'John Smith', department: 'IT Department', item: 'Laptop Computer', priority: 'high', updatedAt: '2024-01-15', status: 'received', cost: 1200 },
+        { id: 'REQ-2025-005', requester: 'David Brown', department: 'Operations', item: 'Safety Equipment', priority: 'high', updatedAt: '2024-01-16', status: 'received', cost: 400 },
+        { id: 'REQ-2025-002', requester: 'Alice Green', department: 'Finance', item: 'Printer', priority: 'medium', updatedAt: '2024-01-10', status: 'finished', cost: 300 },
+        { id: 'REQ-2025-003', requester: 'Bob Lee', department: 'HR', item: 'Office Chairs', priority: 'low', updatedAt: '2024-01-12', status: 'cancelled', cost: 500 },
+        { id: 'REQ-2025-004', requester: 'Emily Davis', department: 'Marketing', item: 'Projector', priority: 'medium', updatedAt: '2024-01-14', status: 'rejected', cost: 700 }
     ],
     currentStatusFilter: 'all'
 };
@@ -2148,16 +2148,23 @@ function closePurchaseOrderModal() {
 
 function generatePurchaseOrderWizardShell(requestData) {
     return `
-        <div class="modal-header">
-            <h2 class="modal-title">NEW PURCHASE ORDER</h2>
-            <p class="modal-subtitle">Camarines Norte State College</p>
-            <p style="font-size: 12px; color: #6b7280; margin: 0;">Entity Name</p>
-            <button class="modal-close" onclick="closePurchaseOrderModal()">
+        <div class="modal-header" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border-bottom: none; padding: 32px 24px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                    <i data-lucide="file-plus" style="width: 32px; height: 32px; color: white;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h2 class="modal-title" style="color: white; font-size: 24px; margin-bottom: 4px;">New Purchase Order</h2>
+                    <p class="modal-subtitle" style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0;">Step-by-step purchase order creation</p>
+                    <p style="font-size: 12px; color: rgba(255,255,255,0.8); margin: 4px 0 0 0;">Camarines Norte State College</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closePurchaseOrderModal()" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                 <i data-lucide="x" style="width: 20px; height: 20px;"></i>
             </button>
         </div>
-        <div class="modal-body" id="po-wizard-body"></div>
-        <div class="modal-footer" id="po-wizard-footer"></div>
+        <div class="modal-body" id="po-wizard-body" style="padding: 32px 24px; background: #f9fafb;"></div>
+        <div class="modal-footer" id="po-wizard-footer" style="padding: 20px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: flex-end;"></div>
     `;
 }
 
@@ -2169,22 +2176,51 @@ function renderPurchaseOrderWizardStep(requestData) {
 
     const totalSteps = 4;
     const stepLabels = ['Supplier', 'Details', 'Items', 'Review'];
+    const stepIcons = ['truck', 'file-text', 'package', 'check-circle'];
+
     const progress = (() => {
         const parts = [];
         for (let i = 1; i <= totalSteps; i++) {
-            const cls = i < step ? 'po-step completed' : (i === step ? 'po-step active' : 'po-step');
-            parts.push(`<div class="po-step-wrap"><div class="${cls}">${i}</div><div class="po-step-label">${stepLabels[i - 1]}</div></div>`);
+            const isCompleted = i < step;
+            const isActive = i === step;
+            const cls = isCompleted ? 'po-step completed' : (isActive ? 'po-step active' : 'po-step');
+            const stepColor = isCompleted ? '#16a34a' : (isActive ? '#2563eb' : '#9ca3af');
+            parts.push(`
+                <div class="po-step-wrap">
+                    <div class="${cls}" style="background: ${isCompleted ? '#16a34a' : (isActive ? '#2563eb' : '#e5e7eb')}; color: ${isCompleted || isActive ? 'white' : '#6b7280'}; box-shadow: ${isActive ? '0 4px 6px rgba(37, 99, 235, 0.3)' : 'none'};">
+                        ${isCompleted ? '<i data-lucide="check" style="width: 16px; height: 16px;"></i>' : i}
+                    </div>
+                    <div class="po-step-label" style="color: ${stepColor}; font-weight: ${isActive ? '600' : '500'};">${stepLabels[i - 1]}</div>
+                </div>
+            `);
         }
         const fillPct = ((step - 1) / (totalSteps - 1)) * 100;
-        return `<div class="po-progress"><div class="po-progress-bar-fill" style="width:${fillPct}%;"></div>${parts.join('')}</div>`;
+        return `<div class="po-progress" style="margin-bottom: 32px;"><div class="po-progress-bar-fill" style="width:${fillPct}%; background: linear-gradient(90deg, #16a34a 0%, #2563eb 100%);"></div>${parts.join('')}</div>`;
     })();
 
     function footerButtons(extraNextCondition = true, nextLabel = 'Next') {
         return `
-            <button class="btn-secondary" onclick="closePurchaseOrderModal()">Cancel</button>
-            ${step > 1 ? `<button class="btn-secondary" onclick="prevPurchaseOrderStep()">Back</button>` : ''}
-            ${step < totalSteps ? `<button class="btn btn-primary" ${!extraNextCondition ? 'disabled' : ''} onclick="nextPurchaseOrderStep()">${nextLabel}</button>` :
-                `<button class="btn btn-primary" onclick="finalizePurchaseOrderCreation()">Create Purchase Order</button>`}
+            <button class="btn-secondary" onclick="closePurchaseOrderModal()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; transition: all 0.2s;">
+                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                Cancel
+            </button>
+            ${step > 1 ? `
+                <button class="btn-secondary" onclick="prevPurchaseOrderStep()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; transition: all 0.2s;">
+                    <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                    Back
+                </button>
+            ` : ''}
+            ${step < totalSteps ? `
+                <button class="btn btn-primary" ${!extraNextCondition ? 'disabled' : ''} onclick="nextPurchaseOrderStep()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); box-shadow: 0 4px 6px rgba(37, 99, 235, 0.25); transition: all 0.2s;">
+                    ${nextLabel}
+                    <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                </button>
+            ` : `
+                <button class="btn btn-primary" onclick="finalizePurchaseOrderCreation()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); box-shadow: 0 4px 6px rgba(22, 163, 74, 0.25); transition: all 0.2s;">
+                    <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                    Create Purchase Order
+                </button>
+            `}
         `;
     }
 
@@ -2192,33 +2228,50 @@ function renderPurchaseOrderWizardStep(requestData) {
         body.innerHTML = `
             <div class="po-wizard">
                 ${progress}
-                <div class="po-step-head">
-                    <h3 class="section-title">Supplier Information</h3>
-                    <p class="po-help">Provide accurate supplier identity and tax details. These fields are used for validation and downstream financial references.</p>
-                </div>
-                <div class="po-fieldset">
-                    <h4>Primary</h4>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label class="form-label">Supplier<span style="color:#dc2626"> *</span></label>
-                            <input type="text" class="form-input" id="po-supplier" placeholder="e.g. ABC Office Supplies" value="${AppState.purchaseOrderDraft.supplier || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">P.O. Number</label>
-                            <input type="text" class="form-input" id="po-number" placeholder="Auto generated" value="${AppState.purchaseOrderDraft.poNumber || ''}" readonly>
+                <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="po-step-head" style="margin-bottom: 24px;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="truck" style="width: 20px; height: 20px; color: #2563eb;"></i>
+                            Supplier Information
+                        </h3>
+                        <p style="margin: 0; font-size: 13px; color: #6b7280;">Provide accurate supplier identity and tax details. These fields are used for validation and downstream financial references.</p>
+                    </div>
+                    <div style="margin-bottom: 24px;">
+                        <h4 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #374151; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;">Primary Information</h4>
+                        <div class="grid-2">
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="building" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Supplier<span style="color:#dc2626"> *</span>
+                                </label>
+                                <input type="text" class="form-input" id="po-supplier" placeholder="e.g. ABC Office Supplies" value="${AppState.purchaseOrderDraft.supplier || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="file-text" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    P.O. Number
+                                </label>
+                                <input type="text" class="form-input" id="po-number" placeholder="Auto generated" value="${AppState.purchaseOrderDraft.poNumber || ''}" readonly style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; background: #f9fafb; color: #6b7280;">
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="po-fieldset">
-                    <h4>Additional</h4>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label class="form-label">Supplier Address</label>
-                            <textarea class="form-textarea" id="po-supplier-address" placeholder="Street, City, Province">${AppState.purchaseOrderDraft.supplierAddress || ''}</textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">TIN Number</label>
-                            <input type="text" class="form-input" id="po-supplier-tin" placeholder="000-000-000-000" value="${AppState.purchaseOrderDraft.supplierTIN || ''}">
+                    <div>
+                        <h4 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #374151; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;">Additional Details</h4>
+                        <div class="grid-2">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="map-pin" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Supplier Address
+                                </label>
+                                <textarea class="form-textarea" id="po-supplier-address" placeholder="Street, City, Province" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; min-height: 80px; transition: all 0.2s;">${AppState.purchaseOrderDraft.supplierAddress || ''}</textarea>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="hash" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    TIN Number
+                                </label>
+                                <input type="text" class="form-input" id="po-supplier-tin" placeholder="000-000-000-000" value="${AppState.purchaseOrderDraft.supplierTIN || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2248,62 +2301,91 @@ function renderPurchaseOrderWizardStep(requestData) {
         body.innerHTML = `
             <div class="po-wizard">
                 ${progress}
-                <div class="po-step-head">
-                    <h3 class="section-title">Procurement & Delivery Details</h3>
-                    <p class="po-help">Specify contextual information that defines how and when the goods will be procured and delivered.</p>
-                </div>
-                <div class="po-fieldset">
-                    <h4>Core Details</h4>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label class="form-label">Department<span style=\"color:#dc2626\"> *</span></label>
-                            <select class="form-select" id="po-department">
-                                <option value="">Select Department</option>
-                                ${departments.map(d => `<option value="${d.value}" ${AppState.purchaseOrderDraft.department === d.value ? 'selected' : ''}>${d.label}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Date of Purchase</label>
-                            <input type="date" class="form-input" id="po-date" value="${AppState.purchaseOrderDraft.purchaseDate || ''}">
+                <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="po-step-head" style="margin-bottom: 24px;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="file-text" style="width: 20px; height: 20px; color: #2563eb;"></i>
+                            Procurement & Delivery Details
+                        </h3>
+                        <p style="margin: 0; font-size: 13px; color: #6b7280;">Specify contextual information that defines how and when the goods will be procured and delivered.</p>
+                    </div>
+                    <div style="margin-bottom: 24px;">
+                        <h4 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #374151; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;">Core Details</h4>
+                        <div class="grid-2">
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="briefcase" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Department<span style="color:#dc2626"> *</span>
+                                </label>
+                                <select class="form-select" id="po-department" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                                    <option value="">Select Department</option>
+                                    ${departments.map(d => `<option value="${d.value}" ${AppState.purchaseOrderDraft.department === d.value ? 'selected' : ''}>${d.label}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Date of Purchase
+                                </label>
+                                <input type="date" class="form-input" id="po-date" value="${AppState.purchaseOrderDraft.purchaseDate || ''}" min="${new Date().toISOString().split('T')[0]}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="po-fieldset">
-                    <h4>Procurement Context</h4>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label class="form-label">Mode of Procurement</label>
-                            <select class="form-select" id="po-mode">
-                                <option value="">Select payment mode</option>
-                                <option ${AppState.purchaseOrderDraft.procurementMode === 'Small Value Procurement' ? 'selected' : ''}>Small Value Procurement</option>
-                                <option ${AppState.purchaseOrderDraft.procurementMode === 'Medium Value Procurement' ? 'selected' : ''}>Medium Value Procurement</option>
-                                <option ${AppState.purchaseOrderDraft.procurementMode === 'High Value Procurement' ? 'selected' : ''}>High Value Procurement</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Gentlemen Clause</label>
-                            <textarea class="form-textarea" id="po-gentlemen" placeholder="Please furnish this office ...">${AppState.purchaseOrderDraft.gentlemen || ''}</textarea>
+                    <div style="margin-bottom: 24px;">
+                        <h4 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #374151; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;">Procurement Context</h4>
+                        <div class="grid-2">
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="shopping-cart" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Mode of Procurement
+                                </label>
+                                <select class="form-select" id="po-mode" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                                    <option value="">Select procurement mode</option>
+                                    <option ${AppState.purchaseOrderDraft.procurementMode === 'Small Value Procurement' ? 'selected' : ''}>Small Value Procurement</option>
+                                    <option ${AppState.purchaseOrderDraft.procurementMode === 'Medium Value Procurement' ? 'selected' : ''}>Medium Value Procurement</option>
+                                    <option ${AppState.purchaseOrderDraft.procurementMode === 'High Value Procurement' ? 'selected' : ''}>High Value Procurement</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="message-square" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Gentlemen Clause
+                                </label>
+                                <textarea class="form-textarea" id="po-gentlemen" placeholder="Please furnish this office ..." style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; min-height: 80px; transition: all 0.2s;">${AppState.purchaseOrderDraft.gentlemen || ''}</textarea>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="po-fieldset">
-                    <h4>Logistics</h4>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label class="form-label">Place of Delivery</label>
-                            <input type="text" class="form-input" id="po-place" placeholder="Campus / Building / Room" value="${AppState.purchaseOrderDraft.placeOfDelivery || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Date of Delivery</label>
-                            <input type="text" class="form-input" id="po-delivery-date" placeholder="e.g. Within 30 days" value="${AppState.purchaseOrderDraft.deliveryDate || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Delivery Term</label>
-                            <input type="text" class="form-input" id="po-delivery-term" placeholder="e.g. Partial / Complete" value="${AppState.purchaseOrderDraft.deliveryTerm || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Payment Term</label>
-                            <input type="text" class="form-input" id="po-payment-term" placeholder="e.g. Net 30" value="${AppState.purchaseOrderDraft.paymentTerm || ''}">
+                    <div>
+                        <h4 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #374151; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;">Logistics</h4>
+                        <div class="grid-2">
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="map-pin" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Place of Delivery
+                                </label>
+                                <input type="text" class="form-input" id="po-place" placeholder="Campus / Building / Room" value="${AppState.purchaseOrderDraft.placeOfDelivery || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="calendar-check" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Date of Delivery
+                                </label>
+                                <input type="text" class="form-input" id="po-delivery-date" placeholder="e.g. Within 30 days" value="${AppState.purchaseOrderDraft.deliveryDate || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="clock" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Delivery Term
+                                </label>
+                                <input type="text" class="form-input" id="po-delivery-term" placeholder="e.g. Partial / Complete" value="${AppState.purchaseOrderDraft.deliveryTerm || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="credit-card" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Payment Term
+                                </label>
+                                <input type="text" class="form-input" id="po-payment-term" placeholder="e.g. Net 30" value="${AppState.purchaseOrderDraft.paymentTerm || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2315,35 +2397,44 @@ function renderPurchaseOrderWizardStep(requestData) {
         body.innerHTML = `
             <div class="po-wizard">
                 ${progress}
-                <div class="po-step-head">
-                    <h3 class="section-title">Items</h3>
-                    <p class="po-help">List each item clearly. Descriptions will auto-fill if the stock property number matches existing inventory.</p>
-                </div>
-                <div class="po-fieldset" style="padding-top:12px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 14px 0;">
-                        <p style="margin:0;font-size:13px;color:#374151;">Add the materials or assets to be procured.</p>
-                        <button class="btn btn-primary" type="button" onclick="addPOItem()"><i data-lucide="plus" class="icon"></i>Add Item</button>
+                <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="po-step-head" style="margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="package" style="width: 20px; height: 20px; color: #2563eb;"></i>
+                            Order Items
+                        </h3>
+                        <p style="margin: 0; font-size: 13px; color: #6b7280;">List each item clearly. Descriptions will auto-fill if the stock property number matches existing inventory.</p>
                     </div>
-                    <div class="table-container" style="max-height:300px;overflow:auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #eff6ff; border-radius: 8px; border: 1px solid #bfdbfe;">
+                        <p style="margin: 0; font-size: 13px; color: #1e40af; font-weight: 500;">
+                            <i data-lucide="info" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i>
+                            Add the materials or assets to be procured
+                        </p>
+                        <button class="btn btn-primary" type="button" onclick="addPOItem()" style="padding: 8px 16px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); box-shadow: 0 4px 6px rgba(37, 99, 235, 0.25);">
+                            <i data-lucide="plus" class="icon" style="width: 16px; height: 16px;"></i>
+                            Add Item
+                        </button>
+                    </div>
+                    <div class="table-container" style="max-height: 350px; overflow: auto; border: 2px solid #e5e7eb; border-radius: 8px;">
                         <table class="table" id="po-items-table">
-                            <thead>
+                            <thead style="background: #f9fafb;">
                                 <tr>
-                                    <th>Stock #</th>
-                                    <th>Unit</th>
-                                    <th>Description</th>
-                                    <th>Detailed Description</th>
-                                    <th>Qty</th>
-                                    <th>Unit Cost</th>
-                                    <th>Amount</th>
-                                    <th>Action</th>
+                                    <th style="padding: 12px;">Stock #</th>
+                                    <th style="padding: 12px;">Unit</th>
+                                    <th style="padding: 12px;">Description</th>
+                                    <th style="padding: 12px;">Detailed Description</th>
+                                    <th style="padding: 12px;">Qty</th>
+                                    <th style="padding: 12px;">Unit Cost</th>
+                                    <th style="padding: 12px;">Amount</th>
+                                    <th style="padding: 12px;">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="po-items-tbody"></tbody>
                             <tfoot>
-                                <tr style="border-top:1px solid #e5e7eb;background:#f9fafb;">
-                                    <td colspan="6" style="text-align:right;font-weight:600;">Grand Total:</td>
-                                    <td style="font-weight:700;color:#dc2626;" id="grand-total">₱0.00</td>
-                                    <td></td>
+                                <tr style="border-top: 2px solid #e5e7eb; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+                                    <td colspan="6" style="text-align: right; font-weight: 600; padding: 16px; color: #1e40af;">Grand Total:</td>
+                                    <td style="font-weight: 700; color: #2563eb; padding: 16px; font-size: 16px;" id="grand-total">₱0.00</td>
+                                    <td style="padding: 16px;"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -2362,64 +2453,132 @@ function renderPurchaseOrderWizardStep(requestData) {
         body.innerHTML = `
             <div class="po-wizard">
                 ${progress}
-                <div class="po-step-head">
-                    <h3 class="section-title">Review & ORS/BURS</h3>
-                    <p class="po-help">Confirm all details. Once created, edits will require opening the order in edit mode.</p>
-                </div>
-                <div class="review-box" style="background:#f9fafb;border:1px solid #e5e7eb;padding:14px 16px;border-radius:10px;margin-bottom:18px;">
-                    <p style="margin:0 0 4px;font-weight:600;color:#111827;">Summary</p>
-                    <p style="margin:0;font-size:14px;color:#374151;">Items: ${AppState.purchaseOrderItems.length} • Total: <strong style="color:#dc2626;">${formatCurrency(totalAmount)}</strong></p>
-                </div>
-                <div class="po-fieldset">
-                    <h4>Funding</h4>
-                    <div class="grid-3">
-                        <div class="form-group">
-                            <label class="form-label">Fund Cluster</label>
-                            <input type="text" class="form-input" id="po-fund-cluster" placeholder="e.g. 01" value="${AppState.purchaseOrderDraft.fundCluster || ''}">
+                <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div class="po-step-head" style="margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="check-circle" style="width: 20px; height: 20px; color: #16a34a;"></i>
+                            Review & Finalize
+                        </h3>
+                        <p style="margin: 0; font-size: 13px; color: #6b7280;">Confirm all details. Once created, edits will require opening the order in edit mode.</p>
+                    </div>
+                    
+                    <!-- Summary Box -->
+                    <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #93c5fd; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <i data-lucide="clipboard-check" style="width: 20px; height: 20px; color: #1e40af;"></i>
+                            <p style="margin: 0; font-weight: 600; color: #1e40af; font-size: 15px;">Order Summary</p>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Funds Available (Optional)</label>
-                            <input type="text" class="form-input" id="po-funds-available" placeholder="e.g. ₱0.00" value="${AppState.purchaseOrderDraft.fundsAvailable || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Notes (Optional)</label>
-                            <input type="text" class="form-input" id="po-notes" placeholder="Short note" value="${AppState.purchaseOrderDraft.notes || ''}">
+                        <div style="display: flex; gap: 24px; margin-top: 12px;">
+                            <div style="flex: 1;">
+                                <p style="margin: 0; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Items</p>
+                                <p style="margin: 4px 0 0 0; font-size: 20px; font-weight: 700; color: #2563eb;">${AppState.purchaseOrderItems.length}</p>
+                            </div>
+                            <div style="flex: 2;">
+                                <p style="margin: 0; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Total Amount</p>
+                                <p style="margin: 4px 0 0 0; font-size: 20px; font-weight: 700; color: #16a34a;">${formatCurrency(totalAmount)}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="po-fieldset">
-                    <h4>ORS / BURS</h4>
-                    <div class="grid-3">
-                        <div class="form-group">
-                            <label class="form-label">ORS/BURS No:</label>
-                            <input type="text" class="form-input" id="po-ors-no" placeholder="Part ORS/BURS number">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Date of the ORS/BURS:</label>
-                            <input type="date" class="form-input" id="po-ors-date">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Amount:</label>
-                            <input type="text" class="form-input" id="po-ors-amount" placeholder="₱0.00">
+                    
+                    <!-- Funding Section -->
+                    <div style="margin-bottom: 24px;">
+                        <h4 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #374151; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="dollar-sign" style="width: 16px; height: 16px; color: #2563eb;"></i>
+                            Funding Information
+                        </h4>
+                        <div class="grid-3">
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="layers" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Fund Cluster
+                                </label>
+                                <input type="text" class="form-input" id="po-fund-cluster" placeholder="e.g. 01" value="${AppState.purchaseOrderDraft.fundCluster || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="banknote" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Funds Available (Optional)
+                                </label>
+                                <input type="text" class="form-input" id="po-funds-available" placeholder="e.g. ₱0.00" value="${AppState.purchaseOrderDraft.fundsAvailable || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="sticky-note" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Notes (Optional)
+                                </label>
+                                <input type="text" class="form-input" id="po-notes" placeholder="Short note" value="${AppState.purchaseOrderDraft.notes || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="po-fieldset">
-                    <h4>Forms Required</h4>
-                    <p class="po-help" style="margin-top:4px;">Select supporting documents to prepare with this Purchase Order.</p>
-                    <div style="display:flex;flex-wrap:wrap;gap:22px;margin-top:8px;font-size:13px;">
-                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-                            <input type="checkbox" id="po-gen-ics" ${AppState.purchaseOrderDraft.generateICS ? 'checked' : ''}> ICS
-                        </label>
-                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-                            <input type="checkbox" id="po-gen-ris" ${AppState.purchaseOrderDraft.generateRIS ? 'checked' : ''}> RIS
-                        </label>
-                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-                            <input type="checkbox" id="po-gen-par" ${AppState.purchaseOrderDraft.generatePAR ? 'checked' : ''}> PAR
-                        </label>
-                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-                            <input type="checkbox" id="po-gen-iar" ${AppState.purchaseOrderDraft.generateIAR ? 'checked' : ''}> IAR
-                        </label>
+                    
+                    <!-- ORS/BURS Section -->
+                    <div style="margin-bottom: 24px;">
+                        <h4 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #374151; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="receipt" style="width: 16px; height: 16px; color: #2563eb;"></i>
+                            ORS / BURS Information
+                        </h4>
+                        <div class="grid-3">
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="hash" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    ORS/BURS No.
+                                </label>
+                                <input type="text" class="form-input" id="po-ors-no" placeholder="Enter ORS/BURS number" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Date of ORS/BURS
+                                </label>
+                                <input type="date" class="form-input" id="po-ors-date" min="${new Date().toISOString().split('T')[0]}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                    <i data-lucide="banknote" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    Amount
+                                </label>
+                                <input type="text" class="form-input" id="po-ors-amount" placeholder="₱0.00" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Forms Required -->
+                    <div>
+                        <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #374151; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="file-check" style="width: 16px; height: 16px; color: #2563eb;"></i>
+                            Forms Required
+                        </h4>
+                        <p style="margin: 0 0 16px 0; font-size: 13px; color: #6b7280;">Select supporting documents to prepare with this Purchase Order</p>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                            <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                                   onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#2563eb';"
+                                   onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
+                                <input type="checkbox" id="po-gen-ics" ${AppState.purchaseOrderDraft.generateICS ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
+                                <span style="font-size: 14px; font-weight: 500; color: #374151;">ICS</span>
+                            </label>
+                            
+                            <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                                   onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#2563eb';"
+                                   onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
+                                <input type="checkbox" id="po-gen-ris" ${AppState.purchaseOrderDraft.generateRIS ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
+                                <span style="font-size: 14px; font-weight: 500; color: #374151;">RIS</span>
+                            </label>
+                            
+                            <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                                   onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#2563eb';"
+                                   onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
+                                <input type="checkbox" id="po-gen-par" ${AppState.purchaseOrderDraft.generatePAR ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
+                                <span style="font-size: 14px; font-weight: 500; color: #374151;">PAR</span>
+                            </label>
+                            
+                            <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                                   onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#2563eb';"
+                                   onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
+                                <input type="checkbox" id="po-gen-iar" ${AppState.purchaseOrderDraft.generateIAR ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
+                                <span style="font-size: 14px; font-weight: 500; color: #374151;">IAR</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2549,8 +2708,13 @@ window.nextPurchaseOrderStep = nextPurchaseOrderStep;
 window.prevPurchaseOrderStep = prevPurchaseOrderStep;
 window.finalizePurchaseOrderCreation = finalizePurchaseOrderCreation;
 
+// Enhanced Purchase Order Modal with modern design
 function generatePurchaseOrderModal(mode, requestData = null) {
-    const title = mode === 'create' ? 'NEW PURCHASE ORDER' : 'PURCHASE ORDER';
+    const title = mode === 'create' ? 'New Purchase Order' :
+        mode === 'edit' ? 'Edit Purchase Order' : 'Purchase Order Details';
+    const subtitle = mode === 'create' ? 'Create a new purchase order request' :
+        mode === 'edit' ? 'Update purchase order information' :
+            'View purchase order details';
     const isReadOnly = mode === 'view';
 
     // Department List using user's suggested values
@@ -2567,159 +2731,242 @@ function generatePurchaseOrderModal(mode, requestData = null) {
     const selectedDepartment = requestData?.department || ''; // Default to empty value
 
     return `
-        <div class="modal-header">
-            <h2 class="modal-title">${title}</h2>
-            <p class="modal-subtitle">Camarines Norte State College</p>
-            <p style="font-size: 12px; color: #6b7280; margin: 0;">Entity Name</p>
-            <button class="modal-close" onclick="closePurchaseOrderModal()">
+        <div class="modal-header" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border-bottom: none; padding: 32px 24px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                ${mode !== 'create' && requestData ? `
+                    <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                        <i data-lucide="file-text" style="width: 32px; height: 32px; color: white;"></i>
+                    </div>
+                ` : ''}
+                <div style="flex: 1;">
+                    <h2 class="modal-title" style="color: white; font-size: 24px; margin-bottom: 4px;">${title}</h2>
+                    <p class="modal-subtitle" style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0;">${subtitle}</p>
+                    <p style="font-size: 12px; color: rgba(255,255,255,0.8); margin: 4px 0 0 0;">Camarines Norte State College</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closePurchaseOrderModal()" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
                 <i data-lucide="x" style="width: 20px; height: 20px;"></i>
             </button>
         </div>
 
-        <div class="modal-body space-y-6">
-            <!-- Basic Information -->
-            <div class="grid-2">
-                <div class="space-y-4">
-                    <div class="form-group">
-                        <label class="form-label">Supplier</label>
-                        <input type="text" class="form-input" 
-                               value="${requestData?.supplier || ''}"
-                               placeholder="Enter supplier name" ${isReadOnly ? 'readonly' : ''}>
+        <div class="modal-body" style="padding: 32px 24px; background: #f9fafb;">
+            <!-- Supplier Information -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="truck" style="width: 18px; height: 18px; color: #2563eb;"></i>
+                    Supplier Information
+                </h3>
+                
+                <div class="grid-2">
+                    <div class="space-y-4">
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                <i data-lucide="building" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                Supplier Name
+                            </label>
+                            <input type="text" class="form-input" id="supplierName"
+                                   value="${requestData?.supplier || ''}"
+                                   placeholder="Enter supplier name" 
+                                   style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                                   ${isReadOnly ? 'readonly' : ''}>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                <i data-lucide="map-pin" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                Supplier Address
+                            </label>
+                            <textarea class="form-textarea" id="supplierAddress"
+                                      placeholder="Enter supplier address" 
+                                      style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; min-height: 80px; transition: all 0.2s;"
+                                      ${isReadOnly ? 'readonly' : ''}>${requestData?.supplierAddress || ''}</textarea>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                <i data-lucide="hash" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                TIN Number
+                            </label>
+                            <input type="text" class="form-input" id="supplierTIN"
+                                   value="${requestData?.supplierTIN || ''}"
+                                   placeholder="Enter TIN number" 
+                                   style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                                   ${isReadOnly ? 'readonly' : ''}>
+                        </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Address of the Supplier</label>
-                        <textarea class="form-textarea" 
-                                     placeholder="Enter supplier address" 
-                                     ${isReadOnly ? 'readonly' : ''}>${requestData?.supplierAddress || ''}</textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">TIN Number of the Supplier</label>
-                        <input type="text" class="form-input" 
-                               value="${requestData?.supplierTIN || ''}"
-                               placeholder="Enter TIN number" ${isReadOnly ? 'readonly' : ''}>
-                    </div>
-                    
-                    <!-- Department Dropdown (REVISED FIELD) -->
-                    <div class="form-group">
-                        <label class="form-label">Department</label>
-                        <select class="form-select" name="department" ${isReadOnly ? 'disabled' : ''}>
-                            <option value="">Select Department</option>
-                            ${departments.map(dept => `
-                                <option value="${dept.value}" ${dept.value === selectedDepartment ? 'selected' : ''}>
-                                    ${dept.label}
-                                </option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    <!-- END REVISED FIELD -->
-                    
-                </div>
 
-                <div class="space-y-4">
-                    <div class="form-group">
-                        <label class="form-label">P.O. Number</label>
-                        <input type="text" class="form-input" 
-                               value="${requestData?.poNumber || ''}"
-                               placeholder="Enter P.O. number" ${isReadOnly ? 'readonly' : ''}>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Date of Purchase</label>
-                        <input type="date" class="form-input" 
-                               value="${requestData?.purchaseDate || ''}"
-                               ${isReadOnly ? 'readonly' : ''}>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Mode of Procurement</label>
-                        <select class="form-select" ${isReadOnly ? 'disabled' : ''}>
-                            <option ${!requestData?.procurementMode ? 'selected' : ''}>Select payment mode</option>
-                            <option ${requestData?.procurementMode === 'Small Value Procurement' ? 'selected' : ''}>Small Value Procurement</option>
-                            <option ${requestData?.procurementMode === 'Medium Value Procurement' ? 'selected' : ''}>Medium Value Procurement</option>
-                            <option ${requestData?.procurementMode === 'High Value Procurement' ? 'selected' : ''}>High Value Procurement</option>
-                        </select>
+                    <div class="space-y-4">
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                <i data-lucide="file-text" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                P.O. Number
+                            </label>
+                            <input type="text" class="form-input" id="poNumber"
+                                   value="${requestData?.poNumber || ''}"
+                                   placeholder="Enter P.O. number" 
+                                   style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                                   ${isReadOnly ? 'readonly' : ''}>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                Date of Purchase
+                            </label>
+                            <input type="date" class="form-input" id="purchaseDate"
+                                   value="${requestData?.purchaseDate || ''}"
+                                   min="${new Date().toISOString().split('T')[0]}"
+                                   style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                                   ${isReadOnly ? 'readonly' : ''}>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                <i data-lucide="shopping-cart" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                Mode of Procurement
+                            </label>
+                            <select class="form-select" id="procurementMode" ${isReadOnly ? 'disabled' : ''} style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s; ${isReadOnly ? 'background: #f9fafb;' : ''}">
+                                <option ${!requestData?.procurementMode ? 'selected' : ''}>Select procurement mode</option>
+                                <option ${requestData?.procurementMode === 'Small Value Procurement' ? 'selected' : ''}>Small Value Procurement</option>
+                                <option ${requestData?.procurementMode === 'Medium Value Procurement' ? 'selected' : ''}>Medium Value Procurement</option>
+                                <option ${requestData?.procurementMode === 'High Value Procurement' ? 'selected' : ''}>High Value Procurement</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Gentlemen Section -->
-            <div class="form-group">
-                <label class="form-label">Gentlemen:</label>
-                <textarea class="form-textarea" 
-                          placeholder="Please furnish this Office the following articles subject to the terms and conditions contained herein"
-                          ${isReadOnly ? 'readonly' : ''}>${requestData?.gentlemen || ''}</textarea>
+            <!-- Department & Gentlemen -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="briefcase" style="width: 18px; height: 18px; color: #2563eb;"></i>
+                    Department & Request Details
+                </h3>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="building-2" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Department
+                    </label>
+                    <select class="form-select" name="department" id="departmentSelect" ${isReadOnly ? 'disabled' : ''} style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s; ${isReadOnly ? 'background: #f9fafb;' : ''}">
+                        <option value="">Select Department</option>
+                        ${departments.map(dept => `
+                            <option value="${dept.value}" ${dept.value === selectedDepartment ? 'selected' : ''}>
+                                ${dept.label}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                        <i data-lucide="message-square" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                        Gentlemen
+                    </label>
+                    <textarea class="form-textarea" id="gentlemen"
+                              placeholder="Please furnish this Office the following articles subject to the terms and conditions contained herein"
+                              style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; min-height: 80px; transition: all 0.2s;"
+                              ${isReadOnly ? 'readonly' : ''}>${requestData?.gentlemen || ''}</textarea>
+                </div>
             </div>
 
             <!-- Delivery Information -->
-            <div class="grid-2">
-                <div class="space-y-4">
-                    <div class="form-group">
-                        <label class="form-label">Place of Delivery</label>
-                        <input type="text" class="form-input" 
-                               value="${requestData?.placeOfDelivery || ''}"
-                               placeholder="Enter delivery place" ${isReadOnly ? 'readonly' : ''}>
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="package" style="width: 18px; height: 18px; color: #2563eb;"></i>
+                    Delivery & Payment Terms
+                </h3>
+                
+                <div class="grid-2">
+                    <div class="space-y-4">
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                <i data-lucide="map-pin" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                Place of Delivery
+                            </label>
+                            <input type="text" class="form-input" id="placeOfDelivery"
+                                   value="${requestData?.placeOfDelivery || ''}"
+                                   placeholder="Enter delivery location" 
+                                   style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                                   ${isReadOnly ? 'readonly' : ''}>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                <i data-lucide="calendar-check" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                Date of Delivery
+                            </label>
+                            <input type="text" class="form-input" id="deliveryDate"
+                                   value="${requestData?.deliveryDate || ''}"
+                                   style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                                   ${isReadOnly ? 'readonly' : ''}>
+                        </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Date of Delivery</label>
-                        <input type="text" class="form-input" 
-                               value="${requestData?.deliveryDate || ''}"
-                               ${isReadOnly ? 'readonly' : ''}>
-                    </div>
-                </div>
 
-                <div class="space-y-4">
-                    <div class="form-group">
-                        <label class="form-label">Delivery Term</label>
-                        <input type="text" class="form-input" 
-                               value="${requestData?.deliveryTerm || ''}"
-                               placeholder="Enter delivery term" ${isReadOnly ? 'readonly' : ''}>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Payment Term</label>
-                        <input type="text" class="form-input" 
-                               value="${requestData?.paymentTerm || ''}"
-                               placeholder="Enter payment term" ${isReadOnly ? 'readonly' : ''}>
+                    <div class="space-y-4">
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                <i data-lucide="clock" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                Delivery Term
+                            </label>
+                            <input type="text" class="form-input" id="deliveryTerm"
+                                   value="${requestData?.deliveryTerm || ''}"
+                                   placeholder="Enter delivery term" 
+                                   style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                                   ${isReadOnly ? 'readonly' : ''}>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                                <i data-lucide="credit-card" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                Payment Term
+                            </label>
+                            <input type="text" class="form-input" id="paymentTerm"
+                                   value="${requestData?.paymentTerm || ''}"
+                                   placeholder="Enter payment term" 
+                                   style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                                   ${isReadOnly ? 'readonly' : ''}>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Items Section -->
-            <div>
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                    <label class="text-lg font-semibold">Items</label>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="list" style="width: 18px; height: 18px; color: #2563eb;"></i>
+                        Order Items
+                    </h3>
                     <div style="display: flex; gap: 8px;">
                         ${!isReadOnly ? `
-                            <button class="btn btn-primary" onclick="addPOItem()">
-                                <i data-lucide="plus" class="icon"></i>
+                            <button class="btn btn-primary" onclick="addPOItem()" style="padding: 8px 16px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); box-shadow: 0 4px 6px rgba(37, 99, 235, 0.25);">
+                                <i data-lucide="plus" class="icon" style="width: 16px; height: 16px;"></i>
                                 Add Item
                             </button>
                         ` : ''}
                     </div>
                 </div>
                 
-                <div class="table-container">
+                <div class="table-container" style="border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
                     <table class="table" id="po-items-table">
-                        <thead>
+                        <thead style="background: #f9fafb;">
                             <tr>
-                                <th>Stock Property Number</th>
-                                <th>Unit</th>
-                                <th>Description</th>
-                                <th>Detailed Description</th>
-                                <th>Quantity</th>
-                                <th>Unit Cost</th>
-                                <th>Amount</th>
-                                ${!isReadOnly ? '<th>Action</th>' : ''}
+                                <th style="padding: 12px;">Stock Property Number</th>
+                                <th style="padding: 12px;">Unit</th>
+                                <th style="padding: 12px;">Description</th>
+                                <th style="padding: 12px;">Detailed Description</th>
+                                <th style="padding: 12px;">Quantity</th>
+                                <th style="padding: 12px;">Unit Cost</th>
+                                <th style="padding: 12px;">Amount</th>
+                                ${!isReadOnly ? '<th style="padding: 12px;">Action</th>' : ''}
                             </tr>
                         </thead>
                         <tbody id="po-items-tbody"></tbody>
                         <tfoot>
-                            <tr style="border-top: 1px solid #e5e7eb; background-color: #f9fafb;">
-                                <td colspan="${isReadOnly ? '6' : '7'}" style="text-align: right; font-weight: 600;">Grand Total:</td>
-                                <td style="font-weight: 700; color: #dc2626;" id="grand-total">
+                            <tr style="border-top: 2px solid #e5e7eb; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+                                <td colspan="${isReadOnly ? '6' : '7'}" style="text-align: right; font-weight: 600; padding: 16px; color: #1e40af;">Grand Total:</td>
+                                <td style="font-weight: 700; color: #2563eb; padding: 16px; font-size: 16px;" id="grand-total">
                                     ${requestData ? formatCurrency(requestData.totalAmount || 0) : '₱0.00'}
                                 </td>
                                 ${!isReadOnly ? '<td></td>' : ''}
@@ -2729,78 +2976,147 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                 </div>
             </div>
 
-            <!-- Funding Information (moved below Items) -->
-            <div style="border-top: 1px solid #e5e7eb; padding-top: 24px;" class="space-y-4">
-                <label style="font-size: 18px; font-weight: 600; color: #dc2626;">Funding</label>
+            <!-- Funding Information -->
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="dollar-sign" style="width: 18px; height: 18px; color: #2563eb;"></i>
+                    Funding Information
+                </h3>
+                
                 <div class="grid-3">
-                    <div class="form-group">
-                        <label class="form-label">Fund Cluster</label>
-                        <input type="text" class="form-input" value="${requestData?.fundCluster || ''}" placeholder="e.g. 01" ${isReadOnly ? 'readonly' : ''}>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="layers" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Fund Cluster
+                        </label>
+                        <input type="text" class="form-input" id="fundCluster"
+                               value="${requestData?.fundCluster || ''}" 
+                               placeholder="e.g. 01" 
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Funds Available (Optional)</label>
-                        <input type="text" class="form-input" value="${requestData?.fundsAvailable || ''}" placeholder="e.g. ₱0.00" ${isReadOnly ? 'readonly' : ''}>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="banknote" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Funds Available (Optional)
+                        </label>
+                        <input type="text" class="form-input" id="fundsAvailable"
+                               value="${requestData?.fundsAvailable || ''}" 
+                               placeholder="e.g. ₱0.00" 
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Notes (Optional)</label>
-                        <input type="text" class="form-input" value="${requestData?.notes || ''}" placeholder="Short note" ${isReadOnly ? 'readonly' : ''}>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="sticky-note" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Notes (Optional)
+                        </label>
+                        <input type="text" class="form-input" id="fundNotes"
+                               value="${requestData?.notes || ''}" 
+                               placeholder="Short note" 
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
                     </div>
                 </div>
             </div>
 
             <!-- ORS/BURS Information -->
-            <div style="border-top: 1px solid #e5e7eb; padding-top: 24px;">
-                <label style="font-size: 18px; font-weight: 600; color: #dc2626; margin:0; display:block;">ORS/BURS Information</label>
-                <div class="grid-3 mt-4">
-                    <div class="form-group">
-                        <label class="form-label">ORS/BURS No:</label>
-                        <input type="text" class="form-input" 
+            <div style="background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="receipt" style="width: 18px; height: 18px; color: #2563eb;"></i>
+                    ORS/BURS Information
+                </h3>
+                
+                <div class="grid-3">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="hash" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            ORS/BURS No.
+                        </label>
+                        <input type="text" class="form-input" id="orsNo"
                                value="${requestData?.orsNo || ''}"
-                               placeholder="Part ORS/BURS number" ${isReadOnly ? 'readonly' : ''}>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Date of the ORS/BURS:</label>
-                        <input type="date" class="form-input" 
-                               value="${requestData?.orsDate || ''}"
+                               placeholder="Enter ORS/BURS number" 
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
                                ${isReadOnly ? 'readonly' : ''}>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Amount:</label>
-                        <input type="text" class="form-input" 
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Date of ORS/BURS
+                        </label>
+                        <input type="date" class="form-input" id="orsDate"
+                               value="${requestData?.orsDate || ''}"
+                               min="${new Date().toISOString().split('T')[0]}"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="banknote" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Amount
+                        </label>
+                        <input type="text" class="form-input" id="orsAmount"
                                value="${requestData?.orsAmount || ''}"
-                               placeholder="₱0.00" ${isReadOnly ? 'readonly' : ''}>
+                               placeholder="₱0.00" 
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
                     </div>
                 </div>
             </div>
 
             <!-- Forms Required -->
-            <div style="border-top: 1px solid #e5e7eb; padding-top: 24px;">
-                <label style="font-size: 18px; font-weight: 600; color: #dc2626;">Forms Required</label>
-                <p class="po-help" style="margin-top:4px;font-size:12px;color:#374151;">Selected supporting documents for this Purchase Order.</p>
-                <div style="display:flex;flex-wrap:wrap;gap:22px;margin-top:8px;font-size:13px;">
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;${isReadOnly ? 'opacity:0.8;' : ''}">
-                        <input type="checkbox" ${requestData?.generateICS ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''}> ICS
+            <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="file-check" style="width: 18px; height: 18px; color: #2563eb;"></i>
+                    Forms Required
+                </h3>
+                <p style="margin: 0 0 16px 0; font-size: 13px; color: #6b7280;">Select supporting documents for this Purchase Order</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; ${isReadOnly ? 'opacity: 0.6; cursor: not-allowed;' : 'hover: {background: #eff6ff; border-color: #2563eb;}'}"
+                           onmouseover="if(!${isReadOnly}) this.style.background='#eff6ff'; if(!${isReadOnly}) this.style.borderColor='#2563eb';"
+                           onmouseout="if(!${isReadOnly}) this.style.background='#f9fafb'; if(!${isReadOnly}) this.style.borderColor='#e5e7eb';">
+                        <input type="checkbox" id="generateICS" ${requestData?.generateICS ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''} 
+                               style="width: 16px; height: 16px; cursor: ${isReadOnly ? 'not-allowed' : 'pointer'};">
+                        <span style="font-size: 14px; font-weight: 500; color: #374151;">ICS</span>
                     </label>
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;${isReadOnly ? 'opacity:0.8;' : ''}">
-                        <input type="checkbox" ${requestData?.generateRIS ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''}> RIS
+                    
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; ${isReadOnly ? 'opacity: 0.6; cursor: not-allowed;' : ''}"
+                           onmouseover="if(!${isReadOnly}) this.style.background='#eff6ff'; if(!${isReadOnly}) this.style.borderColor='#2563eb';"
+                           onmouseout="if(!${isReadOnly}) this.style.background='#f9fafb'; if(!${isReadOnly}) this.style.borderColor='#e5e7eb';">
+                        <input type="checkbox" id="generateRIS" ${requestData?.generateRIS ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''} 
+                               style="width: 16px; height: 16px; cursor: ${isReadOnly ? 'not-allowed' : 'pointer'};">
+                        <span style="font-size: 14px; font-weight: 500; color: #374151;">RIS</span>
                     </label>
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;${isReadOnly ? 'opacity:0.8;' : ''}">
-                        <input type="checkbox" ${requestData?.generatePAR ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''}> PAR
+                    
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; ${isReadOnly ? 'opacity: 0.6; cursor: not-allowed;' : ''}"
+                           onmouseover="if(!${isReadOnly}) this.style.background='#eff6ff'; if(!${isReadOnly}) this.style.borderColor='#2563eb';"
+                           onmouseout="if(!${isReadOnly}) this.style.background='#f9fafb'; if(!${isReadOnly}) this.style.borderColor='#e5e7eb';">
+                        <input type="checkbox" id="generatePAR" ${requestData?.generatePAR ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''} 
+                               style="width: 16px; height: 16px; cursor: ${isReadOnly ? 'not-allowed' : 'pointer'};">
+                        <span style="font-size: 14px; font-weight: 500; color: #374151;">PAR</span>
                     </label>
-                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;${isReadOnly ? 'opacity:0.8;' : ''}">
-                        <input type="checkbox" ${requestData?.generateIAR ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''}> IAR
+                    
+                    <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; ${isReadOnly ? 'opacity: 0.6; cursor: not-allowed;' : ''}"
+                           onmouseover="if(!${isReadOnly}) this.style.background='#eff6ff'; if(!${isReadOnly}) this.style.borderColor='#2563eb';"
+                           onmouseout="if(!${isReadOnly}) this.style.background='#f9fafb'; if(!${isReadOnly}) this.style.borderColor='#e5e7eb';">
+                        <input type="checkbox" id="generateIAR" ${requestData?.generateIAR ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''} 
+                               style="width: 16px; height: 16px; cursor: ${isReadOnly ? 'not-allowed' : 'pointer'};">
+                        <span style="font-size: 14px; font-weight: 500; color: #374151;">IAR</span>
                     </label>
                 </div>
             </div>
         </div>
 
         <!-- Modal Footer -->
-        <div class="modal-footer">
-            <button class="btn-secondary" onclick="closePurchaseOrderModal()">
+        <div class="modal-footer" style="padding: 20px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn-secondary" onclick="closePurchaseOrderModal()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; transition: all 0.2s;">
+                <i data-lucide="${isReadOnly ? 'x' : 'x'}" style="width: 16px; height: 16px;"></i>
                 ${isReadOnly ? 'Close' : 'Cancel'}
             </button>
             ${!isReadOnly ? `
-                <button class="btn btn-primary" onclick="savePurchaseOrder('${requestData?.id || ''}')">
+                <button class="btn btn-primary" onclick="savePurchaseOrder('${requestData?.id || ''}')" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); box-shadow: 0 4px 6px rgba(37, 99, 235, 0.25); transition: all 0.2s;">
+                    <i data-lucide="${mode === 'create' ? 'plus' : 'save'}" style="width: 16px; height: 16px;"></i>
                     ${mode === 'create' ? 'Create Purchase Order' : 'Update Purchase Order'}
                 </button>
             ` : ''}
@@ -3054,22 +3370,38 @@ function generateNewPONumber() {
 function savePurchaseOrder(existingId = null) {
     const modal = document.getElementById('purchase-order-modal');
 
-    // Retrieve input values
-    const supplier = modal.querySelector('input[placeholder="Enter supplier name"]').value;
-    const deliveryDate = modal.querySelector('input[type="date"]').value;
-    // ✅ Use name="department" to select the value from the dropdown
-    const department = modal.querySelector('select[name="department"]').value;
+    // Retrieve input values using new IDs from enhanced modal
+    const supplier = document.getElementById('supplierName')?.value || '';
+    const supplierAddress = document.getElementById('supplierAddress')?.value || '';
+    const supplierTIN = document.getElementById('supplierTIN')?.value || '';
+    const poNumber = document.getElementById('poNumber')?.value || '';
+    const purchaseDate = document.getElementById('purchaseDate')?.value || '';
+    const procurementMode = document.getElementById('procurementMode')?.value || '';
+    const department = document.getElementById('departmentSelect')?.value || '';
+    const gentlemen = document.getElementById('gentlemen')?.value || '';
+    const placeOfDelivery = document.getElementById('placeOfDelivery')?.value || '';
+    const deliveryDate = document.getElementById('deliveryDate')?.value || '';
+    const deliveryTerm = document.getElementById('deliveryTerm')?.value || '';
+    const paymentTerm = document.getElementById('paymentTerm')?.value || '';
+    const fundCluster = document.getElementById('fundCluster')?.value || '';
+    const fundsAvailable = document.getElementById('fundsAvailable')?.value || '';
+    const fundNotes = document.getElementById('fundNotes')?.value || '';
+    const orsNo = document.getElementById('orsNo')?.value || '';
+    const orsDate = document.getElementById('orsDate')?.value || '';
+    const orsAmount = document.getElementById('orsAmount')?.value || '';
+    const generateICS = document.getElementById('generateICS')?.checked || false;
+    const generateRIS = document.getElementById('generateRIS')?.checked || false;
+    const generatePAR = document.getElementById('generatePAR')?.checked || false;
+    const generateIAR = document.getElementById('generateIAR')?.checked || false;
+
     const totalAmount = AppState.purchaseOrderItems.reduce((sum, item) => sum + item.amount, 0);
 
-    let poNumber;
-    if (existingId) {
-        poNumber = modal.querySelector('input[placeholder="Enter P.O. number"]').value;
-    } else {
-        poNumber = generateNewPONumber();
-        const poInput = modal.querySelector('input[placeholder="Enter P.O. number"]');
-        if (poInput) poInput.value = poNumber;
+    let finalPoNumber = poNumber;
+    if (!existingId && !poNumber) {
+        finalPoNumber = generateNewPONumber();
+        const poInput = document.getElementById('poNumber');
+        if (poInput) poInput.value = finalPoNumber;
     }
-
 
     if (existingId) {
         // Update existing request
@@ -3079,9 +3411,27 @@ function savePurchaseOrder(existingId = null) {
             AppState.newRequests[idx] = {
                 ...AppState.newRequests[idx],
                 supplier,
-                poNumber,
+                supplierAddress,
+                supplierTIN,
+                poNumber: finalPoNumber,
+                purchaseDate,
+                procurementMode,
+                department,
+                gentlemen,
+                placeOfDelivery,
                 deliveryDate,
-                department, // Update department
+                deliveryTerm,
+                paymentTerm,
+                fundCluster,
+                fundsAvailable,
+                notes: fundNotes,
+                orsNo,
+                orsDate,
+                orsAmount,
+                generateICS,
+                generateRIS,
+                generatePAR,
+                generateIAR,
                 totalAmount,
                 items: [...AppState.purchaseOrderItems]
             };
@@ -3093,14 +3443,32 @@ function savePurchaseOrder(existingId = null) {
 
         const newRequest = {
             id: newRequestId,
-            poNumber,
+            poNumber: finalPoNumber,
             supplier,
+            supplierAddress,
+            supplierTIN,
+            purchaseDate,
+            procurementMode,
             requestDate: new Date().toISOString().split('T')[0],
+            department,
+            gentlemen,
+            placeOfDelivery,
             deliveryDate,
+            deliveryTerm,
+            paymentTerm,
+            fundCluster,
+            fundsAvailable,
+            notes: fundNotes,
+            orsNo,
+            orsDate,
+            orsAmount,
+            generateICS,
+            generateRIS,
+            generatePAR,
+            generateIAR,
             totalAmount,
             status: "submitted",
             requestedBy: "Current User",
-            department, // Store department
             items: [...AppState.purchaseOrderItems]
         };
         AppState.newRequests.push(newRequest);
@@ -3110,7 +3478,7 @@ function savePurchaseOrder(existingId = null) {
     if (existingId) {
         showAlert('Purchase order updated successfully!', 'success');
     } else {
-        showAlert(`New purchase order ${poNumber} created successfully!`, 'success');
+        showAlert(`New purchase order ${finalPoNumber} created successfully!`, 'success');
     }
 
     // Refresh UI and close modal
@@ -3988,6 +4356,7 @@ function generateUserModal(mode = 'view', userData = null) {
                         </label>
                         <input type="date" class="form-input" id="userCreated"
                                value="${userData?.created || new Date().toISOString().split('T')[0]}"
+                               min="${new Date().toISOString().split('T')[0]}"
                                style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s; ${isReadOnly ? 'background: #f9fafb;' : ''}"
                                ${isReadOnly ? 'readonly' : ''}>
                     </div>
@@ -4331,6 +4700,7 @@ function generateProductModal(mode = 'create', productData = null) {
                         </label>
                         <input type="date" class="form-input" id="productDate"
                                value="${productData?.date || new Date().toISOString().split('T')[0]}"
+                               min="${new Date().toISOString().split('T')[0]}"
                                style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s; ${isReadOnly ? 'background: #f9fafb;' : ''}"
                                ${isReadOnly ? 'readonly' : ''}>
                     </div>
@@ -4644,6 +5014,7 @@ function generateStockInModal(mode = 'create', stockData = null) {
                         </label>
                         <input type="date" class="form-input" id="date-input"
                                value="${dateValue}"
+                               min="${new Date().toISOString().split('T')[0]}"
                                style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
                                ${isReadOnly ? 'readonly' : ''}>
                     </div>
@@ -4945,6 +5316,7 @@ function generateStockOutModal(mode = 'create', stockData = null) {
                         </label>
                         <input id="so-date" type="date" class="form-input"
                                value="${stockData?.date || new Date().toISOString().split('T')[0]}"
+                               min="${new Date().toISOString().split('T')[0]}"
                                style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
                                ${isReadOnly ? 'readonly' : ''}>
                     </div>
@@ -5426,20 +5798,34 @@ function viewStatusRequest(id) {
         overlay.className = 'modal-overlay active';
         overlay.innerHTML = `
             <div class="modal-content compact" role="dialog" aria-modal="true" aria-labelledby="status-view-title">
-                <div class="modal-header" style="padding:16px 20px; text-align:left; display:flex; align-items:center; justify-content:space-between;">
-                    <div>
-                        <h2 id="status-view-title" class="modal-title" style="font-size:18px; margin:0;">Request ${rec.id}</h2>
-                        <p class="modal-subtitle" style="margin:4px 0 0 0;">Quick status overview</p>
+                <div class="modal-header" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border-bottom: none; padding: 32px 24px;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 64px; height: 64px; background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                            <i data-lucide="eye" style="width: 32px; height: 32px; color: white;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h2 id="status-view-title" class="modal-title" style="color: white; font-size: 24px; margin-bottom: 4px;">Request ${rec.id}</h2>
+                            <p class="modal-subtitle" style="color: rgba(255,255,255,0.9); font-size: 14px; margin: 0;">Quick status overview</p>
+                        </div>
                     </div>
-                    <button class="modal-close" id="status-view-close" aria-label="Close">
-                        <i data-lucide="x"></i>
+                    <button class="modal-close" id="status-view-close" aria-label="Close" style="color: white; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                        <i data-lucide="x" style="width: 20px; height: 20px;"></i>
                     </button>
                 </div>
-                <div class="modal-body" style="padding:16px 20px;">
-                    <dl class="detail-grid" id="status-view-body"></dl>
+                <div class="modal-body" style="padding: 32px 24px; background: #f9fafb;">
+                    <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <h3 style="margin: 0 0 20px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="info" style="width: 18px; height: 18px; color: #2563eb;"></i>
+                            Request Details
+                        </h3>
+                        <dl class="detail-grid" id="status-view-body" style="display: grid; grid-template-columns: 140px 1fr; gap: 16px 24px; margin: 0;"></dl>
+                    </div>
                 </div>
-                <div class="modal-footer" style="padding:12px 20px;">
-                    <button class="btn btn-secondary" id="status-view-dismiss">Close</button>
+                <div class="modal-footer" style="padding: 20px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button class="btn btn-secondary" id="status-view-dismiss" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; transition: all 0.2s;">
+                        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                        Close
+                    </button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
@@ -5453,13 +5839,47 @@ function viewStatusRequest(id) {
     const grid = overlay.querySelector('#status-view-body');
     if (grid) {
         grid.innerHTML = `
-            <dt>Item</dt><dd>${rec.item}</dd>
-            <dt>Requester</dt><dd>${rec.requester}</dd>
-            <dt>Department</dt><dd>${rec.department}</dd>
-            <dt>Priority</dt><dd><span class="badge ${getBadgeClass(rec.priority, 'priority').split(' ').slice(-1)} inline">${rec.priority}</span></dd>
-            <dt>Status</dt><dd><span class="${getBadgeClass(rec.status)} inline">${rec.status}</span></dd>
-            <dt>Updated</dt><dd>${rec.updatedAt}</dd>
-            <dt>Est. Cost</dt><dd>${formatCurrency(rec.cost || 0)}</dd>
+            <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="package" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                Item
+            </dt>
+            <dd style="margin: 0; color: #111827;">${rec.item}</dd>
+            
+            <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="user" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                Requester
+            </dt>
+            <dd style="margin: 0; color: #111827;">${rec.requester}</dd>
+            
+            <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="briefcase" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                Department
+            </dt>
+            <dd style="margin: 0; color: #111827;">${rec.department}</dd>
+            
+            <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="flag" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                Priority
+            </dt>
+            <dd style="margin: 0;"><span class="badge ${getBadgeClass(rec.priority, 'priority').split(' ').slice(-1)} inline" style="padding: 4px 12px; border-radius: 6px; font-size: 13px; font-weight: 500;">${rec.priority}</span></dd>
+            
+            <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="activity" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                Status
+            </dt>
+            <dd style="margin: 0;"><span class="${getBadgeClass(rec.status)} inline" style="padding: 4px 12px; border-radius: 6px; font-size: 13px; font-weight: 500;">${rec.status}</span></dd>
+            
+            <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                Updated
+            </dt>
+            <dd style="margin: 0; color: #111827;">${rec.updatedAt}</dd>
+            
+            <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="dollar-sign" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                Est. Cost
+            </dt>
+            <dd style="margin: 0; color: #16a34a; font-weight: 600; font-size: 15px;">${formatCurrency(rec.cost || 0)}</dd>
         `;
     }
     // Icon refresh
