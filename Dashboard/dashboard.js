@@ -48,9 +48,46 @@ const AppState = {
     pendingRequests: [],
     completedRequests: [],
     notifications: [
-        { id: 'n1', title: 'New requisition submitted', time: '2h ago', read: false },
-        { id: 'n2', title: 'Stock level low: Paper A4', time: '1d ago', read: false },
-        { id: 'n3', title: 'PO #1234 approved', time: '3d ago', read: true }
+        {
+            id: 'n1',
+            title: 'New requisition submitted',
+            message: 'REQ-2025-006 has been submitted for approval',
+            time: '2h ago',
+            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+            read: false,
+            type: 'info',
+            icon: 'file-plus'
+        },
+        {
+            id: 'n2',
+            title: 'Stock level low: Paper A4',
+            message: 'Current stock: 15 units. Reorder level: 20 units',
+            time: '1d ago',
+            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
+            read: false,
+            type: 'warning',
+            icon: 'alert-triangle'
+        },
+        {
+            id: 'n3',
+            title: 'PO #1234 approved',
+            message: 'Purchase order has been approved by admin',
+            time: '3d ago',
+            timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+            read: true,
+            type: 'success',
+            icon: 'check-circle'
+        },
+        {
+            id: 'n4',
+            title: 'Stock In completed',
+            message: '50 units of Ballpoint Pen received',
+            time: '5d ago',
+            timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+            read: true,
+            type: 'success',
+            icon: 'package-check'
+        }
     ],
     // Unified status list (replaces hardcoded table rows in status management)
     statusRequests: [
@@ -180,6 +217,26 @@ function getBadgeClass(status, type = 'status') {
     return badgeClasses[type][status] || 'badge gray';
 }
 
+// Helper function to get status background color
+function getStatusColor(status) {
+    const statusColors = {
+        'active': '#10b981',
+        'inactive': '#6b7280',
+        'draft': '#6b7280',
+        'submitted': '#3b82f6',
+        'pending': '#eab308',
+        'under-review': '#3b82f6',
+        'awaiting-approval': '#f97316',
+        'approved': '#3b82f6',
+        'delivered': '#10b981',
+        'completed': '#059669',
+        'received': '#3b82f6',
+        'finished': '#059669',
+        'cancelled': '#dc2626'
+    };
+    return statusColors[status] || '#6b7280';
+}
+
 // UI Alert / Toast helper
 function showAlert(message, type = 'info', duration = 4000) {
     try {
@@ -294,35 +351,100 @@ function renderNotifications() {
     const listEl = document.getElementById('notifications-list');
     const badge = document.getElementById('notifications-badge');
     if (!listEl || !badge) return;
+
     listEl.innerHTML = '';
     const unread = (AppState.notifications || []).filter(n => !n.read).length;
-    badge.style.display = unread > 0 ? 'block' : 'none';
+    badge.style.display = unread > 0 ? 'flex' : 'none';
+    badge.textContent = unread > 9 ? '9+' : unread;
 
-    (AppState.notifications || []).forEach(n => {
-        const item = document.createElement('div');
-        item.style.padding = '8px';
-        item.style.borderRadius = '6px';
-        item.style.cursor = 'pointer';
-        item.style.display = 'flex';
-        item.style.justifyContent = 'space-between';
-        item.style.alignItems = 'center';
-        if (!n.read) {
-            item.style.background = '#f8fafc';
-        }
-        item.innerHTML = `
-            <div style="flex:1;">
-                <div style="font-size:13px;color:#111827;">${escapeHtml(n.title)}</div>
-                <div style="font-size:12px;color:#6b7280;margin-top:4px;">${escapeHtml(n.time)}</div>
-            </div>
-            <div style="margin-left:8px;">
-                <button class="btn-link" style="font-size:12px;color:#6b7280;border:none;background:none;" onclick="event.stopPropagation(); toggleNotificationRead('${n.id}');">${n.read ? 'Unread' : 'Mark read'}</button>
+    // Sort notifications by timestamp (newest first)
+    const sortedNotifications = [...(AppState.notifications || [])].sort((a, b) => {
+        const timeA = a.timestamp ? new Date(a.timestamp) : new Date();
+        const timeB = b.timestamp ? new Date(b.timestamp) : new Date();
+        return timeB - timeA;
+    });
+
+    if (sortedNotifications.length === 0) {
+        listEl.innerHTML = `
+            <div style="padding: 40px 20px; text-align: center; color: #9ca3af;">
+                <i data-lucide="bell-off" style="width: 48px; height: 48px; margin: 0 auto 12px; opacity: 0.5;"></i>
+                <p style="margin: 0; font-size: 14px;">No notifications</p>
             </div>
         `;
-        item.addEventListener('click', function () {
-            toggleNotificationRead(n.id);
+        lucide.createIcons();
+        return;
+    }
+
+    sortedNotifications.forEach(n => {
+        const typeConfig = {
+            'success': { bg: '#ecfdf5', iconColor: '#10b981', borderColor: '#6ee7b7' },
+            'warning': { bg: '#fef3c7', iconColor: '#f59e0b', borderColor: '#fcd34d' },
+            'error': { bg: '#fee2e2', iconColor: '#ef4444', borderColor: '#fca5a5' },
+            'info': { bg: '#dbeafe', iconColor: '#3b82f6', borderColor: '#93c5fd' }
+        };
+
+        const config = typeConfig[n.type] || typeConfig.info;
+        const isUnread = !n.read;
+
+        const item = document.createElement('div');
+        item.className = 'notification-item';
+        item.style.cssText = `
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: ${isUnread ? config.bg : '#ffffff'};
+            border-left: 3px solid ${isUnread ? config.borderColor : 'transparent'};
+            position: relative;
+        `;
+
+        item.innerHTML = `
+            <div style="flex-shrink: 0; width: 36px; height: 36px; background: ${config.bg}; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid ${config.borderColor};">
+                <i data-lucide="${n.icon || 'bell'}" style="width: 18px; height: 18px; color: ${config.iconColor};"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
+                    <div style="font-size: 13px; font-weight: 600; color: #111827; line-height: 1.4;">${escapeHtml(n.title)}</div>
+                    ${isUnread ? '<div style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; flex-shrink: 0; margin-top: 3px;"></div>' : ''}
+                </div>
+                ${n.message ? `<div style="font-size: 12px; color: #6b7280; line-height: 1.4; margin-bottom: 6px;">${escapeHtml(n.message)}</div>` : ''}
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <div style="font-size: 11px; color: #9ca3af; display: flex; align-items: center; gap: 4px;">
+                        <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
+                        ${escapeHtml(n.time)}
+                    </div>
+                    <button class="notification-action-btn" onclick="event.stopPropagation(); toggleNotificationRead('${n.id}');" style="font-size: 11px; color: ${config.iconColor}; border: none; background: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-weight: 500; transition: all 0.2s;">
+                        ${isUnread ? '<i data-lucide="check" style="width: 12px; height: 12px;"></i>' : '<i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i>'}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Hover effects
+        item.addEventListener('mouseenter', function () {
+            this.style.transform = 'translateX(4px)';
+            this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
         });
+
+        item.addEventListener('mouseleave', function () {
+            this.style.transform = 'translateX(0)';
+            this.style.boxShadow = 'none';
+        });
+
+        item.addEventListener('click', function (e) {
+            if (!e.target.closest('.notification-action-btn')) {
+                toggleNotificationRead(n.id);
+            }
+        });
+
         listEl.appendChild(item);
     });
+
+    // Reinitialize Lucide icons
+    lucide.createIcons();
 }
 
 function toggleNotifications(e) {
@@ -337,6 +459,10 @@ function toggleNotifications(e) {
         renderNotifications();
         menu.style.display = 'block';
         btn.setAttribute('aria-expanded', 'true');
+
+        // Add animation class
+        menu.style.animation = 'notificationSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+
         setTimeout(() => {
             document.addEventListener('click', outsideNotificationsClick);
         }, 0);
@@ -347,8 +473,15 @@ function closeNotifications() {
     const menu = document.getElementById('notifications-menu');
     const btn = document.getElementById('notifications-btn');
     if (!menu || !btn) return;
-    menu.style.display = 'none';
-    btn.setAttribute('aria-expanded', 'false');
+
+    // Add closing animation
+    menu.style.animation = 'notificationSlideOut 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+
+    setTimeout(() => {
+        menu.style.display = 'none';
+        btn.setAttribute('aria-expanded', 'false');
+    }, 200);
+
     document.removeEventListener('click', outsideNotificationsClick);
 }
 
@@ -363,13 +496,98 @@ function outsideNotificationsClick(e) {
 function toggleNotificationRead(id) {
     const n = (AppState.notifications || []).find(x => x.id === id);
     if (!n) return;
-    n.read = true;
+    n.read = !n.read; // Toggle instead of always setting to true
     renderNotifications();
 }
 
 function markAllNotificationsRead() {
     (AppState.notifications || []).forEach(n => n.read = true);
     renderNotifications();
+}
+
+function deleteNotification(id) {
+    AppState.notifications = (AppState.notifications || []).filter(n => n.id !== id);
+    renderNotifications();
+}
+
+function clearAllNotifications() {
+    if ((AppState.notifications || []).length === 0) return;
+    if (confirm('Are you sure you want to clear all notifications?')) {
+        AppState.notifications = [];
+        renderNotifications();
+    }
+}
+
+// Add new notification (for demo/testing purposes)
+function addNotification(title, message, type = 'info', icon = 'bell') {
+    const newNotification = {
+        id: 'n' + Date.now(),
+        title: title,
+        message: message,
+        time: 'Just now',
+        timestamp: new Date(),
+        read: false,
+        type: type, // 'success', 'warning', 'error', 'info'
+        icon: icon
+    };
+
+    AppState.notifications.unshift(newNotification);
+    renderNotifications();
+
+    // Show animation on badge
+    const badge = document.getElementById('notifications-badge');
+    if (badge) {
+        badge.style.animation = 'none';
+        setTimeout(() => {
+            badge.style.animation = 'badgePulse 2s ease-in-out infinite';
+        }, 10);
+    }
+}
+
+// Sidebar Toggle Function
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const isCollapsed = sidebar.classList.toggle('collapsed');
+
+    // Store the collapsed state in localStorage
+    localStorage.setItem('sidebarCollapsed', isCollapsed);
+
+    // Add/remove tooltips for navigation items
+    updateNavTooltips(isCollapsed);
+
+    // Reinitialize Lucide icons for the toggle button
+    setTimeout(() => {
+        lucide.createIcons();
+    }, 100);
+}
+
+// Update navigation tooltips based on collapsed state
+function updateNavTooltips(isCollapsed) {
+    if (isCollapsed) {
+        // Add tooltips to all nav buttons
+        document.querySelectorAll('.nav-button').forEach(button => {
+            const textElement = button.querySelector('.nav-content span');
+            if (textElement) {
+                button.setAttribute('data-tooltip', textElement.textContent);
+            }
+        });
+    } else {
+        // Remove tooltips when expanded
+        document.querySelectorAll('.nav-button').forEach(button => {
+            button.removeAttribute('data-tooltip');
+        });
+    }
+}
+
+// Initialize sidebar state from localStorage
+function initializeSidebarState() {
+    const sidebar = document.getElementById('sidebar');
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+    if (isCollapsed) {
+        sidebar.classList.add('collapsed');
+        updateNavTooltips(true);
+    }
 }
 
 // Navigation Functions
@@ -573,15 +791,28 @@ function generateDashboardPage() {
 
                     <!-- Notifications popup (absolute inside header-actions) -->
                     <div id="notifications-menu">
-                        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px 8px 8px;">
-                            <strong>Notifications</strong>
-                            <button class="btn-link" style="border:none;background:none;color:#6b7280;cursor:pointer;" onclick="markAllNotificationsRead();">Mark all read</button>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #e5e7eb;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="bell" style="width: 18px; height: 18px; color: #111827;"></i>
+                                <strong style="font-size: 15px; color: #111827;">Notifications</strong>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <button class="notification-header-btn" onclick="markAllNotificationsRead();" title="Mark all as read">
+                                    <i data-lucide="check-check" style="width: 16px; height: 16px;"></i>
+                                </button>
+                                <button class="notification-header-btn" onclick="clearAllNotifications();" title="Clear all">
+                                    <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div id="notifications-list" style="max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:4px 8px;">
+                        <div id="notifications-list" style="max-height: 360px; overflow-y: auto; overflow-x: hidden;">
                             <!-- notifications injected here -->
                         </div>
-                        <div style="text-align:center;padding-top:8px;">
-                            <button class="btn-secondary" style="padding:6px 12px;border-radius:6px;" onclick="closeNotifications()">Close</button>
+                        <div style="padding: 10px 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: center;">
+                            <button class="btn-secondary" style="padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 500;" onclick="closeNotifications()">
+                                <i data-lucide="x" style="width: 14px; height: 14px; margin-right: 4px;"></i>
+                                Close
+                            </button>
                         </div>
                     </div>
                     
@@ -1716,14 +1947,16 @@ function generateRequisitionReportsPage() {
 }
 
 function generateStatusReportsPage() {
-    const departments = ['All', 'IT', 'Procurement', 'Finance', 'HR', 'Admin'];
+    // Dynamically get departments and statuses from statusRequests
+    const uniqueDepartments = ['All', ...[...new Set((AppState.statusRequests || []).map(r => r.department).filter(Boolean))]];
+    const uniqueStatuses = ['All', ...[...new Set((AppState.statusRequests || []).map(r => r.status).filter(Boolean))]];
 
     return `
         <div class="page-header">
             <div class="page-header-content">
                 <div>
                     <h1 class="page-title">Status Report</h1>
-                    <p class="page-subtitle">Breakdown of request statuses</p>
+                    <p class="page-subtitle">Breakdown of request statuses from Status Management</p>
                 </div>
                 <div>
                     <button class="btn btn-secondary" id="export-status-btn">Export CSV</button>
@@ -1733,11 +1966,17 @@ function generateStatusReportsPage() {
 
         <div class="page-content">
             <div class="card">
-                <div style="display:flex;gap:12px;align-items:center;">
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
                     <div>
                         <label class="form-label">Department</label>
                         <select id="status-department-filter" class="form-select">
-                            ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
+                            ${uniqueDepartments.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Status</label>
+                        <select id="status-status-filter" class="form-select">
+                            ${uniqueStatuses.map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
                         </select>
                     </div>
                     <div>
@@ -1761,6 +2000,7 @@ function generateStatusReportsPage() {
                         <tr>
                             <th>Status</th>
                             <th>Count</th>
+                            <th>Department</th>
                             <th>Details</th>
                         </tr>
                     </thead>
@@ -1805,9 +2045,27 @@ function exportRequisitionCSV() {
 }
 
 function exportStatusCSV() {
-    const rows = [['Status', 'Count']];
-    const rowsToExport = (window.__statusSummary && Object.keys(window.__statusSummary).length) ? window.__statusSummary : (function () { const all = [...(AppState.newRequests || []), ...(AppState.pendingRequests || []), ...(AppState.completedRequests || [])]; return all.reduce((acc, r) => { acc[r.status || 'unknown'] = (acc[r.status || 'unknown'] || 0) + 1; return acc; }, {}); })();
-    Object.keys(rowsToExport).forEach(k => rows.push([k, rowsToExport[k]]));
+    const rows = [['Status', 'Count', 'Total Cost']];
+    const rowsToExport = (window.__statusSummary && Object.keys(window.__statusSummary).length) ? window.__statusSummary : (function () {
+        const all = [...(AppState.statusRequests || [])];
+        return all.reduce((acc, r) => {
+            acc[r.status || 'unknown'] = (acc[r.status || 'unknown'] || 0) + 1;
+            return acc;
+        }, {});
+    })();
+
+    // Calculate total cost per status from statusRequests
+    const costByStatus = (AppState.statusRequests || []).reduce((acc, r) => {
+        const status = r.status || 'unknown';
+        acc[status] = (acc[status] || 0) + (r.cost || 0);
+        return acc;
+    }, {});
+
+    Object.keys(rowsToExport).forEach(k => rows.push([
+        k,
+        rowsToExport[k],
+        formatCurrency(costByStatus[k] || 0)
+    ]));
     downloadCSV('status-report.csv', rows);
 }
 
@@ -1945,13 +2203,22 @@ function renderStatusReport() {
     if (!tbody) return;
 
     const dept = document.getElementById('status-department-filter')?.value || 'All';
+    const statusFilter = document.getElementById('status-status-filter')?.value || 'All';
     const from = document.getElementById('status-date-from')?.value;
     const to = document.getElementById('status-date-to')?.value;
 
-    let all = [...(AppState.newRequests || []), ...(AppState.pendingRequests || []), ...(AppState.completedRequests || [])];
-    if (from) all = all.filter(r => r.requestDate ? new Date(r.requestDate) >= new Date(from) : true);
-    if (to) all = all.filter(r => r.requestDate ? new Date(r.requestDate) <= new Date(to) : true);
+    // Use statusRequests from Status Management instead of request arrays
+    let all = [...(AppState.statusRequests || [])];
+
+    // Apply date filters based on updatedAt field
+    if (from) all = all.filter(r => r.updatedAt ? new Date(r.updatedAt) >= new Date(from) : true);
+    if (to) all = all.filter(r => r.updatedAt ? new Date(r.updatedAt) <= new Date(to) : true);
+
+    // Apply department filter
     if (dept && dept !== 'All') all = all.filter(r => (r.department || '').toLowerCase().includes(dept.toLowerCase()));
+
+    // Apply status filter
+    if (statusFilter && statusFilter !== 'All') all = all.filter(r => (r.status || 'unknown').toLowerCase() === statusFilter.toLowerCase());
 
     const summary = all.reduce((acc, r) => { const s = r.status || 'unknown'; acc[s] = (acc[s] || 0) + 1; return acc; }, {});
     window.__statusSummary = summary;
@@ -1966,31 +2233,63 @@ function renderStatusReport() {
     // render status chart
     renderStatusChart(Object.keys(summary), Object.values(summary));
 
-    // Replace tbody HTML with inline details for each status
-    const rowsHtml = Object.keys(summary).map(k => {
-        const matches = all.filter(r => (r.status || 'unknown') === k);
-        const detailHtml = matches.length ? matches.map(r => `
-            <div style="margin-bottom:6px;">
-                <a href="#" onclick="openPurchaseOrderModal('view','${r.id}'); return false;" style="color:#dc2626; text-decoration:underline;">${r.poNumber || r.id}</a>
-                ${r.supplier ? ` - ${r.supplier}` : ''}
-                <span style="margin-left:8px; color:#6b7280;">${formatCurrency(r.totalAmount || 0)}</span>
-            </div>
-        `).join('') : '<span style="color:#6b7280;">—</span>';
+    // Replace tbody HTML with separate rows for each status-department combination
+    const rowsHtml = [];
 
-        return `
-        <tr>
-            <td>${k}</td>
-            <td>${summary[k]}</td>
-            <td style="max-width:420px;">${detailHtml}</td>
-        </tr>
-        `;
-    }).join('');
-    tbody.innerHTML = rowsHtml;
+    Object.keys(summary).forEach(k => {
+        const matches = all.filter(r => (r.status || 'unknown') === k);
+
+        // Group by department
+        const byDepartment = {};
+        matches.forEach(r => {
+            const dept = r.department || 'Unassigned';
+            if (!byDepartment[dept]) byDepartment[dept] = [];
+            byDepartment[dept].push(r);
+        });
+
+        // Create a row for each department
+        const departments = Object.keys(byDepartment);
+
+        if (departments.length === 0) {
+            // No departments, show one row with no department
+            rowsHtml.push(`
+                <tr>
+                    <td style="text-transform: capitalize; font-weight: 500;">${k}</td>
+                    <td style="font-weight: 600;">${summary[k]}</td>
+                    <td>—</td>
+                    <td style="max-width:420px;"><span style="color:#6b7280;">—</span></td>
+                </tr>
+            `);
+        } else {
+            departments.forEach((dept, index) => {
+                const deptRequests = byDepartment[dept];
+                const detailHtml = deptRequests.map(r => `
+                    <div style="margin-bottom:6px;">
+                        <a href="#" onclick="viewStatusRequestDetails('${r.id}'); return false;" style="color:#dc2626; text-decoration:underline;">${r.id}</a>
+                        ${r.requester ? ` - ${r.requester}` : ''}
+                        ${r.item ? ` (${r.item})` : ''}
+                        <span style="margin-left:8px; color:#6b7280;">${r.cost ? formatCurrency(r.cost) : ''}</span>
+                    </div>
+                `).join('');
+
+                rowsHtml.push(`
+                    <tr>
+                        <td style="text-transform: capitalize; font-weight: 500;">${k}</td>
+                        <td style="font-weight: 600;">${deptRequests.length}</td>
+                        <td>${dept}</td>
+                        <td style="max-width:420px;">${detailHtml}</td>
+                    </tr>
+                `);
+            });
+        }
+    });
+
+    tbody.innerHTML = rowsHtml.join('');
 }
 
 function showStatusDetails(status) {
-    // Find matching requests
-    const all = [...(AppState.newRequests || []), ...(AppState.pendingRequests || []), ...(AppState.completedRequests || [])];
+    // Find matching requests from Status Management
+    const all = [...(AppState.statusRequests || [])];
     const matches = all.filter(r => (r.status || 'unknown') === status);
 
     const modal = document.getElementById('purchase-order-modal');
@@ -1998,24 +2297,26 @@ function showStatusDetails(status) {
 
     modalContent.innerHTML = `
         <div class="modal-header">
-            <h2 class="modal-title">Requests: ${status}</h2>
+            <h2 class="modal-title">Requests: ${status.charAt(0).toUpperCase() + status.slice(1)}</h2>
             <button class="modal-close" onclick="closePurchaseOrderModal()">
                 <i data-lucide="x" style="width: 20px; height: 20px;"></i>
             </button>
         </div>
         <div class="modal-body">
             <table class="table">
-                <thead><tr><th>Request ID</th><th>PO</th><th>Supplier</th><th>Amount</th><th>Action</th></tr></thead>
+                <thead><tr><th>Request ID</th><th>Requester</th><th>Department</th><th>Item</th><th>Priority</th><th>Cost</th><th>Updated</th></tr></thead>
                 <tbody>
                     ${matches.length ? matches.map(r => `
                         <tr>
-                            <td>${r.id}</td>
-                            <td>${r.poNumber || '-'}</td>
-                            <td>${r.supplier || '-'}</td>
-                            <td>${formatCurrency(r.totalAmount || 0)}</td>
-                            <td><button class="btn btn-primary" onclick="openPurchaseOrderModal('view','${r.id}')">View</button></td>
+                            <td><a href="#" onclick="viewStatusRequestDetails('${r.id}'); return false;" style="color:#dc2626; text-decoration:underline;">${r.id}</a></td>
+                            <td>${r.requester || '-'}</td>
+                            <td>${r.department || '-'}</td>
+                            <td>${r.item || '-'}</td>
+                            <td><span class="${getBadgeClass(r.priority || 'low', 'priority')}">${capitalize(r.priority || 'low')}</span></td>
+                            <td>${r.cost ? formatCurrency(r.cost) : '-'}</td>
+                            <td>${r.updatedAt || '-'}</td>
                         </tr>
-                    `).join('') : `<tr><td colspan="5">No requests with status ${status}</td></tr>`}
+                    `).join('') : `<tr><td colspan="7">No requests with status ${status}</td></tr>`}
                 </tbody>
             </table>
         </div>
@@ -2051,9 +2352,13 @@ function renderStatusChart(labels, data) {
     const ctx = document.getElementById('status-chart');
     if (!ctx) return;
     if (__statusChartInstance) __statusChartInstance.destroy();
+
+    // Generate colors based on actual status labels
+    const backgroundColors = labels.map(label => getStatusColor(label.toLowerCase()));
+
     __statusChartInstance = new Chart(ctx.getContext('2d'), {
         type: 'doughnut',
-        data: { labels, datasets: [{ data, backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#6b7280'] }] },
+        data: { labels, datasets: [{ data, backgroundColor: backgroundColors }] },
         options: { responsive: true, maintainAspectRatio: false }
     });
 }
@@ -2083,6 +2388,7 @@ function initializeReportPageEvents(pageId) {
     }
     if (pageId === 'status-report') {
         document.getElementById('status-department-filter')?.addEventListener('change', renderStatusReport);
+        document.getElementById('status-status-filter')?.addEventListener('change', renderStatusReport);
         document.getElementById('status-date-from')?.addEventListener('change', renderStatusReport);
         document.getElementById('status-date-to')?.addEventListener('change', renderStatusReport);
         document.getElementById('export-status-btn')?.addEventListener('click', exportStatusCSV);
@@ -3979,6 +4285,7 @@ document.addEventListener('click', function (e) {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function () {
+    initializeSidebarState();
     initializeNavigation();
 
     // Initialize icons
@@ -4454,44 +4761,183 @@ function generateAboutPage() {
         </div>
 
         <div class="page-content">
-            <div class="card">
-                <h2 style="margin-top:0;">Our Mission</h2>
-                <p style="color:#374151;line-height:1.6;">The SPMO (Stock & Procurement Management Office) System is designed to streamline inventory, requisition, and procurement workflows for educational institutions. Our mission is to provide a reliable, easy-to-use platform that improves transparency, reduces manual work, and helps departments manage resources effectively.</p>
+            <!-- Hero Section -->
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 48px 32px; text-align: center; border: none;">
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <h2 style="margin: 0 0 16px 0; font-size: 32px; font-weight: 700; color: white;">SPMO System</h2>
+                    <p style="font-size: 18px; line-height: 1.8; margin: 0; opacity: 0.95;">
+                        Revolutionizing Inventory & Procurement Management for Camarines Norte State College
+                    </p>
+                </div>
             </div>
 
-            <div class="card" style="margin-top:16px;">
-                <h2 style="margin-top:0;">What We Do</h2>
-                <ul style="color:#374151;line-height:1.6;">
-                    <li>Centralize inventory and stock management</li>
-                    <li>Automate purchase order creation and tracking</li>
-                    <li>Generate reports for audits and planning</li>
-                </ul>
-            </div>
-
-            <div class="card" style="margin-top:16px;">
-                <h2 style="margin-top:0;">Contact & Support</h2>
-                <p style="color:#374151;line-height:1.6;">For questions, feature requests or to report issues, please contact the System Administrator:</p>
-                <p style="margin:0;font-weight:600;color:#111827;">Camarines Norte State College - SPMO</p>
-                <p style="margin:0;color:#6b7280;">Email: it-support@cnsc.edu.ph</p>
-                <p style="margin:0;color:#6b7280;">Phone: (054) 123-4567</p>
-            </div>
-
-            <div class="card" style="margin-top:16px;">
-                <h2 style="margin-top:0;">The Team</h2>
-                <div class="grid-3" style="gap:12px;">
-                    <div style="padding:12px;border-radius:6px;background:#fff;border:1px solid #eef2f7;">
-                        <p style="margin:0;font-weight:600;">Project Lead</p>
-                        <p style="margin:0;color:#6b7280;">Cherry Ann Quila</p>
+            <!-- Mission & Vision Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 24px;">
+                <div class="card" style="border-left: 4px solid #667eea;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                        <div style="width: 48px; height: 48px; background: #ede9fe; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="target" style="width: 24px; height: 24px; color: #667eea;"></i>
+                        </div>
+                        <h3 style="margin: 0; font-size: 20px; color: #111827;">Our Mission</h3>
                     </div>
-                    <div style="padding:12px;border-radius:6px;background:#fff;border:1px solid #eef2f7;">
-                        <p style="margin:0;font-weight:600;">Developer</p>
-                        <p style="margin:0;color:#6b7280;">Vince Balce</p>
+                    <p style="color: #4b5563; line-height: 1.7; margin: 0;">
+                        To provide a comprehensive, user-friendly platform that streamlines inventory management, 
+                        automates procurement processes, and ensures transparency in resource allocation across 
+                        all departments of CNSC.
+                    </p>
+                </div>
+
+                <div class="card" style="border-left: 4px solid #10b981;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                        <div style="width: 48px; height: 48px; background: #d1fae5; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="eye" style="width: 24px; height: 24px; color: #10b981;"></i>
+                        </div>
+                        <h3 style="margin: 0; font-size: 20px; color: #111827;">Our Vision</h3>
                     </div>
-                    <div style="padding:12px;border-radius:6px;background:#fff;border:1px solid #eef2f7;">
-                        <p style="margin:0;font-weight:600;">QA / Documentation</p>
-                        <p style="margin:0;color:#6b7280;">Marinel Ledesma</p>
+                    <p style="color: #4b5563; line-height: 1.7; margin: 0;">
+                        To be the leading digital solution for educational institutions, setting the standard 
+                        for efficient resource management, data-driven decision making, and operational excellence.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Key Features -->
+            <div class="card" style="margin-top: 24px;">
+                <h3 style="margin: 0 0 24px 0; font-size: 24px; color: #111827; text-align: center;">What We Offer</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px;">
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="width: 64px; height: 64px; background: #fef3c7; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <i data-lucide="package" style="width: 32px; height: 32px; color: #f59e0b;"></i>
+                        </div>
+                        <h4 style="margin: 0 0 8px 0; color: #111827;">Inventory Management</h4>
+                        <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                            Real-time tracking of stock levels, automated alerts, and comprehensive inventory reports
+                        </p>
+                    </div>
+
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="width: 64px; height: 64px; background: #dbeafe; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <i data-lucide="shopping-cart" style="width: 32px; height: 32px; color: #3b82f6;"></i>
+                        </div>
+                        <h4 style="margin: 0 0 8px 0; color: #111827;">Procurement Automation</h4>
+                        <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                            Streamlined purchase order creation, approval workflows, and vendor management
+                        </p>
+                    </div>
+
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="width: 64px; height: 64px; background: #fce7f3; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <i data-lucide="bar-chart-3" style="width: 32px; height: 32px; color: #ec4899;"></i>
+                        </div>
+                        <h4 style="margin: 0 0 8px 0; color: #111827;">Analytics & Reporting</h4>
+                        <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                            Powerful dashboards and customizable reports for data-driven decisions
+                        </p>
+                    </div>
+
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="width: 64px; height: 64px; background: #d1fae5; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <i data-lucide="users" style="width: 32px; height: 32px; color: #10b981;"></i>
+                        </div>
+                        <h4 style="margin: 0 0 8px 0; color: #111827;">Multi-User Access</h4>
+                        <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                            Role-based permissions ensuring secure and organized collaboration
+                        </p>
                     </div>
                 </div>
+            </div>
+
+            <!-- Team Section -->
+            <div class="card" style="margin-top: 24px;">
+                <h3 style="margin: 0 0 8px 0; font-size: 24px; color: #111827; text-align: center;">Meet the Team</h3>
+                <p style="text-align: center; color: #6b7280; margin: 0 0 32px 0;">The dedicated professionals behind SPMO System</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+                    <div style="text-align: center; padding: 24px; background: #f9fafb; border-radius: 12px; border: 2px solid #e5e7eb; transition: all 0.3s;">
+                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px; font-weight: 700; color: white;">
+                            CQ
+                        </div>
+                        <h4 style="margin: 0 0 4px 0; color: #111827; font-size: 18px;">Cherry Ann Quila</h4>
+                        <p style="margin: 0 0 12px 0; color: #667eea; font-weight: 600; font-size: 14px;">QA & Papers</p>
+                        <p style="margin: 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+                            Leading QA initiatives to maintain excellence and alignment in all project and paper outputs.
+                        </p>
+                    </div>
+
+                    <div style="text-align: center; padding: 24px; background: #f9fafb; border-radius: 12px; border: 2px solid #e5e7eb; transition: all 0.3s;">
+                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px; font-weight: 700; color: white;">
+                            VB
+                        </div>
+                        <h4 style="margin: 0 0 4px 0; color: #111827; font-size: 18px;">Vince Balce</h4>
+                        <p style="margin: 0 0 12px 0; color: #3b82f6; font-weight: 600; font-size: 14px;">Project Lead/Lead Developer</p>
+                        <p style="margin: 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+                            Leading the Strategic direction and ensuring project success & Architecting and developing robust system features
+                        </p>
+                    </div>
+
+                    <div style="text-align: center; padding: 24px; background: #f9fafb; border-radius: 12px; border: 2px solid #e5e7eb; transition: all 0.3s;">
+                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px; font-weight: 700; color: white;">
+                            ML
+                        </div>
+                        <h4 style="margin: 0 0 4px 0; color: #111827; font-size: 18px;">Marinel Ledesma</h4>
+                        <p style="margin: 0 0 12px 0; color: #ec4899; font-weight: 600; font-size: 14px;">Co Developer & Documentation</p>
+                        <p style="margin: 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+                            Ensuring quality standards and comprehensive support for development and prepared clear project documentation.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Section -->
+            <div class="card" style="margin-top: 24px; background: #f9fafb; border: 2px solid #e5e7eb;">
+                <div style="text-align: center; max-width: 600px; margin: 0 auto;">
+                    <div style="width: 64px; height: 64px; background: #667eea; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                        <i data-lucide="mail" style="width: 32px; height: 32px; color: white;"></i>
+                    </div>
+                    <h3 style="margin: 0 0 8px 0; font-size: 24px; color: #111827;">Get in Touch</h3>
+                    <p style="margin: 0 0 24px 0; color: #6b7280; line-height: 1.6;">
+                        Have questions or need support? We're here to help!
+                    </p>
+                    
+                    <div style="display: grid; gap: 16px; text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: white; border-radius: 8px;">
+                            <div style="width: 40px; height: 40px; background: #ede9fe; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i data-lucide="building-2" style="width: 20px; height: 20px; color: #667eea;"></i>
+                            </div>
+                            <div>
+                                <p style="margin: 0; font-weight: 600; color: #111827; font-size: 14px;">Institution</p>
+                                <p style="margin: 0; color: #6b7280; font-size: 14px;">Camarines Norte State College - Supply and Property Management Office</p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: white; border-radius: 8px;">
+                            <div style="width: 40px; height: 40px; background: #dbeafe; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i data-lucide="mail" style="width: 20px; height: 20px; color: #3b82f6;"></i>
+                            </div>
+                            <div>
+                                <p style="margin: 0; font-weight: 600; color: #111827; font-size: 14px;">Email</p>
+                                <p style="margin: 0; color: #6b7280; font-size: 14px;">cnsc.spmo@.edu.ph</p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: white; border-radius: 8px;">
+                            <div style="width: 40px; height: 40px; background: #d1fae5; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i data-lucide="phone" style="width: 20px; height: 20px; color: #10b981;"></i>
+                            </div>
+                            <div>
+                                <p style="margin: 0; font-weight: 600; color: #111827; font-size: 14px;">Phone</p>
+                                <p style="margin: 0; color: #6b7280; font-size: 14px;">(054) 123-4567</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Note -->
+            <div style="margin-top: 32px; padding: 24px; text-align: center; background: linear-gradient(to right, #f9fafb, #f3f4f6, #f9fafb); border-radius: 12px;">
+                <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                    © ${currentYear} SPMO System - Camarines Norte State College. All rights reserved.
+                </p>
             </div>
         </div>
     `;
@@ -5894,6 +6340,72 @@ function viewStatusRequest(id) {
     }
 }
 window.viewStatusRequest = viewStatusRequest;
+
+// View status request details (for status reports)
+function viewStatusRequestDetails(requestId) {
+    const rec = (AppState.statusRequests || []).find(r => r.id === requestId);
+    if (!rec) {
+        showAlert('Request not found', 'error');
+        return;
+    }
+
+    const modal = document.getElementById('purchase-order-modal');
+    const modalContent = modal.querySelector('.modal-content');
+
+    modalContent.innerHTML = `
+        <div class="modal-header">
+            <h2 class="modal-title">Request Details: ${rec.id}</h2>
+            <button class="modal-close" onclick="closePurchaseOrderModal()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="grid-2" style="gap: 20px;">
+                <div class="form-group">
+                    <label class="form-label">Request ID</label>
+                    <input type="text" class="form-input" value="${rec.id}" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <span class="${getBadgeClass(rec.status)}" style="display: inline-block; margin-top: 8px;">${capitalize(rec.status)}</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Requester</label>
+                    <input type="text" class="form-input" value="${rec.requester || ''}" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <input type="text" class="form-input" value="${rec.department || ''}" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Item</label>
+                    <input type="text" class="form-input" value="${rec.item || ''}" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <span class="${getBadgeClass(rec.priority || 'low', 'priority')}" style="display: inline-block; margin-top: 8px;">${capitalize(rec.priority || 'low')}</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cost</label>
+                    <input type="text" class="form-input" value="${rec.cost ? formatCurrency(rec.cost) : 'N/A'}" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Updated At</label>
+                    <input type="text" class="form-input" value="${rec.updatedAt || 'N/A'}" readonly>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closePurchaseOrderModal()">Close</button>
+        </div>
+    `;
+
+    modal.classList.add('active');
+    setTimeout(() => lucide.createIcons(), 100);
+}
+
+// Make functions globally accessible
+window.viewStatusRequestDetails = viewStatusRequestDetails;
 
 // Sidebar and status behavior is handled centrally by the navigation initialization
 // (initializeNavigation, toggleNavGroup, navigateToPage and loadPageContent).

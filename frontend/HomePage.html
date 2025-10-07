@@ -120,6 +120,27 @@
   <footer>
     <p>&copy; 2025 Camarines Norte State College. All rights reserved.</p>
   </footer>
+
+  <script>
+    // Smooth scroll for Learn More button
+    document.addEventListener('DOMContentLoaded', function () {
+      const learnMoreBtn = document.querySelector('a[href="#learn"]');
+
+      if (learnMoreBtn) {
+        learnMoreBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          const targetSection = document.querySelector('#learn');
+
+          if (targetSection) {
+            targetSection.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      }
+    });
+  </script>
 </body>
 
 </html>

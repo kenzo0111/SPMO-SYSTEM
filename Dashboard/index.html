@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -10,6 +8,7 @@
     <link rel="stylesheet" href="dashboard.css">
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="vendor/lucide.min.js"></script>
     <!-- Chart.js CDN for report charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -198,6 +197,15 @@
                     </button>
                 </div>
             </nav>
+
+            <!-- Sidebar Footer with Toggle Button -->
+            <div class="sidebar-footer">
+                <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()"
+                    aria-label="Toggle sidebar">
+                    <i data-lucide="panel-left-close" class="toggle-icon"></i>
+                    <span class="toggle-text">Collapse</span>
+                </button>
+            </div>
         </aside>
 
         <!-- Main Content Area -->
