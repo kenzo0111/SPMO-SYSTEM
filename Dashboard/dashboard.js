@@ -54,11 +54,11 @@ const AppState = {
     ],
     // Unified status list (replaces hardcoded table rows in status management)
     statusRequests: [
-        { id: 'REQ-2025-001', requester: 'John Smith', department: 'IT Department', item: 'Laptop Computer', priority: 'high', updatedAt: '2024-01-15', status: 'received', cost: 1200 },
-        { id: 'REQ-2025-005', requester: 'David Brown', department: 'Operations', item: 'Safety Equipment', priority: 'high', updatedAt: '2024-01-16', status: 'received', cost: 400 },
-        { id: 'REQ-2025-002', requester: 'Alice Green', department: 'Finance', item: 'Printer', priority: 'medium', updatedAt: '2024-01-10', status: 'finished', cost: 300 },
-        { id: 'REQ-2025-003', requester: 'Bob Lee', department: 'HR', item: 'Office Chairs', priority: 'low', updatedAt: '2024-01-12', status: 'cancelled', cost: 500 },
-        { id: 'REQ-2025-004', requester: 'Emily Davis', department: 'Marketing', item: 'Projector', priority: 'medium', updatedAt: '2024-01-14', status: 'rejected', cost: 700 }
+        { id: 'REQ-2025-001', requester: 'John Smith', department: 'IT Department', item: 'Laptop Computer', priority: 'high', updatedAt: '2025-01-15', status: 'received', cost: 1200 },
+        { id: 'REQ-2025-005', requester: 'David Brown', department: 'Operations', item: 'Safety Equipment', priority: 'high', updatedAt: '2025-01-16', status: 'received', cost: 400 },
+        { id: 'REQ-2025-002', requester: 'Alice Green', department: 'Finance', item: 'Printer', priority: 'medium', updatedAt: '2025-01-10', status: 'finished', cost: 300 },
+        { id: 'REQ-2025-003', requester: 'Bob Lee', department: 'HR', item: 'Office Chairs', priority: 'low', updatedAt: '2025-01-12', status: 'cancelled', cost: 500 },
+        { id: 'REQ-2025-004', requester: 'Emily Davis', department: 'Marketing', item: 'Projector', priority: 'medium', updatedAt: '2025-01-14', status: 'rejected', cost: 700 }
     ],
     currentStatusFilter: 'all'
 };
@@ -116,7 +116,7 @@ const MockData = {
         { id: 'SH03', name: 'Over Cabinet & Under Cabinet', description: 'Over cabinet and under cabinet', quantity: 5, unitCost: 7500.00, totalValue: 37500.00, date: '2025-01-15', type: 'semi-expendable' },
 
         // Non-Expendable products
-        { id: 'N001', name: 'Toyota Hiace van', description: 'Toyota Hiace van with plate number', quantity: 1, unitCost: 2700000.00, totalValue: 2700000.00, date: '2024-10-10', type: 'non-expendable' },
+        { id: 'N001', name: 'Toyota Hiace van', description: 'Toyota Hiace van with plate number', quantity: 1, unitCost: 2700000.00, totalValue: 2700000.00, date: '2025-10-10', type: 'non-expendable' },
         { id: 'N002', name: 'Office Building', description: '2-floor building used for office operations', quantity: 1, unitCost: 8500000.00, totalValue: 8500000.00, date: '2025-08-03', type: 'non-expendable' },
         { id: 'N003', name: 'Industrial Machinery', description: 'Heavy diesel engine for construction purposes', quantity: 1, unitCost: 6500000.00, totalValue: 6500000.00, date: '2025-10-15', type: 'non-expendable' },
         { id: 'N004', name: 'Library Furniture Set', description: 'Complete set including study rooms', quantity: 1, unitCost: 855000.00, totalValue: 855000.00, date: '2025-01-10', type: 'non-expendable' },
@@ -722,7 +722,7 @@ function generateDashboardPage() {
                             </div>
                         </div>
                         
-                        <div class="action-item" onclick="navigateToPage('reports')">
+                        <div class="action-item" onclick="navigateToPage('inventory-reports')">
                             <div class="action-icon purple">
                                 <i data-lucide="bar-chart-3" class="icon"></i>
                             </div>
@@ -3992,9 +3992,9 @@ document.addEventListener('DOMContentLoaded', function () {
 function generateRolesManagementPage() {
     // Sample data for initial load only
     const initialMembers = [
-        { id: "SA001", group: "Group Juan", name: "Cherry Ann Quila", role: "Leader", email: "cherry@cnsc.edu.ph", department: "IT", status: "Active", created: "2024-01-15" },
-        { id: "SA002", group: "Group Juan", name: "Vince Balce", role: "Member", email: "vince@cnsc.edu.ph", department: "Finance", status: "Inactive", created: "2024-02-01" },
-        { id: "SA003", group: "Group Juan", name: "Marinel Ledesma", role: "Member", email: "marinel@cnsc.edu.ph", department: "HR", status: "Active", created: "2024-03-10" }
+        { id: "SA001", group: "Group Juan", name: "Cherry Ann Quila", role: "Leader", email: "cherry@cnsc.edu.ph", department: "IT", status: "Active", created: "2025-01-15" },
+        { id: "SA002", group: "Group Juan", name: "Vince Balce", role: "Member", email: "vince@cnsc.edu.ph", department: "Finance", status: "Inactive", created: "2025-02-01" },
+        { id: "SA003", group: "Group Juan", name: "Marinel Ledesma", role: "Member", email: "marinel@cnsc.edu.ph", department: "HR", status: "Active", created: "2025-03-10" }
     ];
 
     // FIX: Only initialize MockData.users if it doesn't already exist.
@@ -4387,10 +4387,10 @@ function generateUserModal(mode = 'view', userData = null) {
 function generateUsersManagementPage() {
     // sample user data
     const users = [
-        { name: "John Doe", email: "john@cnsc.edu.ph", role: "Admin", department: "IT", status: "Active", created: "2024-01-15" },
-        { name: "Jane Smith", email: "jane@cnsc.edu.ph", role: "Manager", department: "Procurement", status: "Active", created: "2024-01-10" },
-        { name: "Bob Johnson", email: "bob@cnsc.edu.ph", role: "User", department: "Finance", status: "Inactive", created: "2024-01-05" },
-        { name: "Alice Brown", email: "alice@cnsc.edu.ph", role: "User", department: "HR", status: "Active", created: "2024-01-12" }
+        { name: "John Doe", email: "john@cnsc.edu.ph", role: "Admin", department: "IT", status: "Active", created: "2025-01-15" },
+        { name: "Jane Smith", email: "jane@cnsc.edu.ph", role: "Manager", department: "Procurement", status: "Active", created: "2025-01-10" },
+        { name: "Bob Johnson", email: "bob@cnsc.edu.ph", role: "User", department: "Finance", status: "Inactive", created: "2025-01-05" },
+        { name: "Alice Brown", email: "alice@cnsc.edu.ph", role: "User", department: "HR", status: "Active", created: "2025-01-12" }
     ];
 
     return `
