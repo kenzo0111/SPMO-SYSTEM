@@ -972,18 +972,51 @@ body {
 .table-actions {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
 }
 
 /* Badges */
 .badge {
     display: inline-flex;
     align-items: center;
+    gap: 4px;
     padding: 4px 8px;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 500;
 }
+
+/* Badge + Icon utility */
+.badge .icon, .badge i[data-lucide] {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2px;
+}
+
+/* Uniform icon-only action buttons */
+.icon-action-btn {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+.icon-action-btn:hover { background:#f3f4f6; }
+.icon-action-btn:active { background:#e5e7eb; }
+.icon-action-btn i[data-lucide] { width:16px; height:16px; }
+
+/* Color contexts (re-usable) */
+.icon-action-danger { border-color:#fecaca; color:#991b1b; }
+.icon-action-danger:hover { background:#fee2e2; }
+.icon-action-warning { border-color:#fed7aa; color:#c2410c; }
+.icon-action-warning:hover { background:#ffedd5; }
+.icon-action-success { border-color:#d1fae5; color:#065f46; }
+.icon-action-success:hover { background:#dcfce7; }
 
 .badge.green {
     background-color: #dcfce7;
@@ -1070,6 +1103,25 @@ body {
     overflow-y: auto;
     animation: modalSlideIn 0.2s ease-out;
 }
+
+/* Compact modal variant */
+.modal-content.compact {
+    max-width: 520px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 4px 10px -4px rgba(0,0,0,0.08);
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    row-gap: 8px;
+    column-gap: 12px;
+    font-size: 13px;
+}
+.detail-grid dt { font-weight:600; color:#374151; }
+.detail-grid dd { margin:0; color:#4b5563; }
+
+.badge.inline { font-size:11px; padding:2px 6px; }
 
 @keyframes modalSlideIn {
     from {

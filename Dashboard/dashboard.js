@@ -51,7 +51,16 @@ const AppState = {
         { id: 'n1', title: 'New requisition submitted', time: '2h ago', read: false },
         { id: 'n2', title: 'Stock level low: Paper A4', time: '1d ago', read: false },
         { id: 'n3', title: 'PO #1234 approved', time: '3d ago', read: true }
-    ]
+    ],
+    // Unified status list (replaces hardcoded table rows in status management)
+    statusRequests: [
+        { id: 'REQ-2024-001', requester: 'John Smith', department: 'IT Department', item: 'Laptop Computer', priority: 'high', updatedAt: '2024-01-15', status: 'received', cost: 1200 },
+        { id: 'REQ-2024-005', requester: 'David Brown', department: 'Operations', item: 'Safety Equipment', priority: 'high', updatedAt: '2024-01-16', status: 'received', cost: 400 },
+        { id: 'REQ-2024-002', requester: 'Alice Green', department: 'Finance', item: 'Printer', priority: 'medium', updatedAt: '2024-01-10', status: 'finished', cost: 300 },
+        { id: 'REQ-2024-003', requester: 'Bob Lee', department: 'HR', item: 'Office Chairs', priority: 'low', updatedAt: '2024-01-12', status: 'cancelled', cost: 500 },
+        { id: 'REQ-2024-004', requester: 'Emily Davis', department: 'Marketing', item: 'Projector', priority: 'medium', updatedAt: '2024-01-14', status: 'rejected', cost: 700 }
+    ],
+    currentStatusFilter: 'all'
 };
 
 
@@ -150,6 +159,8 @@ function getBadgeClass(status, type = 'status') {
             'approved': 'badge blue',
             'delivered': 'badge green',
             'completed': 'badge emerald',
+            'received': 'badge blue',
+            'finished': 'badge emerald',
             'cancelled': 'badge red',
 
         },
@@ -822,11 +833,11 @@ function generateCategoriesPage() {
                                 <td style="padding: 16px 24px; color: #6b7280; max-width: 600px; line-height: 1.5;">${category.description}</td>
                                 <td style="padding: 16px 24px;">
                                     <div class="table-actions">
-                                        <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="openCategoryModal('edit','${category.id}')">
-                                            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                        <button class="icon-action-btn icon-action-warning" title="Edit" onclick="openCategoryModal('edit','${category.id}')">
+                                            <i data-lucide="edit"></i>
                                         </button>
-                                        <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="deleteCategory('${category.id}')">
-                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                        <button class="icon-action-btn icon-action-danger" title="Delete" onclick="deleteCategory('${category.id}')">
+                                            <i data-lucide="trash-2"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -929,11 +940,11 @@ function generateProductsPage() {
                                 <td>${product.date}</td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="deleteProduct('${product.id}')">
-                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                        <button class="icon-action-btn icon-action-danger" title="Delete" onclick="deleteProduct('${product.id}')">
+                                            <i data-lucide="trash-2"></i>
                                         </button>
-                                        <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="openProductModal('edit','${product.id}')">
-                                            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                        <button class="icon-action-btn icon-action-warning" title="Edit" onclick="openProductModal('edit','${product.id}')">
+                                            <i data-lucide="edit"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -1229,14 +1240,14 @@ function generateNewRequestPage() {
                             <td>${request.department}</td>
                             <td>
                                 <div class="table-actions">
-                                    <button class="btn-outline-blue" onclick="openPurchaseOrderModal('view', '${request.id}')" title="View">
-                                        <i data-lucide="eye" class="icon"></i>
+                                    <button class="icon-action-btn" title="View" onclick="openPurchaseOrderModal('view', '${request.id}')">
+                                        <i data-lucide="eye"></i>
                                     </button>
-                                    <button class="btn-outline-orange" onclick="openPurchaseOrderModal('edit', '${request.id}')" title="Edit">
-                                        <i data-lucide="edit" class="icon"></i>
+                                    <button class="icon-action-btn icon-action-warning" title="Edit" onclick="openPurchaseOrderModal('edit', '${request.id}')">
+                                        <i data-lucide="edit"></i>
                                     </button>
-                                    <button class="btn-outline-red" onclick="deleteRequest('${request.id}')" title="Delete">
-                                        <i data-lucide="trash-2" class="icon"></i>
+                                    <button class="icon-action-btn icon-action-danger" title="Delete" onclick="deleteRequest('${request.id}')">
+                                        <i data-lucide="trash-2"></i>
                                     </button>
                                 </div>
                             </td>
@@ -1369,17 +1380,17 @@ function generatePendingApprovalPage() {
                                     <td>${request.submittedDate || request.requestDate || '-'}</td>
                                     <td>
                                         <div class="table-actions">
-                                            <button class="btn-outline-blue" onclick="openPurchaseOrderModal('view', '${request.id}')" title="View Details">
-                                                <i data-lucide="eye" class="icon"></i>
+                                            <button class="icon-action-btn" title="View" onclick="openPurchaseOrderModal('view', '${request.id}')">
+                                                <i data-lucide="eye"></i>
                                             </button>
-                                            <button class="btn-outline-orange" onclick="openPurchaseOrderModal('edit', '${request.id}')" title="Edit Request">
-                                                <i data-lucide="edit" class="icon"></i>
+                                            <button class="icon-action-btn icon-action-warning" title="Edit" onclick="openPurchaseOrderModal('edit', '${request.id}')">
+                                                <i data-lucide="edit"></i>
                                             </button>
-                                            <button class="btn-outline-green" onclick="approveRequest('${request.id}')" title="Approve Request">
-                                                <i data-lucide="check" class="icon"></i>
+                                            <button class="icon-action-btn icon-action-success" title="Approve" onclick="approveRequest('${request.id}')">
+                                                <i data-lucide="check-circle"></i>
                                             </button>
-                                            <button class="btn-outline-red" onclick="rejectRequest('${request.id}')" title="Reject Request">
-                                                <i data-lucide="x" class="icon"></i>
+                                            <button class="icon-action-btn icon-action-danger" title="Reject" onclick="rejectRequest('${request.id}')">
+                                                <i data-lucide="x-circle"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -1406,10 +1417,13 @@ function generatePendingApprovalPage() {
 function generateCompletedRequestPage() {
     // Prepare lists (mirror the approach used in generatePendingApprovalPage)
     const allCompleted = (AppState.completedRequests || []);
-    const completedList = allCompleted.filter(r => r.status === 'completed');
-    const deliveredList = allCompleted.filter(r => r.status === 'delivered');
-    const totalRequests = allCompleted.length;
-    const totalValue = allCompleted.reduce((sum, req) => sum + (req.totalAmount || 0), 0);
+    // Visible in this page: treat only actually fulfilled / approved flows as "completed" view entries
+    const visibleStatuses = ['approved', 'delivered', 'completed'];
+    const visibleCompleted = allCompleted.filter(r => visibleStatuses.includes(r.status));
+    const completedList = visibleCompleted.filter(r => r.status === 'completed');
+    const deliveredList = visibleCompleted.filter(r => r.status === 'delivered');
+    const totalRequests = visibleCompleted.length;
+    const totalValue = visibleCompleted.reduce((sum, req) => sum + (req.totalAmount || 0), 0);
 
     return `
         <section class="page-header">
@@ -1467,8 +1481,8 @@ function generateCompletedRequestPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${(AppState.completedRequests || []).length > 0
-            ? (AppState.completedRequests || []).map(request => `
+                        ${visibleCompleted.length > 0
+            ? visibleCompleted.map(request => `
                                 <tr>
                                     <td>${request.id}</td>
                                     <td>
@@ -1490,14 +1504,14 @@ function generateCompletedRequestPage() {
                                     <td>${request.deliveredDate || '-'}</td>
                                     <td>
                                         <div class="table-actions">
-                                            <button class="btn-outline-blue" onclick="openPurchaseOrderModal('view', '${request.id}')" title="View Details">
-                                                <i data-lucide="eye" class="icon"></i>
+                                            <button class="icon-action-btn" title="View" onclick="openPurchaseOrderModal('view', '${request.id}')">
+                                                <i data-lucide="eye"></i>
                                             </button>
-                                            <button class="btn-outline-green" onclick="downloadPO('${request.id}')" title="Download PO">
-                                                <i data-lucide="download" class="icon"></i>
+                                            <button class="icon-action-btn icon-action-success" title="Download PO" onclick="downloadPO('${request.id}')">
+                                                <i data-lucide="download"></i>
                                             </button>
-                                            <button class="btn-outline-orange" onclick="archiveRequest('${request.id}')" title="Archive Request">
-                                                <i data-lucide="archive" class="icon"></i>
+                                            <button class="icon-action-btn icon-action-warning" title="Archive" onclick="archiveRequest('${request.id}')">
+                                                <i data-lucide="archive"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -3241,11 +3255,11 @@ function updateProductsTable() {
                 <td>${product.date}</td>
                 <td>
                     <div class="table-actions">
-                        <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
-                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                        <button class="icon-action-btn icon-action-danger" title="Delete">
+                            <i data-lucide="trash-2"></i>
                         </button>
-                        <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;">
-                            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                        <button class="icon-action-btn icon-action-warning" title="Edit">
+                            <i data-lucide="edit"></i>
                         </button>
                     </div>
                 </td>
@@ -3316,9 +3330,8 @@ async function rejectRequest(requestId) {
         request.status = 'rejected';
         request.rejectedBy = 'Approver User';
         request.rejectedDate = new Date().toISOString().split('T')[0];
-
-        // Move to completedRequests for record keeping
-        AppState.completedRequests.push(request);
+        AppState.rejectedRequests = AppState.rejectedRequests || [];
+        AppState.rejectedRequests.push(request);
         AppState.newRequests.splice(idx, 1);
     } else {
         const pidx = AppState.pendingRequests.findIndex(r => r.id === requestId);
@@ -3327,7 +3340,8 @@ async function rejectRequest(requestId) {
             request.status = 'rejected';
             request.rejectedBy = 'Approver User';
             request.rejectedDate = new Date().toISOString().split('T')[0];
-            AppState.completedRequests.push(request);
+            AppState.rejectedRequests = AppState.rejectedRequests || [];
+            AppState.rejectedRequests.push(request);
             AppState.pendingRequests.splice(pidx, 1);
         }
     }
@@ -3671,14 +3685,14 @@ function generateRolesManagementPage() {
                             <td>${member.created}</td>
                             <td>
                                 <div class="table-actions">
-                                    <button class="btn-outline-blue" title="View" onclick="openUserModal('view', '${member.id}')">
-                                        <i data-lucide="eye" class="icon"></i>
+                                    <button class="icon-action-btn" title="View" onclick="openUserModal('view', '${member.id}')">
+                                        <i data-lucide="eye"></i>
                                     </button>
-                                    <button class="btn-outline-orange" title="Edit" onclick="openUserModal('edit', '${member.id}')">
-                                        <i data-lucide="edit" class="icon"></i>
+                                    <button class="icon-action-btn icon-action-warning" title="Edit" onclick="openUserModal('edit', '${member.id}')">
+                                        <i data-lucide="edit"></i>
                                     </button>
-                                    <button class="btn-outline-red" title="Delete" onclick="deleteMember('${member.id}')">
-                                        <i data-lucide="trash-2" class="icon"></i>
+                                    <button class="icon-action-btn icon-action-danger" title="Delete" onclick="deleteMember('${member.id}')">
+                                        <i data-lucide="trash-2"></i>
                                     </button>
                                 </div>
                             </td>
@@ -4514,11 +4528,11 @@ function renderStockInRow(r, index) {
             <td style="color: #6b7280;">${r.receivedBy}</td>
             <td>
                 <div class="table-actions">
-                    <button class="btn-outline-red" title="Delete" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="deleteStockIn('${r.id}')">
-                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                    <button class="icon-action-btn icon-action-danger" title="Delete" onclick="deleteStockIn('${r.id}')">
+                        <i data-lucide="trash-2"></i>
                     </button>
-                    <button class="btn-outline-orange" title="Edit" style="width: 32px; height: 32px; padding: 0; border-radius: 4px;" onclick="openStockInModal('edit','${r.id}')">
-                        <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                    <button class="icon-action-btn icon-action-warning" title="Edit" onclick="openStockInModal('edit','${r.id}')">
+                        <i data-lucide="edit"></i>
                     </button>
                 </div>
             </td>
@@ -4779,14 +4793,14 @@ function renderStockOutRow(s) {
             <td><span class="badge ${s.status === 'Completed' ? 'green' : s.status === 'Pending' ? 'yellow' : s.status === 'Cancelled' ? 'red' : ''}">${s.status}</span></td>
             <td>
                 <div class="table-actions">
-                    <button class="btn-outline-blue" title="View Details" onclick="viewStockOutDetails('${s.id}')">
-                        <i data-lucide="eye" class="icon"></i>
+                    <button class="icon-action-btn" title="View" onclick="viewStockOutDetails('${s.id}')">
+                        <i data-lucide="eye"></i>
                     </button>
-                    <button class="btn-outline-orange" title="Edit" onclick="editStockOut('${s.id}')">
-                        <i data-lucide="edit" class="icon"></i>
+                    <button class="icon-action-btn icon-action-warning" title="Edit" onclick="editStockOut('${s.id}')">
+                        <i data-lucide="edit"></i>
                     </button>
-                    <button class="btn-outline-red" title="Delete" onclick="deleteStockOut('${s.id}')">
-                        <i data-lucide="trash-2" class="icon"></i>
+                    <button class="icon-action-btn icon-action-danger" title="Delete" onclick="deleteStockOut('${s.id}')">
+                        <i data-lucide="trash-2"></i>
                     </button>
                 </div>
             </td>
@@ -4824,6 +4838,7 @@ function generateStockOutIssueId() {
 function initStatusManagement(filter = "all") {
     const mainContent = document.getElementById("main-content");
     if (!mainContent) return;
+    AppState.currentStatusFilter = filter;
 
     // ✅ Render UI
     mainContent.innerHTML = `
@@ -4832,22 +4847,22 @@ function initStatusManagement(filter = "all") {
             <div class="status-cards">
                 <div class="status-card received" data-status="received">
                     <h3>Received</h3>
-                    <div class="count">2</div>
+                    <div class="count" data-count="received">0</div>
                     <p>Awaiting processing</p>
                 </div>
                 <div class="status-card finished" data-status="finished">
                     <h3>Finished</h3>
-                    <div class="count">1</div>
+                    <div class="count" data-count="finished">0</div>
                     <p>Successfully completed</p>
                 </div>
                 <div class="status-card cancelled" data-status="cancelled">
                     <h3>Cancelled</h3>
-                    <div class="count">1</div>
+                    <div class="count" data-count="cancelled">0</div>
                     <p>Request withdrawn</p>
                 </div>
                 <div class="status-card rejected" data-status="rejected">
                     <h3>Rejected</h3>
-                    <div class="count">1</div>
+                    <div class="count" data-count="rejected">0</div>
                     <p>Request denied</p>
                 </div>
             </div>
@@ -4911,71 +4926,63 @@ function initStatusManagement(filter = "all") {
     document.getElementById("prioritySelect").addEventListener("change", applyFilters);
     // Export handler (same behavior as Reports export)
     document.getElementById('export-status-btn')?.addEventListener('click', exportStatusCSV);
+    // Card click events to switch filters
+    mainContent.querySelectorAll('.status-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const s = card.getAttribute('data-status');
+            AppState.currentStatusFilter = s;
+            document.getElementById('status-table-body').innerHTML = renderStatusRows(s);
+            applyFilters();
+        });
+    });
+    refreshStatusCards();
+}
+
+function refreshStatusCards() {
+    const counts = (AppState.statusRequests || []).reduce((acc, r) => { acc[r.status] = (acc[r.status] || 0) + 1; return acc; }, {});
+    ['received', 'finished', 'cancelled', 'rejected'].forEach(s => {
+        const el = document.querySelector(`.status-card .count[data-count="${s}"]`);
+        if (el) el.textContent = counts[s] || 0;
+    });
 }
 
 // ===== Dummy Rows =====
 function renderStatusRows(status) {
-    const rows = {
-        received: `
-            <tr>
-                <td>REQ-2024-001</td>
-                <td>John Smith</td>
-                <td>IT Department</td>
-                <td>Laptop Computer</td>
-                <td><span style="color:red;font-weight:bold;">High</span></td>
-                <td>1/15/2024</td>
-                <td>Review Required</td>
-                <td>₱1,200</td>
-            </tr>
-            <tr>
-                <td>REQ-2024-005</td>
-                <td>David Brown</td>
-                <td>Operations</td>
-                <td>Safety Equipment</td>
-                <td><span style="color:red;font-weight:bold;">High</span></td>
-                <td>1/16/2024</td>
-                <td>Pending Approval</td>
-                <td>₱400</td>
-            </tr>`,
-        finished: `
-            <tr>
-                <td>REQ-2024-002</td>
-                <td>Alice Green</td>
-                <td>Finance</td>
-                <td>Printer</td>
-                <td>Medium</td>
-                <td>1/10/2024</td>
-                <td>Completed</td>
-                <td>₱300</td>
-            </tr>`,
-        cancelled: `
-            <tr>
-                <td>REQ-2024-003</td>
-                <td>Bob Lee</td>
-                <td>HR</td>
-                <td>Office Chairs</td>
-                <td>Low</td>
-                <td>1/12/2024</td>
-                <td>Cancelled</td>
-                <td>₱500</td>
-            </tr>`,
-        rejected: `
-            <tr>
-                <td>REQ-2024-004</td>
-                <td>Emily Davis</td>
-                <td>Marketing</td>
-                <td>Projector</td>
-                <td>Medium</td>
-                <td>1/14/2024</td>
-                <td>Rejected</td>
-                <td>₱700</td>
-            </tr>`
-    };
-
-    if (status === "all") {
-        return rows.received + rows.finished + rows.cancelled + rows.rejected;
-    }
-    return rows[status] || "";
+    const list = (AppState.statusRequests || []).filter(r => status === 'all' ? true : r.status === status);
+    if (!list.length) return `<tr><td colspan="8" style="text-align:center;padding:16px;color:#6b7280;">No records</td></tr>`;
+    const html = list.map(r => {
+        const priorityColor = r.priority === 'high' ? 'red' : r.priority === 'medium' ? 'orange' : 'green';
+        const showActions = r.status === 'received';
+        const actionsHtml = showActions ? `
+            <div class="table-actions" style="flex-wrap:wrap;">
+                <button class="icon-action-btn" title="View Details" onclick="viewStatusRequest('${r.id}')">
+                    <i data-lucide="eye"></i>
+                </button>
+                <button class="icon-action-btn icon-action-danger" title="Reject" onclick="updateStatusRow('${r.id}','rejected')">
+                    <i data-lucide="x-circle"></i>
+                </button>
+                <button class="icon-action-btn icon-action-warning" title="Cancel" onclick="updateStatusRow('${r.id}','cancelled')">
+                    <i data-lucide="ban"></i>
+                </button>
+                <button class="icon-action-btn icon-action-success" title="Complete" onclick="updateStatusRow('${r.id}','finished')">
+                    <i data-lucide="check-circle"></i>
+                </button>
+            </div>` : `<span class="${getBadgeClass(r.status)}"><i data-lucide="badge-check" style="width:14px;height:14px;"></i>${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span>`;
+        return `
+            <tr data-request-id="${r.id}">
+                <td>${r.id}</td>
+                <td>${r.requester}</td>
+                <td>${r.department}</td>
+                <td>${r.item}</td>
+                <td><span style="color:${priorityColor};font-weight:bold;">${r.priority.charAt(0).toUpperCase() + r.priority.slice(1)}</span></td>
+                <td>${r.updatedAt}</td>
+                <td>${actionsHtml}</td>
+                <td>${formatCurrency(r.cost || 0)}</td>
+        </tr>`;
+    }).join('');
+    // Defer icon init until injected into DOM (caller will set innerHTML, then we init here with a microtask)
+    queueMicrotask(() => { try { lucide.createIcons(); } catch (e) { } });
+    return html;
 }
 
 // ===== Apply Filters =====
@@ -5000,6 +5007,87 @@ function applyFilters() {
         row.style.display = match ? "" : "none";
     });
 }
+
+// ===== Update Row Status (for Received actions) =====
+function updateStatusRow(requestId, newStatus) {
+    try {
+        const rec = (AppState.statusRequests || []).find(r => r.id === requestId);
+        if (!rec) { showAlert('Row not found', 'error'); return; }
+        rec.status = newStatus;
+        rec.updatedAt = new Date().toISOString().split('T')[0];
+        // Re-render current filter view
+        const body = document.getElementById('status-table-body');
+        if (body) body.innerHTML = renderStatusRows(AppState.currentStatusFilter || 'all');
+        // icons already re-init inside renderStatusRows; safeguard:
+        try { lucide.createIcons(); } catch (e) { }
+        // Update counts on cards
+        refreshStatusCards();
+        const statusLabel = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+        showAlert(`Request ${requestId} marked as ${statusLabel}`, 'success');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// Lightweight viewer for status management entries
+function viewStatusRequest(id) {
+    const rec = (AppState.statusRequests || []).find(r => r.id === id);
+    if (!rec) { showAlert('Request not found', 'error'); return; }
+    let overlay = document.getElementById('status-view-modal');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'status-view-modal';
+        overlay.className = 'modal-overlay active';
+        overlay.innerHTML = `
+            <div class="modal-content compact" role="dialog" aria-modal="true" aria-labelledby="status-view-title">
+                <div class="modal-header" style="padding:16px 20px; text-align:left; display:flex; align-items:center; justify-content:space-between;">
+                    <div>
+                        <h2 id="status-view-title" class="modal-title" style="font-size:18px; margin:0;">Request ${rec.id}</h2>
+                        <p class="modal-subtitle" style="margin:4px 0 0 0;">Quick status overview</p>
+                    </div>
+                    <button class="modal-close" id="status-view-close" aria-label="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div class="modal-body" style="padding:16px 20px;">
+                    <dl class="detail-grid" id="status-view-body"></dl>
+                </div>
+                <div class="modal-footer" style="padding:12px 20px;">
+                    <button class="btn btn-secondary" id="status-view-dismiss">Close</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        // Close on backdrop click
+        overlay.addEventListener('click', e => { if (e.target === overlay) closeStatusView(); });
+        // Esc key handler
+        document.addEventListener('keydown', escHandler);
+    } else {
+        overlay.classList.add('active');
+    }
+    const grid = overlay.querySelector('#status-view-body');
+    if (grid) {
+        grid.innerHTML = `
+            <dt>Item</dt><dd>${rec.item}</dd>
+            <dt>Requester</dt><dd>${rec.requester}</dd>
+            <dt>Department</dt><dd>${rec.department}</dd>
+            <dt>Priority</dt><dd><span class="badge ${getBadgeClass(rec.priority, 'priority').split(' ').slice(-1)} inline">${rec.priority}</span></dd>
+            <dt>Status</dt><dd><span class="${getBadgeClass(rec.status)} inline">${rec.status}</span></dd>
+            <dt>Updated</dt><dd>${rec.updatedAt}</dd>
+            <dt>Est. Cost</dt><dd>${formatCurrency(rec.cost || 0)}</dd>
+        `;
+    }
+    // Icon refresh
+    try { lucide.createIcons(); } catch (e) { }
+    overlay.querySelector('#status-view-close').onclick = closeStatusView;
+    overlay.querySelector('#status-view-dismiss').onclick = closeStatusView;
+    function escHandler(ev) { if (ev.key === 'Escape') { closeStatusView(); } }
+    function closeStatusView() {
+        overlay.classList.remove('active');
+        setTimeout(() => { if (overlay) overlay.remove(); }, 150);
+        document.removeEventListener('keydown', escHandler);
+    }
+}
+window.viewStatusRequest = viewStatusRequest;
 
 // Sidebar and status behavior is handled centrally by the navigation initialization
 // (initializeNavigation, toggleNavGroup, navigateToPage and loadPageContent).
