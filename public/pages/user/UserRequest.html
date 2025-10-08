@@ -349,10 +349,8 @@
             return obj;
         }
         function goHome() {
-            // Prefer HomePage if present, else AccessSystem
-            fetch('UserHomePage.html', { method: 'HEAD' }).then(r => {
-                if (r.ok) window.location.href = 'UserHomePage.html'; else window.location.href = 'AccessSystem.html';
-            }).catch(() => window.location.href = 'AccessSystem.html');
+            // Navigate back to user homepage or access system
+            window.location.href = '../AccessSystem.html';
         }
         function toast(msg) {
             try {
@@ -364,6 +362,18 @@
         function onResetForm() {
             // slight defer because type=reset triggers before custom code sometimes
             setTimeout(() => toast('Form cleared'), 50);
+        }
+        function clearAllRequests() {
+            if (confirm('⚠️ Are you sure you want to clear ALL stored requests? This cannot be undone!')) {
+                try {
+                    localStorage.removeItem('userPurchaseRequests');
+                    toast('✅ All requests cleared from storage');
+                    console.log('LocalStorage cleared: userPurchaseRequests');
+                } catch (e) {
+                    console.error('Error clearing localStorage:', e);
+                    toast('❌ Error clearing storage');
+                }
+            }
         }
         function handleRequestSubmit(e) {
             e.preventDefault();
@@ -383,9 +393,50 @@
             } else if (confirm('Submit purchase request?')) { showSuccess(d); }
         }
         function showSuccess(d) {
+            // Save request to localStorage for admin dashboard
+            // Get the next sequential number
+            let existingRequests = [];
+            try {
+                const stored = localStorage.getItem('userPurchaseRequests');
+                if (stored) {
+                    existingRequests = JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error('Error reading existing requests:', e);
+            }
+
+            const currentYear = new Date().getFullYear();
+            const nextNumber = existingRequests.length + 1;
+            const requestId = `REQ-${currentYear}-` + String(nextNumber).padStart(3, '0');
+            const timestamp = new Date().toISOString();
+            const request = {
+                requestId: requestId,
+                email: d.email,
+                requester: d.requester,
+                department: d.department,
+                items: d.items,
+                unit: d.unit,
+                neededDate: d.neededDate || 'Not specified',
+                priority: d.priority,
+                status: 'Incoming',
+                submittedDate: timestamp,
+                timestamp: timestamp
+            };
+
+            // Add new request
+            existingRequests.push(request);
+
+            // Save back to localStorage
+            try {
+                localStorage.setItem('userPurchaseRequests', JSON.stringify(existingRequests));
+            } catch (e) {
+                console.error('Error saving request:', e);
+            }
+
+            // Show success message
             const s = document.getElementById('successDialog');
             const txt = document.getElementById('successText');
-            txt.textContent = `Request submitted successfully for ${d.items?.slice(0, 50) || 'items'}. Tracking temp ID: PR-${Date.now().toString().slice(-5)}`;
+            txt.textContent = `Request ${requestId} submitted successfully for ${d.items?.slice(0, 50) || 'items'}. Please check your email for confirmation and updates.`;
             if (typeof s.showModal === 'function') { s.showModal(); }
             else alert('Request submitted.');
             document.getElementById('purchaseRequestForm').reset();

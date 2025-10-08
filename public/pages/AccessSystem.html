@@ -165,6 +165,101 @@
       return '*'.repeat(pin.length - 2) + pin.slice(-2);
     }
 
+    // User Login Logging Function
+    // Update user status in MockData
+    function updateUserStatus(email, status) {
+      try {
+        // Get or initialize users from localStorage
+        let users = [];
+        try {
+          const stored = localStorage.getItem('mockDataUsers');
+          if (stored) {
+            users = JSON.parse(stored);
+          }
+        } catch (e) {
+          console.warn('Could not load existing users:', e);
+        }
+
+        // Find user by email and update status
+        const user = users.find(u => u.email === email);
+        if (user) {
+          user.status = status;
+          console.log(`User ${email} status updated to ${status}`);
+
+          // Save updated users to localStorage
+          localStorage.setItem('mockDataUsers', JSON.stringify(users));
+        }
+      } catch (error) {
+        console.error('Error updating user status:', error);
+      }
+    }
+
+    function logUserLogin(email, status = 'Success') {
+      try {
+        // Update user status to Active on successful login
+        if (status === 'Success') {
+          updateUserStatus(email, 'Active');
+        }
+
+        // Get or initialize userLogs from localStorage
+        let userLogs = [];
+        try {
+          const stored = localStorage.getItem('spmo_userLogs');
+          if (stored) {
+            userLogs = JSON.parse(stored);
+          }
+        } catch (e) {
+          console.warn('Could not load existing logs:', e);
+        }
+
+        // Generate unique log ID
+        const logId = 'LOG' + String(userLogs.length + 1).padStart(3, '0');
+
+        // Get current timestamp
+        const now = new Date();
+        const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
+
+        // Extract name from email (basic approach)
+        const namePart = email.split('@')[0];
+        const name = namePart.charAt(0).toUpperCase() + namePart.slice(1).replace(/\./g, ' ');
+
+        // Detect device info
+        const userAgent = navigator.userAgent;
+        let device = 'Unknown Device';
+        if (userAgent.indexOf('Windows') !== -1) device = 'Windows PC';
+        else if (userAgent.indexOf('Mac') !== -1) device = 'MacBook';
+        else if (userAgent.indexOf('Linux') !== -1) device = 'Linux PC';
+        else if (userAgent.indexOf('Android') !== -1) device = 'Android Device';
+        else if (userAgent.indexOf('iPhone') !== -1 || userAgent.indexOf('iPad') !== -1) device = 'iOS Device';
+
+        // Create log entry
+        const logEntry = {
+          id: logId,
+          email: email,
+          name: name,
+          action: 'Login',
+          timestamp: timestamp,
+          ipAddress: 'N/A',
+          device: device,
+          status: status
+        };
+
+        // Add to beginning of logs array (newest first)
+        userLogs.unshift(logEntry);
+
+        // Keep only last 100 logs
+        if (userLogs.length > 100) {
+          userLogs = userLogs.slice(0, 100);
+        }
+
+        // Save to localStorage
+        localStorage.setItem('spmo_userLogs', JSON.stringify(userLogs));
+        console.log('User login logged:', logEntry);
+      } catch (error) {
+        console.error('Error logging user login:', error);
+      }
+    }
+
     function showLoginDialog(email, pin) {
       const dialog = document.getElementById('loginDialog');
       const text = document.getElementById('dialogText');
@@ -182,6 +277,10 @@
           const val = dialog.returnValue;
           dialog.removeEventListener('close', onClose);
           if (val === 'confirm') {
+            // Save user session data
+            saveUserSession(email);
+            // Log user login before proceeding to dashboard
+            logUserLogin(email);
             // proceed to dashboard
             window.location.href = 'admin/dashboard.html';
           } else {
@@ -194,9 +293,54 @@
       } else {
         // Fallback: use confirm() dialog
         const ok = confirm(`Sign in as ${email} with PIN ${masked}?`);
-        if (ok) window.location.href = 'admin/dashboard.html';
+        if (ok) {
+          saveUserSession(email);
+          logUserLogin(email);
+          window.location.href = 'admin/dashboard.html';
+        }
         else otpInputs[0].focus();
       }
+    }
+
+    // Save user session to localStorage
+    function saveUserSession(email) {
+      try {
+        // Get users from localStorage to find matching user
+        let users = [];
+        try {
+          const stored = localStorage.getItem('mockDataUsers');
+          if (stored) {
+            users = JSON.parse(stored);
+          }
+        } catch (e) {
+          console.warn('Could not load users:', e);
+        }
+
+        // Find user by email
+        const user = users.find(u => u.email === email);
+
+        // Create session data
+        const sessionData = {
+          email: email,
+          name: user ? user.name : extractNameFromEmail(email),
+          role: user ? user.role : 'User',
+          department: user ? user.department : 'N/A',
+          id: user ? user.id : 'GUEST',
+          loginTime: new Date().toISOString()
+        };
+
+        // Save to localStorage
+        localStorage.setItem('userSession', JSON.stringify(sessionData));
+        console.log('User session saved:', sessionData);
+      } catch (error) {
+        console.error('Error saving user session:', error);
+      }
+    }
+
+    // Extract name from email
+    function extractNameFromEmail(email) {
+      const namePart = email.split('@')[0];
+      return namePart.charAt(0).toUpperCase() + namePart.slice(1).replace(/\./g, ' ');
     }
 
     // Show a simple alert dialog. Uses <dialog> if available, otherwise window.alert

@@ -1,8 +1,11 @@
 // Dashboard JavaScript Application
 
-// Initialize Lucide icons
+// Initialize Lucide icons and load user logs
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
+    loadUserSession(); // Load user session from localStorage
+    loadUserLogs(); // Load user logs from localStorage
+    loadUsers(); // Load users from localStorage
 });
 
 // Application State
@@ -94,13 +97,7 @@ const AppState = {
         }
     ],
     // Unified status list (replaces hardcoded table rows in status management)
-    statusRequests: [
-        { id: 'REQ-2025-001', requester: 'John Smith', department: 'IT Department', item: 'Laptop Computer', priority: 'high', updatedAt: '2025-01-15', status: 'incoming', cost: 1200 },
-        { id: 'REQ-2025-005', requester: 'David Brown', department: 'Operations', item: 'Safety Equipment', priority: 'high', updatedAt: '2025-01-16', status: 'incoming', cost: 400 },
-        { id: 'REQ-2025-002', requester: 'Alice Green', department: 'Finance', item: 'Printer', priority: 'medium', updatedAt: '2025-01-10', status: 'finished', cost: 300 },
-        { id: 'REQ-2025-003', requester: 'Bob Lee', department: 'HR', item: 'Office Chairs', priority: 'low', updatedAt: '2025-01-12', status: 'cancelled', cost: 500 },
-        { id: 'REQ-2025-004', requester: 'Emily Davis', department: 'Marketing', item: 'Projector', priority: 'medium', updatedAt: '2025-01-14', status: 'rejected', cost: 700 }
-    ],
+    statusRequests: [],
     currentStatusFilter: 'all',
 
     // About Us Content
@@ -175,6 +172,12 @@ const MockData = {
     ],
 
     completedRequests: [
+    ],
+
+    userLogs: [
+        { id: 'LOG001', email: 'cherry@cnsc.edu.ph', name: 'Cherry Ann Quila', action: 'Login', timestamp: '2025-01-15 08:30:15', ipAddress: '192.168.1.100', device: 'Windows PC', status: 'Success' },
+        { id: 'LOG002', email: 'vince@cnsc.edu.ph', name: 'Vince Balce', action: 'Login', timestamp: '2025-01-15 09:15:42', ipAddress: '192.168.1.101', device: 'MacBook', status: 'Success' },
+        { id: 'LOG003', email: 'marinel@cnsc.edu.ph', name: 'Marinel Ledesma', action: 'Login', timestamp: '2025-01-15 10:20:33', ipAddress: '192.168.1.102', device: 'Windows PC', status: 'Success' }
     ]
 };
 
@@ -289,6 +292,233 @@ function showAlert(message, type = 'info', duration = 4000) {
     }
 }
 
+// User Login Logging Function
+function logUserLogin(email, name, status = 'Success') {
+    try {
+        if (!window.MockData) window.MockData = {};
+        if (!window.MockData.userLogs) window.MockData.userLogs = [];
+
+        // Update user status to Active on successful login
+        if (status === 'Success') {
+            updateUserStatus(email, 'Active');
+        }
+
+        // Generate unique log ID
+        const logId = 'LOG' + String(window.MockData.userLogs.length + 1).padStart(3, '0');
+
+        // Get current timestamp
+        const now = new Date();
+        const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
+
+        // Detect device info (basic detection)
+        const userAgent = navigator.userAgent;
+        let device = 'Unknown Device';
+        if (userAgent.indexOf('Windows') !== -1) device = 'Windows PC';
+        else if (userAgent.indexOf('Mac') !== -1) device = 'MacBook';
+        else if (userAgent.indexOf('Linux') !== -1) device = 'Linux PC';
+        else if (userAgent.indexOf('Android') !== -1) device = 'Android Device';
+        else if (userAgent.indexOf('iPhone') !== -1 || userAgent.indexOf('iPad') !== -1) device = 'iOS Device';
+
+        // Create log entry
+        const logEntry = {
+            id: logId,
+            email: email || 'unknown@cnsc.edu.ph',
+            name: name || 'Unknown User',
+            action: 'Login',
+            timestamp: timestamp,
+            ipAddress: 'N/A', // In production, this would come from server
+            device: device,
+            status: status
+        };
+
+        // Add to beginning of logs array (newest first)
+        window.MockData.userLogs.unshift(logEntry);
+
+        // Keep only last 100 logs to prevent memory issues
+        if (window.MockData.userLogs.length > 100) {
+            window.MockData.userLogs = window.MockData.userLogs.slice(0, 100);
+        }
+
+        // Also save to localStorage for persistence
+        try {
+            localStorage.setItem('spmo_userLogs', JSON.stringify(window.MockData.userLogs));
+        } catch (e) {
+            console.warn('Could not save user logs to localStorage:', e);
+        }
+
+        console.log('User login logged:', logEntry);
+        return logEntry;
+    } catch (error) {
+        console.error('Error logging user login:', error);
+        return null;
+    }
+}
+
+// Update user status in MockData.users
+function updateUserStatus(email, status) {
+    try {
+        if (!window.MockData) window.MockData = {};
+        if (!window.MockData.users) window.MockData.users = [];
+
+        // Find user by email and update status
+        const user = window.MockData.users.find(u => u.email === email);
+        if (user) {
+            user.status = status;
+            console.log(`User ${email} status updated to ${status}`);
+
+            // Save updated users to localStorage
+            try {
+                localStorage.setItem('mockDataUsers', JSON.stringify(window.MockData.users));
+            } catch (e) {
+                console.warn('Could not save users to localStorage:', e);
+            }
+        }
+    } catch (error) {
+        console.error('Error updating user status:', error);
+    }
+}
+
+// Log user logout
+function logUserLogout(email, name) {
+    try {
+        if (!window.MockData) window.MockData = {};
+        if (!window.MockData.userLogs) window.MockData.userLogs = [];
+
+        // Update user status to Inactive on logout
+        updateUserStatus(email, 'Inactive');
+
+        // Generate unique log ID
+        const logId = 'LOG' + String(window.MockData.userLogs.length + 1).padStart(3, '0');
+
+        // Get current timestamp
+        const now = new Date();
+        const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
+
+        // Detect device info
+        const userAgent = navigator.userAgent;
+        let device = 'Unknown Device';
+        if (userAgent.indexOf('Windows') !== -1) device = 'Windows PC';
+        else if (userAgent.indexOf('Mac') !== -1) device = 'MacBook';
+        else if (userAgent.indexOf('Linux') !== -1) device = 'Linux PC';
+        else if (userAgent.indexOf('Android') !== -1) device = 'Android Device';
+        else if (userAgent.indexOf('iPhone') !== -1 || userAgent.indexOf('iPad') !== -1) device = 'iOS Device';
+
+        // Create logout log entry
+        const logEntry = {
+            id: logId,
+            email: email || 'unknown@cnsc.edu.ph',
+            name: name || 'Unknown User',
+            action: 'Logout',
+            timestamp: timestamp,
+            ipAddress: 'N/A',
+            device: device,
+            status: 'Success'
+        };
+
+        // Add to beginning of logs array
+        window.MockData.userLogs.unshift(logEntry);
+
+        // Keep only last 100 logs
+        if (window.MockData.userLogs.length > 100) {
+            window.MockData.userLogs = window.MockData.userLogs.slice(0, 100);
+        }
+
+        // Save to localStorage
+        try {
+            localStorage.setItem('spmo_userLogs', JSON.stringify(window.MockData.userLogs));
+        } catch (e) {
+            console.warn('Could not save user logs to localStorage:', e);
+        }
+
+        console.log('User logout logged:', logEntry);
+        return logEntry;
+    } catch (error) {
+        console.error('Error logging user logout:', error);
+        return null;
+    }
+}
+
+// Load user logs from localStorage on page load
+function loadUserLogs() {
+    try {
+        const stored = localStorage.getItem('spmo_userLogs');
+        if (stored) {
+            const logs = JSON.parse(stored);
+            if (Array.isArray(logs) && logs.length > 0) {
+                if (!window.MockData) window.MockData = {};
+                window.MockData.userLogs = logs;
+                console.log('Loaded', logs.length, 'user logs from localStorage');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading user logs:', error);
+    }
+}
+
+// Load users from localStorage on page load
+function loadUsers() {
+    try {
+        const stored = localStorage.getItem('mockDataUsers');
+        if (stored) {
+            const users = JSON.parse(stored);
+            if (Array.isArray(users) && users.length > 0) {
+                if (!window.MockData) window.MockData = {};
+                window.MockData.users = users;
+                console.log('Loaded', users.length, 'users from localStorage');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+}
+
+// Load user session from localStorage and update AppState
+function loadUserSession() {
+    try {
+        const stored = localStorage.getItem('userSession');
+        if (stored) {
+            const session = JSON.parse(stored);
+
+            // Update AppState.currentUser with session data
+            AppState.currentUser = {
+                id: session.id || 'GUEST',
+                name: session.name || 'Guest User',
+                email: session.email || '',
+                role: session.role || 'User',
+                department: session.department || 'N/A',
+                status: 'Active',
+                created: session.loginTime ? session.loginTime.split('T')[0] : new Date().toISOString().split('T')[0]
+            };
+
+            console.log('User session loaded:', AppState.currentUser);
+
+            // Update the UI with current user info
+            updateUserDisplay();
+        } else {
+            console.warn('No user session found. Using default user.');
+        }
+    } catch (error) {
+        console.error('Error loading user session:', error);
+    }
+}
+
+// Update user display in the header
+function updateUserDisplay() {
+    const userAvatar = document.getElementById('header-user-avatar');
+    if (userAvatar && AppState.currentUser) {
+        const initials = AppState.currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('');
+        userAvatar.textContent = initials;
+        userAvatar.title = AppState.currentUser.name;
+    }
+
+    // Reinitialize Lucide icons after updating display
+    setTimeout(() => {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }, 100);
+}
+
 // Confirmation modal helper that returns a Promise<boolean>
 function showConfirm(message, title = 'Confirm') {
     return new Promise((resolve) => {
@@ -354,6 +584,64 @@ function escapeHtml(str) {
 function capitalize(s) {
     if (!s) return '-';
     return String(s).charAt(0).toUpperCase() + String(s).slice(1);
+}
+
+// Load user requests from localStorage and merge with AppState.statusRequests
+function loadUserRequests() {
+    try {
+        const userRequests = JSON.parse(localStorage.getItem('userPurchaseRequests') || '[]');
+
+        console.log(`Found ${userRequests.length} user requests in localStorage`);
+
+        if (userRequests.length > 0) {
+            // Convert user requests to match the statusRequests format
+            const formattedRequests = userRequests.map(req => {
+                // Parse the date properly
+                const submittedDate = req.submittedDate ? new Date(req.submittedDate) : new Date();
+                const year = submittedDate.getFullYear();
+                const month = String(submittedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(submittedDate.getDate()).padStart(2, '0');
+                const formattedDate = `${year}-${month}-${day}`;
+
+                return {
+                    id: req.requestId,
+                    requester: req.requester || req.email,
+                    department: req.department || 'Unknown',
+                    item: Array.isArray(req.items) ? req.items.map(i => i.description || i.item || '').join(', ') : (req.items || 'N/A'),
+                    priority: (req.priority || 'medium').toLowerCase(),
+                    updatedAt: formattedDate,
+                    status: (req.status || 'incoming').toLowerCase(),
+                    cost: req.totalCost || 0,
+                    source: 'user-form', // Mark as coming from user form
+                    email: req.email,
+                    unit: req.unit,
+                    neededDate: req.neededDate,
+                    rawData: req // Store original request data
+                };
+            });
+
+            console.log('Formatted requests:', formattedRequests);
+
+            // Get existing IDs to avoid duplicates
+            const existingIds = new Set((AppState.statusRequests || []).map(r => r.id));
+
+            // Only add requests that don't already exist
+            const newRequests = formattedRequests.filter(r => !existingIds.has(r.id));
+
+            if (newRequests.length > 0) {
+                // Add new requests at the beginning (most recent first)
+                AppState.statusRequests = [...newRequests, ...(AppState.statusRequests || [])];
+                console.log(`✅ Loaded ${newRequests.length} new user requests from localStorage`);
+                console.log('Total requests now:', AppState.statusRequests.length);
+            } else {
+                console.log('No new requests to add (all already exist)');
+            }
+        } else {
+            console.log('No user requests in localStorage yet');
+        }
+    } catch (error) {
+        console.error('❌ Error loading user requests from localStorage:', error);
+    }
 }
 
 function renderNotifications() {
@@ -492,6 +780,11 @@ function closeNotifications() {
     }, 200);
 
     document.removeEventListener('click', outsideNotificationsClick);
+}
+
+function viewAllNotifications() {
+    closeNotifications();
+    navigateToPage('activity');
 }
 
 function outsideNotificationsClick(e) {
@@ -760,6 +1053,12 @@ function loadPageContent(pageId) {
         case 'users': // ✅ Users Management
             mainContent.innerHTML = generateUsersManagementPage();
             break;
+        case 'login-activity': // ✅ Login Activity Logs
+            mainContent.innerHTML = generateLoginActivityPage();
+            break;
+        case 'activity': // Activity & Notifications
+            mainContent.innerHTML = generateActivityPage();
+            break;
         case 'about':
             mainContent.innerHTML = generateAboutPage();
             break;
@@ -784,11 +1083,39 @@ function generateDashboardPage() {
         minute: '2-digit'
     });
 
+    // Calculate real statistics from data sources
+    const totalProducts = MockData.products ? MockData.products.length : 0;
+    const lowStockThreshold = 15;
+    const lowStockItems = MockData.products ? MockData.products.filter(p => p.quantity < lowStockThreshold).length : 0;
+
+    // Get total users from MockData
+    const totalUsers = window.MockData && window.MockData.users ? window.MockData.users.length : 0;
+    const activeUsers = window.MockData && window.MockData.users ? window.MockData.users.filter(u => u.status === 'Active').length : 0;
+
+    // Calculate incoming requests (all status requests that are not finished/cancelled/returned)
+    const incomingStatuses = ['incoming', 'submitted', 'pending', 'under-review', 'awaiting-approval', 'approved'];
+    const incomingRequests = (AppState.statusRequests || []).filter(r => incomingStatuses.includes(r.status)).length;
+
+    // Calculate received/delivered today
+    const today = new Date().toISOString().split('T')[0];
+    const receivedToday = (AppState.statusRequests || []).filter(r =>
+        r.status === 'received' && r.updatedAt === today
+    ).length;
+
+    // Calculate finished requests
+    const finishedRequests = (AppState.statusRequests || []).filter(r => r.status === 'finished').length;
+
+    // Calculate total value of all products
+    const totalInventoryValue = MockData.products ? MockData.products.reduce((sum, p) => sum + (p.totalValue || 0), 0) : 0;
+
     return `
         <div class="page-header">
             <div class="page-header-content">
                 <div>
-                    <h1 class="page-title">Dashboard Overview</h1>
+                    <h1 class="page-title">
+                        <i data-lucide="layout-dashboard" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Dashboard Overview
+                    </h1>
                     <p class="page-subtitle">Last updated: ${currentTime}</p>
                 </div>
                 <div id="header-actions" class="header-actions">
@@ -823,8 +1150,14 @@ function generateDashboardPage() {
                         <div id="notifications-list" style="max-height: 360px; overflow-y: auto; overflow-x: hidden;">
                             <!-- notifications injected here -->
                         </div>
-                        <div style="padding: 10px 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: center;">
-                            <button class="btn-secondary" style="padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 500;" onclick="closeNotifications()">
+                        <div style="padding: 10px 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                            <a href="#" onclick="viewAllNotifications(); return false;" style="color: #667eea; font-size: 13px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+                               onmouseover="this.style.color='#5568d3'; this.style.gap='8px';"
+                               onmouseout="this.style.color='#667eea'; this.style.gap='6px';">
+                                <i data-lucide="list" style="width: 14px; height: 14px;"></i>
+                                View all notifications
+                            </a>
+                            <button class="btn-secondary" style="padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500;" onclick="closeNotifications()">
                                 <i data-lucide="x" style="width: 14px; height: 14px; margin-right: 4px;"></i>
                                 Close
                             </button>
@@ -838,8 +1171,37 @@ function generateDashboardPage() {
 
                         <!-- Popup menu (hidden by default) - absolute inside header block -->
                         <div id="user-menu">
-                            <button class="btn-menu" style="display:block;width:100%;text-align:left;padding:8px;border:none;background:none;cursor:pointer;border-radius:6px;" onclick="openUserModal('edit','current'); closeUserMenu();">Settings</button>
-                            <button class="btn-menu" style="display:block;width:100%;text-align:left;padding:8px;border:none;background:none;cursor:pointer;border-radius:6px;" onclick="logout()">Logout</button>
+                            <!-- User Info Section -->
+                            <div style="padding: 12px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 18px;">
+                                        ${AppState.currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-weight: 600; color: #111827; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${AppState.currentUser.name}</div>
+                                        <div style="font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${AppState.currentUser.email}</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; background: #ede9fe; color: #6b21a8; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                        <i data-lucide="shield" style="width: 10px; height: 10px;"></i>
+                                        ${AppState.currentUser.role}
+                                    </span>
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; background: #dbeafe; color: #1e40af; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                        <i data-lucide="building" style="width: 10px; height: 10px;"></i>
+                                        ${AppState.currentUser.department}
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- Menu Actions -->
+                            <button class="btn-menu" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:none;cursor:pointer;border-radius:6px;display:flex;align-items:center;gap:8px;color:#374151;font-size:14px;" onclick="openUserModal('edit','current'); closeUserMenu();">
+                                <i data-lucide="settings" style="width:16px;height:16px;"></i>
+                                Settings
+                            </button>
+                            <button class="btn-menu" style="display:block;width:100%;text-align:left;padding:10px 12px;border:none;background:none;cursor:pointer;border-radius:6px;display:flex;align-items:center;gap:8px;color:#dc2626;font-size:14px;" onclick="logout()">
+                                <i data-lucide="log-out" style="width:16px;height:16px;"></i>
+                                Logout
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -852,9 +1214,9 @@ function generateDashboardPage() {
                 <div class="metric-card">
                     <div class="metric-content">
                         <div class="metric-info">
-                            <h3>Total Items</h3>
-                            <p class="value">1,247</p>
-                            <p class="change">Items in inventory</p>
+                            <h3>Total Products</h3>
+                            <p class="value">${totalProducts}</p>
+                            <p class="change">Products in inventory</p>
                         </div>
                         <div class="metric-icon blue">
                             <i data-lucide="package" class="icon"></i>
@@ -866,8 +1228,8 @@ function generateDashboardPage() {
                     <div class="metric-content">
                         <div class="metric-info">
                             <h3>Low Stock Items</h3>
-                            <p class="value">23</p>
-                            <p class="change">Items with low stock</p>
+                            <p class="value">${lowStockItems}</p>
+                            <p class="change">Items below ${lowStockThreshold} units</p>
                         </div>
                         <div class="metric-icon orange">
                             <i data-lucide="alert-triangle" class="icon"></i>
@@ -878,9 +1240,9 @@ function generateDashboardPage() {
                 <div class="metric-card">
                     <div class="metric-content">
                         <div class="metric-info">
-                            <h3>Pending Requests</h3>
-                            <p class="value">${(AppState.newRequests || []).filter(r => ['submitted', 'pending', 'under-review', 'awaiting-approval'].includes(r.status)).length}</p>
-                            <p class="change">Awaiting approval</p>
+                            <h3>Incoming Requests</h3>
+                            <p class="value">${incomingRequests}</p>
+                            <p class="change">Awaiting processing</p>
                         </div>
                         <div class="metric-icon yellow">
                             <i data-lucide="clock" class="icon"></i>
@@ -889,12 +1251,12 @@ function generateDashboardPage() {
                 </div>
                 
                 <div class="metric-card">
+
                     <div class="metric-content">
                         <div class="metric-info">
-                            <h3>Delivered Today</h3>
-                            <p class="value">45</p>
-                            <p class="change">Successfully delivered</p>
-                            <p class="change negative">-18% from last month</p>
+                            <h3>Received Today</h3>
+                            <p class="value">${receivedToday}</p>
+                            <p class="change">Successfully received</p>
                         </div>
                         <div class="metric-icon green">
                             <i data-lucide="check-circle" class="icon"></i>
@@ -905,13 +1267,12 @@ function generateDashboardPage() {
                 <div class="metric-card">
                     <div class="metric-content">
                         <div class="metric-info">
-                            <h3>Active Items</h3>
-                            <p class="value">126</p>
-                            <p class="change">Currently in use</p>
-                            <p class="change positive">+9% from last month</p>
+                            <h3>Total Users</h3>
+                            <p class="value">${totalUsers}</p>
+                            <p class="change">${activeUsers} active users</p>
                         </div>
                         <div class="metric-icon purple">
-                            <i data-lucide="trending-up" class="icon"></i>
+                            <i data-lucide="users" class="icon"></i>
                         </div>
                     </div>
                 </div>
@@ -919,10 +1280,9 @@ function generateDashboardPage() {
                 <div class="metric-card">
                     <div class="metric-content">
                         <div class="metric-info">
-                            <h3>Monthly Growth</h3>
-                            <p class="value">8.2%</p>
-                            <p class="change">Inventory expansion</p>
-                            <p class="change positive">+2.1% from last month</p>
+                            <h3>Inventory Value</h3>
+                            <p class="value currency-value">${formatCurrency(totalInventoryValue)}</p>
+                            <p class="change">Total asset value</p>
                         </div>
                         <div class="metric-icon indigo">
                             <i data-lucide="bar-chart-3" class="icon"></i>
@@ -1050,7 +1410,10 @@ function generateCategoriesPage() {
         <div class="page-header">
             <div class="page-header-content">
                 <div>
-                    <h1 class="page-title">Categories</h1>
+                    <h1 class="page-title">
+                        <i data-lucide="folder" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Categories
+                    </h1>
                     <p class="page-subtitle">Manage inventory categories</p>
                 </div>
                 <button class="add-product-btn" onclick="openCategoryModal('create')">
@@ -1104,7 +1467,10 @@ function generateProductsPage() {
         <div class="page-header">
             <div class="page-header-content">
                 <div>
-                    <h1 class="page-title">List of Products</h1>
+                    <h1 class="page-title">
+                        <i data-lucide="box" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        List of Products
+                    </h1>
                     <p class="page-subtitle">Manage product inventory</p>
                 </div>
                 <button class="add-product-btn" onclick="openProductModal()">
@@ -1222,7 +1588,10 @@ function generateStockInPage() {
         <div class="page-header">
             <div class="page-header-content">
                 <div>
-                    <h1 class="page-title">Stock In</h1>
+                    <h1 class="page-title">
+                        <i data-lucide="arrow-down-to-line" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Stock In
+                    </h1>
                     <p class="page-subtitle">Record incoming inventory and stock receipts</p>
                 </div>
                 <button class="btn btn-primary" onclick="openStockInModal('create')">
@@ -1306,7 +1675,10 @@ function generateStockOutPage() {
         <div class="page-header">
             <div class="page-header-content">
                 <div>
-                    <h1 class="page-title">Stock Out</h1>
+                    <h1 class="page-title">
+                        <i data-lucide="arrow-up-from-line" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Stock Out
+                    </h1>
                     <p class="page-subtitle">Record outgoing inventory and issued items</p>
                 </div>
                 <button class="btn btn-primary" onclick="openStockOutModal('create')">
@@ -1403,7 +1775,10 @@ function generateNewRequestPage() {
         <section class="page-header">
             <div class="page-header-content">
                 <header>
-                    <h1 class="page-title">New Request</h1>
+                    <h1 class="page-title">
+                        <i data-lucide="file-plus" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        New Request
+                    </h1>
                     <p class="page-subtitle">Create and manage new purchase requests</p>
                 </header>
                 <button class="btn btn-primary" onclick="openPurchaseOrderModal('create')">
@@ -1539,7 +1914,10 @@ function generatePendingApprovalPage() {
         <section class="page-header">
             <div class="page-header-content">
                 <header>
-                    <h1 class="page-title">Pending Approval</h1>
+                    <h1 class="page-title">
+                        <i data-lucide="clock" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Pending Approval
+                    </h1>
                     <p class="page-subtitle">Review and approve purchase requests</p>
                 </header>
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -1675,7 +2053,10 @@ function generateCompletedRequestPage() {
         <section class="page-header">
             <div class="page-header-content">
                 <header>
-                    <h1 class="page-title">Completed Request</h1>
+                    <h1 class="page-title">
+                        <i data-lucide="check-circle" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Completed Request
+                    </h1>
                     <p class="page-subtitle">View completed and archived purchase requests</p>
                 </header>
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -1815,87 +2196,142 @@ function generateInventoryReportsPage() {
         <div class="page-header">
             <div class="page-header-content">
                 <div>
-                    <h1 class="page-title">Inventory Reports</h1>
-                    <p class="page-subtitle">Generate and export inventory summary</p>
+                    <h1 class="page-title">
+                        <i data-lucide="package" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Inventory Reports
+                    </h1>
+                    <p class="page-subtitle">Generate and export inventory summary with analytics</p>
                 </div>
                 <div>
-                    <button class="btn btn-secondary" id="export-inventory-btn">Export CSV</button>
+                    <button class="btn btn-secondary" id="export-inventory-btn">
+                        <i data-lucide="download" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"></i>
+                        Export CSV
+                    </button>
                 </div>
             </div>
         </div>
 
         <div class="page-content">
-            <div class="card">
-                <div style="display:flex;gap:12px;align-items:center;">
-                    <div>
-                        <label class="form-label">Department</label>
+            <!-- Filters Card -->
+            <div class="card report-filters-card">
+                <div class="card-header-inline">
+                    <h3 class="card-title-small">
+                        <i data-lucide="filter" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"></i>
+                        Filters
+                    </h3>
+                </div>
+                <div class="filter-grid">
+                    <div class="filter-item">
+                        <label class="form-label">
+                            <i data-lucide="building-2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                            Department
+                        </label>
                         <select id="inventory-department-filter" class="form-select">
                             ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
                         </select>
                     </div>
-                    <div>
-                        <label class="form-label">From</label>
+                    <div class="filter-item">
+                        <label class="form-label">
+                            <i data-lucide="calendar" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                            From Date
+                        </label>
                         <input type="date" id="inventory-date-from" class="form-input">
                     </div>
-                    <div>
-                        <label class="form-label">To</label>
+                    <div class="filter-item">
+                        <label class="form-label">
+                            <i data-lucide="calendar" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                            To Date
+                        </label>
                         <input type="date" id="inventory-date-to" class="form-input">
                     </div>
                 </div>
             </div>
 
-            <div class="card" style="margin-top:12px;">
-                <canvas id="inventory-chart" width="600" height="200"></canvas>
-            </div>
-
-            <div class="card" style="margin-top:12px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-                <div style="flex:1;">
-                    <h3 style="margin:0 0 8px 0;">Low Stocks</h3>
-                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-                        <label class="form-label" style="margin:0;">Threshold</label>
-                        <input type="number" id="low-stock-threshold" class="form-input" value="20" style="width:100px;">
-                        <button class="btn btn-secondary" id="export-lowstock-btn">Export Low Stocks</button>
-                    </div>
-                    <div class="table-container" style="max-height:240px;overflow:auto;">
-                        <table class="table" id="low-stock-table">
-                            <thead>
-                                <tr>
-                                    <th>Stock Number</th>
-                                    <th>Name</th>
-                                    <th>Current Stock</th>
-                                    <th>Unit</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- low stock rows injected by renderInventoryReport() -->
-                            </tbody>
-                        </table>
-                    </div>
+            <!-- Chart Card -->
+            <div class="card chart-card">
+                <div class="card-header-inline">
+                    <h3 class="card-title-small">
+                        <i data-lucide="bar-chart-3" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"></i>
+                        Inventory Trends
+                    </h3>
                 </div>
-                <div style="width:320px;">
-                    <!-- small summary card for low stocks -->
-                    <div style="padding:12px;border-radius:8px;background:#fff;border:1px solid #eef2f7;">
-                        <p style="margin:0;color:#6b7280;">Items below threshold</p>
-                        <h2 id="low-stock-count" style="margin:8px 0 0 0;">0</h2>
-                        <p id="lowest-item" style="margin:8px 0 0 0;color:#6b7280;">-</p>
-                    </div>
+                <div class="chart-wrapper">
+                    <canvas id="inventory-chart" width="600" height="200"></canvas>
                 </div>
             </div>
 
-            <div class="table-container" style="margin-top:16px;">
-                <table class="table" id="inventory-report-table">
-                    <thead>
-                        <tr>
-                            <th>Stock Number</th>
-                            <th>Name</th>
-                            <th>Current Stock</th>
-                            <th>Unit</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- rows injected by renderInventoryReport() -->
-                    </tbody>
-                </table>
+            <!-- Low Stock Section -->
+            <div class="card low-stock-card">
+                <div class="low-stock-header">
+                    <div class="low-stock-content">
+                        <div class="card-header-inline">
+                            <h3 class="card-title-small">
+                                <i data-lucide="alert-triangle" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;color:#dc2626;"></i>
+                                Low Stock Alerts
+                            </h3>
+                        </div>
+                        <div class="low-stock-controls">
+                            <label class="form-label" style="margin:0;white-space:nowrap;">Threshold</label>
+                            <input type="number" id="low-stock-threshold" class="form-input threshold-input" value="20" min="1">
+                            <button class="btn btn-secondary btn-sm" id="export-lowstock-btn">
+                                <i data-lucide="download" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                                Export
+                            </button>
+                        </div>
+                        <div class="table-container low-stock-table-container">
+                            <table class="table" id="low-stock-table">
+                                <thead>
+                                    <tr>
+                                        <th>Stock Number</th>
+                                        <th>Name</th>
+                                        <th>Current Stock</th>
+                                        <th>Unit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- low stock rows injected by renderInventoryReport() -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="low-stock-summary">
+                        <div class="summary-card alert-card">
+                            <div class="summary-icon">
+                                <i data-lucide="package-x" style="width:24px;height:24px;color:#dc2626;"></i>
+                            </div>
+                            <div class="summary-content">
+                                <p class="summary-label">Items Below Threshold</p>
+                                <h2 class="summary-value" id="low-stock-count">0</h2>
+                                <p class="summary-detail" id="lowest-item">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full Inventory Table -->
+            <div class="card table-card">
+                <div class="card-header-inline">
+                    <h3 class="card-title-small">
+                        <i data-lucide="list" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"></i>
+                        Complete Inventory
+                    </h3>
+                </div>
+                <div class="table-container">
+                    <table class="table" id="inventory-report-table">
+                        <thead>
+                            <tr>
+                                <th>Stock Number</th>
+                                <th>Name</th>
+                                <th>Current Stock</th>
+                                <th>Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- rows injected by renderInventoryReport() -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     `;
@@ -1908,54 +2344,94 @@ function generateRequisitionReportsPage() {
         <div class="page-header">
             <div class="page-header-content">
                 <div>
-                    <h1 class="page-title">Requisition Reports</h1>
-                    <p class="page-subtitle">Overview of requisitions and requests</p>
+                    <h1 class="page-title">
+                        <i data-lucide="file-text" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Requisition Reports
+                    </h1>
+                    <p class="page-subtitle">Overview of requisitions and purchase requests</p>
                 </div>
                 <div>
-                    <button class="btn btn-secondary" id="export-requisition-btn">Export CSV</button>
+                    <button class="btn btn-secondary" id="export-requisition-btn">
+                        <i data-lucide="download" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"></i>
+                        Export CSV
+                    </button>
                 </div>
             </div>
         </div>
 
         <div class="page-content">
-            <div class="card">
-                <div style="display:flex;gap:12px;align-items:center;">
-                    <div>
-                        <label class="form-label">Department</label>
+            <!-- Filters Card -->
+            <div class="card report-filters-card">
+                <div class="card-header-inline">
+                    <h3 class="card-title-small">
+                        <i data-lucide="filter" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"></i>
+                        Filters
+                    </h3>
+                </div>
+                <div class="filter-grid">
+                    <div class="filter-item">
+                        <label class="form-label">
+                            <i data-lucide="building-2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                            Department
+                        </label>
                         <select id="requisition-department-filter" class="form-select">
                             ${departments.map(d => `<option value="${d}">${d}</option>`).join('')}
                         </select>
                     </div>
-                    <div>
-                        <label class="form-label">From</label>
+                    <div class="filter-item">
+                        <label class="form-label">
+                            <i data-lucide="calendar" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                            From Date
+                        </label>
                         <input type="date" id="requisition-date-from" class="form-input">
                     </div>
-                    <div>
-                        <label class="form-label">To</label>
+                    <div class="filter-item">
+                        <label class="form-label">
+                            <i data-lucide="calendar" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                            To Date
+                        </label>
                         <input type="date" id="requisition-date-to" class="form-input">
                     </div>
                 </div>
             </div>
 
-            <div class="card" style="margin-top:12px;">
-                <canvas id="requisition-chart" width="800" height="240"></canvas>
+            <!-- Chart Card -->
+            <div class="card chart-card">
+                <div class="card-header-inline">
+                    <h3 class="card-title-small">
+                        <i data-lucide="trending-up" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"></i>
+                        Requisition Analytics
+                    </h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="requisition-chart" width="800" height="240"></canvas>
+                </div>
             </div>
 
-            <div class="table-container" style="margin-top:16px;">
-                <table class="table" id="requisition-report-table">
-                    <thead>
-                        <tr>
-                            <th>Request ID</th>
-                            <th>PO Number</th>
-                            <th>Supplier</th>
-                            <th>Total Amount</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- rows injected by renderRequisitionReport() -->
-                    </tbody>
-                </table>
+            <!-- Requisition Table -->
+            <div class="card table-card">
+                <div class="card-header-inline">
+                    <h3 class="card-title-small">
+                        <i data-lucide="clipboard-list" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"></i>
+                        All Requisitions
+                    </h3>
+                </div>
+                <div class="table-container">
+                    <table class="table" id="requisition-report-table">
+                        <thead>
+                            <tr>
+                                <th>Request ID</th>
+                                <th>PO Number</th>
+                                <th>Supplier</th>
+                                <th>Total Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- rows injected by renderRequisitionReport() -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     `;
@@ -1970,59 +2446,102 @@ function generateStatusReportsPage() {
         <div class="page-header">
             <div class="page-header-content">
                 <div>
-                    <h1 class="page-title">Status Report</h1>
+                    <h1 class="page-title">
+                        <i data-lucide="activity" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Status Reports
+                    </h1>
                     <p class="page-subtitle">Breakdown of request statuses from Status Management</p>
                 </div>
                 <div>
-                    <button class="btn btn-secondary" id="export-status-btn">Export CSV</button>
+                    <button class="btn btn-secondary" id="export-status-btn">
+                        <i data-lucide="download" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"></i>
+                        Export CSV
+                    </button>
                 </div>
             </div>
         </div>
 
         <div class="page-content">
-            <div class="card">
-                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-                    <div>
-                        <label class="form-label">Department</label>
+            <!-- Filters Card -->
+            <div class="card report-filters-card">
+                <div class="card-header-inline">
+                    <h3 class="card-title-small">
+                        <i data-lucide="filter" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"></i>
+                        Filters
+                    </h3>
+                </div>
+                <div class="filter-grid filter-grid-four">
+                    <div class="filter-item">
+                        <label class="form-label">
+                            <i data-lucide="building-2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                            Department
+                        </label>
                         <select id="status-department-filter" class="form-select">
                             ${uniqueDepartments.map(d => `<option value="${d}">${d}</option>`).join('')}
                         </select>
                     </div>
-                    <div>
-                        <label class="form-label">Status</label>
+                    <div class="filter-item">
+                        <label class="form-label">
+                            <i data-lucide="check-circle-2" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                            Status
+                        </label>
                         <select id="status-status-filter" class="form-select">
                             ${uniqueStatuses.map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
                         </select>
                     </div>
-                    <div>
-                        <label class="form-label">From</label>
+                    <div class="filter-item">
+                        <label class="form-label">
+                            <i data-lucide="calendar" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                            From Date
+                        </label>
                         <input type="date" id="status-date-from" class="form-input">
                     </div>
-                    <div>
-                        <label class="form-label">To</label>
+                    <div class="filter-item">
+                        <label class="form-label">
+                            <i data-lucide="calendar" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>
+                            To Date
+                        </label>
                         <input type="date" id="status-date-to" class="form-input">
                     </div>
                 </div>
             </div>
 
-            <div class="card" style="margin-top:12px;">
-                <canvas id="status-chart" width="600" height="200"></canvas>
+            <!-- Chart Card -->
+            <div class="card chart-card">
+                <div class="card-header-inline">
+                    <h3 class="card-title-small">
+                        <i data-lucide="pie-chart" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"></i>
+                        Status Distribution
+                    </h3>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="status-chart" width="600" height="200"></canvas>
+                </div>
             </div>
 
-            <div class="table-container" style="margin-top:16px;">
-                <table class="table" id="status-report-table">
-                    <thead>
-                        <tr>
-                            <th>Status</th>
-                            <th>Count</th>
-                            <th>Department</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- rows injected by renderStatusReport() -->
-                    </tbody>
-                </table>
+            <!-- Status Summary Table -->
+            <div class="card table-card">
+                <div class="card-header-inline">
+                    <h3 class="card-title-small">
+                        <i data-lucide="table-2" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"></i>
+                        Status Summary
+                    </h3>
+                </div>
+                <div class="table-container">
+                    <table class="table" id="status-report-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Count</th>
+                                <th>Department</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- rows injected by renderStatusReport() -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     `;
@@ -2521,23 +3040,23 @@ function renderPurchaseOrderWizardStep(requestData) {
 
     function footerButtons(extraNextCondition = true, nextLabel = 'Next') {
         return `
-            <button class="btn-secondary" onclick="closePurchaseOrderModal()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; transition: all 0.2s;">
+            <button class="btn-secondary" onclick="closePurchaseOrderModal()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
                 <i data-lucide="x" style="width: 16px; height: 16px;"></i>
                 Cancel
             </button>
             ${step > 1 ? `
-                <button class="btn-secondary" onclick="prevPurchaseOrderStep()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; transition: all 0.2s;">
+                <button class="btn-secondary" onclick="prevPurchaseOrderStep()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
                     <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
                     Back
                 </button>
             ` : ''}
             ${step < totalSteps ? `
-                <button class="btn btn-primary" ${!extraNextCondition ? 'disabled' : ''} onclick="nextPurchaseOrderStep()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); box-shadow: 0 4px 6px rgba(37, 99, 235, 0.25); transition: all 0.2s;">
+                <button class="btn btn-primary" ${!extraNextCondition ? 'disabled' : ''} onclick="nextPurchaseOrderStep()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); box-shadow: 0 4px 6px rgba(37, 99, 235, 0.25); transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
                     ${nextLabel}
                     <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
                 </button>
             ` : `
-                <button class="btn btn-primary" onclick="finalizePurchaseOrderCreation()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); box-shadow: 0 4px 6px rgba(22, 163, 74, 0.25); transition: all 0.2s;">
+                <button class="btn btn-primary" onclick="finalizePurchaseOrderCreation()" style="padding: 10px 24px; font-weight: 500; border-radius: 8px; background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); box-shadow: 0 4px 6px rgba(22, 163, 74, 0.25); transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
                     <i data-lucide="check" style="width: 16px; height: 16px;"></i>
                     Create Purchase Order
                 </button>
@@ -4263,7 +4782,17 @@ window.openModal = openModal;
 function toggleUserMenu(event) {
     const menu = document.getElementById('user-menu');
     if (!menu) return;
-    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    const isVisible = menu.style.display === 'block';
+    menu.style.display = isVisible ? 'none' : 'block';
+
+    // Reinitialize Lucide icons when menu is opened
+    if (!isVisible) {
+        setTimeout(() => {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }, 50);
+    }
 }
 
 function closeUserMenu() {
@@ -4272,6 +4801,11 @@ function closeUserMenu() {
 }
 
 function logout() {
+    // Log the logout action and set status to Inactive
+    if (AppState.currentUser && AppState.currentUser.email) {
+        logUserLogout(AppState.currentUser.email, AppState.currentUser.name);
+    }
+
     // Clear user session data
     AppState.currentUser = {
         id: null,
@@ -4297,7 +4831,7 @@ function logout() {
 
     // Redirect to login page after a brief delay
     setTimeout(() => {
-        window.location.href = '../frontend/AccessSystem.html';
+        window.location.href = '../pages/AccessSystem.html';
     }, 500);
 }
 
@@ -4318,6 +4852,9 @@ document.addEventListener('click', function (e) {
 document.addEventListener('DOMContentLoaded', function () {
     initializeSidebarState();
     initializeNavigation();
+
+    // Load user requests from localStorage
+    loadUserRequests();
 
     // Initialize icons
     lucide.createIcons();
@@ -4343,69 +4880,168 @@ function generateRolesManagementPage() {
 
     const membersToRender = window.MockData.users;
 
+    // Calculate statistics
+    const totalMembers = membersToRender.length;
+    const activeMembers = membersToRender.filter(m => m.status === 'Active').length;
+
     const html = `
         <div class="page-header">
             <div class="page-header-content">
                 <div>
-                    <h1 class="page-title">Roles & Management</h1>
-                    <p class="page-subtitle">Manage groups, members, and their assigned roles</p>
+                    <h1 class="page-title">
+                        <i data-lucide="shield" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Roles & Management
+                    </h1>
+                    <p class="page-subtitle">Manage team members, roles, and organizational structure</p>
                 </div>
                 <div>
-                    <button class="btn btn-primary" onclick="openUserModal('create')">
-                        <i data-lucide="user-plus" class="icon"></i>
+                    <button class="btn btn-primary" onclick="openUserModal('create')" style="display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: all 0.2s;">
+                        <i data-lucide="user-plus" style="width:18px;height:18px;"></i>
                         Add Member
                     </button>
                 </div>
             </div>
         </div>
 
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Member ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Department</th>
-                        <th>Status</th>
-                        <th>Created</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${membersToRender.map(member => `
+        <!-- Statistics Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 32px;">
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="margin: 0 0 8px 0; font-size: 14px; opacity: 0.9;">Total Members</p>
+                        <h3 style="margin: 0; font-size: 32px; font-weight: 700;">${totalMembers}</h3>
+                    </div>
+                    <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="users" style="width: 28px; height: 28px;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="margin: 0 0 8px 0; font-size: 14px; opacity: 0.9;">Active Members</p>
+                        <h3 style="margin: 0; font-size: 32px; font-weight: 700;">${activeMembers}</h3>
+                    </div>
+                    <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="user-check" style="width: 28px; height: 28px;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members Table -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <div style="padding: 20px 24px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">
+                <h2 style="margin: 0; font-size: 18px; color: #111827; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="shield-check" style="width:20px;height:20px;color:#667eea;"></i>
+                    Team Members & Roles
+                </h2>
+                <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280;">Manage member accounts, roles, and permissions</p>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="table" style="margin: 0;">
+                    <thead>
                         <tr>
-                            <td>${member.id}</td>
-                            <td>${member.name}</td>
-                            <td>${member.email}</td>
-                            <td>
-                                <span class="status-badge ${member.role.toLowerCase()}">${member.role}</span>
-                            </td>
-                            <td>${member.department}</td>
-                            <td>
-                                <span class="status-badge ${member.status === "Active" ? "green" : "red"}">
-                                    ${member.status}
-                                </span>
-                            </td>
-                            <td>${member.created}</td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="icon-action-btn" title="View" onclick="openUserModal('view', '${member.id}')">
-                                        <i data-lucide="eye"></i>
-                                    </button>
-                                    <button class="icon-action-btn icon-action-warning" title="Edit" onclick="openUserModal('edit', '${member.id}')">
-                                        <i data-lucide="edit"></i>
-                                    </button>
-                                    <button class="icon-action-btn icon-action-danger" title="Delete" onclick="deleteMember('${member.id}')">
-                                        <i data-lucide="trash-2"></i>
-                                    </button>
+                            <th style="padding-left: 24px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="hash" style="width:14px;height:14px;"></i>
+                                    Member ID
                                 </div>
-                            </td>
+                            </th>
+                            <th>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="user" style="width:14px;height:14px;"></i>
+                                    Name
+                                </div>
+                            </th>
+                            <th>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="mail" style="width:14px;height:14px;"></i>
+                                    Email
+                                </div>
+                            </th>
+                            <th>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="shield" style="width:14px;height:14px;"></i>
+                                    Role
+                                </div>
+                            </th>
+                            <th>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="building" style="width:14px;height:14px;"></i>
+                                    Department
+                                </div>
+                            </th>
+                            <th>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="circle-dot" style="width:14px;height:14px;"></i>
+                                    Status
+                                </div>
+                            </th>
+                            <th>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+                                    Created
+                                </div>
+                            </th>
+                            <th style="padding-right: 24px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="settings" style="width:14px;height:14px;"></i>
+                                    Actions
+                                </div>
+                            </th>
                         </tr>
-                    `).join("")}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        ${membersToRender.map((member, index) => `
+                            <tr style="transition: all 0.2s;">
+                                <td style="padding-left: 24px;">
+                                    <div style="font-family: 'Courier New', monospace; font-size: 13px; color: #6b7280; font-weight: 600;">
+                                        ${member.id}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+                                            ${member.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                                        </div>
+                                        <div>
+                                            <div style="font-weight: 600; color: #111827;">${member.name}</div>
+                                            <div style="font-size: 11px; color: #9ca3af;">${member.group}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="color: #4b5563; font-size: 14px;">${member.email}</td>
+                                <td>
+                                    <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: ${member.role === 'Leader' ? '#fef3c7' : '#e0f2fe'}; color: ${member.role === 'Leader' ? '#92400e' : '#0c4a6e'}; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                                        <i data-lucide="${member.role === 'Leader' ? 'crown' : 'user'}" style="width:12px;height:12px;"></i>
+                                        ${member.role}
+                                    </span>
+                                </td>
+                                <td style="color: #6b7280; font-size: 14px;">${member.department}</td>
+                                <td>
+                                    <span class="badge ${member.status === 'Active' ? 'green' : 'gray'}" style="display: inline-flex; align-items: center; gap: 6px;">
+                                        <span style="width: 6px; height: 6px; background: currentColor; border-radius: 50%;"></span>
+                                        ${member.status}
+                                    </span>
+                                </td>
+                                <td style="color: #6b7280; font-size: 14px;">${member.created}</td>
+                                <td style="padding-right: 24px;">
+                                    <div class="table-actions">
+                                        <button class="icon-action-btn icon-action-warning" title="Edit" onclick="openUserModal('edit', '${member.id}')">
+                                            <i data-lucide="edit"></i>
+                                        </button>
+                                        <button class="icon-action-btn icon-action-danger" title="Delete" onclick="deleteMember('${member.id}')">
+                                            <i data-lucide="trash-2"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            </div>
         </div>
     `;
 
@@ -4495,8 +5131,19 @@ function saveUser(userId) {
 async function deleteMember(memberId) {
     const ok = await showConfirm("Are you sure you want to delete this member?", 'Delete Member');
     if (!ok) return;
+
+    // Find the user name before deleting
+    const user = window.MockData.users.find(u => u.id === memberId);
+    const userName = user ? user.name : 'User';
+
+    // Delete the user
     window.MockData.users = window.MockData.users.filter(u => u.id !== memberId);
-    refreshRolesTable(); // Refresh the table to reflect deletion
+
+    // Show success toast
+    showAlert(`${userName} has been successfully deleted`, 'success');
+
+    // Refresh the table to reflect deletion
+    refreshRolesTable();
 }
 
 
@@ -4723,52 +5370,429 @@ function generateUserModal(mode = 'view', userData = null) {
 // ------------------------- //
 
 function generateUsersManagementPage() {
-    // sample user data
-    const users = [
-        { name: "John Doe", email: "john@cnsc.edu.ph", role: "Admin", department: "IT", status: "Active", created: "2025-01-15" },
-        { name: "Jane Smith", email: "jane@cnsc.edu.ph", role: "Manager", department: "Procurement", status: "Active", created: "2025-01-10" },
-        { name: "Bob Johnson", email: "bob@cnsc.edu.ph", role: "User", department: "Finance", status: "Inactive", created: "2025-01-05" },
-        { name: "Alice Brown", email: "alice@cnsc.edu.ph", role: "User", department: "HR", status: "Active", created: "2025-01-12" }
-    ];
+    // Initialize MockData if not exists
+    if (!window.MockData) window.MockData = {};
+    if (!window.MockData.users) {
+        // Initialize with default users if empty
+        window.MockData.users = [
+            { id: "SA001", group: "Group Juan", name: "Cherry Ann Quila", role: "Leader", email: "cherry@cnsc.edu.ph", department: "IT", status: "Active", created: "2025-01-15" },
+            { id: "SA002", group: "Group Juan", name: "Vince Balce", role: "Member", email: "vince@cnsc.edu.ph", department: "Finance", status: "Inactive", created: "2025-02-01" },
+            { id: "SA003", group: "Group Juan", name: "Marinel Ledesma", role: "Member", email: "marinel@cnsc.edu.ph", department: "HR", status: "Active", created: "2025-03-10" }
+        ];
+    }
+
+    // Use shared data from MockData
+    const users = window.MockData.users;
+
+    // Calculate statistics
+    const totalUsers = users.length;
+    const activeUsers = users.filter(u => u.status === 'Active').length;
+    const inactiveUsers = users.filter(u => u.status === 'Inactive').length;
 
     return `
         <div class="page-header">
             <div class="page-header-content">
                 <div>
-                    <h1 class="page-title">User Management</h1>
-                    <p class="page-subtitle">Monitor and manage system users</p>
+                    <h1 class="page-title">
+                        <i data-lucide="users" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        User Management
+                    </h1>
+                    <p class="page-subtitle">Monitor and manage system users and permissions</p>
                 </div>
             </div>
         </div>
 
-        <div class="table-container">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Department</th>
-                        <th>Status</th>
-                        <th>Created</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${users.map(user => `
-                        <tr>
-                            <td>${user.name}</td>
-                            <td>${user.email}</td>
-                            <td>${user.role}</td>
-                            <td>${user.department}</td>
-                            <td>
-                                <span class="status-badge ${user.status.toLowerCase()}">${user.status}</span>
-                            </td>
-                            <td>${user.created}</td>
-                        </tr>
-                    `).join("")}
+        <!-- Statistics Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 32px;">
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="margin: 0 0 8px 0; font-size: 14px; opacity: 0.9;">Total Users</p>
+                        <h3 style="margin: 0; font-size: 32px; font-weight: 700;">${totalUsers}</h3>
+                    </div>
+                    <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="users" style="width: 28px; height: 28px;"></i>
+                    </div>
+                </div>
+            </div>
 
-                </tbody>
-            </table>
+            <div class="card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="margin: 0 0 8px 0; font-size: 14px; opacity: 0.9;">Active Users</p>
+                        <h3 style="margin: 0; font-size: 32px; font-weight: 700;">${activeUsers}</h3>
+                    </div>
+                    <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="user-check" style="width: 28px; height: 28px;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="margin: 0 0 8px 0; font-size: 14px; opacity: 0.9;">Inactive Users</p>
+                        <h3 style="margin: 0; font-size: 32px; font-weight: 700;">${inactiveUsers}</h3>
+                    </div>
+                    <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="user-x" style="width: 28px; height: 28px;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Users Table -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <div style="padding: 20px 24px; border-bottom: 1px solid #e5e7eb; background: #f9fafb;">
+                <h2 style="margin: 0; font-size: 18px; color: #111827; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="users-2" style="width:20px;height:20px;color:#667eea;"></i>
+                    System Users
+                </h2>
+                <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280;">Manage user accounts and permissions</p>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="table" style="margin: 0;">
+                    <thead>
+                        <tr>
+                            <th style="padding-left: 24px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="user" style="width:14px;height:14px;"></i>
+                                    Name
+                                </div>
+                            </th>
+                            <th>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="mail" style="width:14px;height:14px;"></i>
+                                    Email
+                                </div>
+                            </th>
+                            <th>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="shield" style="width:14px;height:14px;"></i>
+                                    Role
+                                </div>
+                            </th>
+                            <th>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="building" style="width:14px;height:14px;"></i>
+                                    Department
+                                </div>
+                            </th>
+                            <th>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="circle-dot" style="width:14px;height:14px;"></i>
+                                    Status
+                                </div>
+                            </th>
+                            <th style="padding-right: 24px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+                                    Created
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map((user, index) => `
+                            <tr style="transition: all 0.2s;">
+                                <td style="padding-left: 24px;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+                                            ${user.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                                        </div>
+                                        <div>
+                                            <div style="font-weight: 600; color: #111827;">${user.name}</div>
+                                            <div style="font-size: 12px; color: #6b7280;">${user.id}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="color: #4b5563; font-size: 14px;">${user.email}</td>
+                                <td>
+                                    <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: ${user.role === 'Leader' ? '#ede9fe' : '#e0f2fe'}; color: ${user.role === 'Leader' ? '#7c3aed' : '#0284c7'}; border-radius: 20px; font-size: 13px; font-weight: 500;">
+                                        <i data-lucide="${user.role === 'Leader' ? 'crown' : 'user'}" style="width:12px;height:12px;"></i>
+                                        ${user.role}
+                                    </span>
+                                </td>
+                                <td style="color: #6b7280; font-size: 14px;">${user.department}</td>
+                                <td>
+                                    <span class="badge ${user.status.toLowerCase() === 'active' ? 'green' : 'gray'}" style="display: inline-flex; align-items: center; gap: 6px;">
+                                        <span style="width: 6px; height: 6px; background: currentColor; border-radius: 50%;"></span>
+                                        ${user.status}
+                                    </span>
+                                </td>
+                                <td style="padding-right: 24px; color: #6b7280; font-size: 14px;">${user.created}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// -------------------------------- //
+//   Login Activity Logs Page      //
+// -------------------------------- //
+
+function generateLoginActivityPage() {
+    // Initialize userLogs if not exists
+    if (!window.MockData) window.MockData = {};
+    if (!window.MockData.userLogs) {
+        window.MockData.userLogs = [];
+    }
+
+    const userLogs = window.MockData.userLogs || [];
+
+    // Calculate statistics
+    const totalLogs = userLogs.length;
+    const successfulLogins = userLogs.filter(log => log.status.toLowerCase() === 'success').length;
+    const failedLogins = userLogs.filter(log => log.status.toLowerCase() === 'failed').length;
+    const uniqueUsers = [...new Set(userLogs.map(log => log.email))].length;
+
+    // Get today's date
+    const today = new Date().toISOString().split('T')[0];
+    const todayLogins = userLogs.filter(log => log.timestamp.startsWith(today)).length;
+
+    return `
+        <div class="page-header">
+            <div class="page-header-content">
+                <div>
+                    <h1 class="page-title">
+                        <i data-lucide="activity" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Login Activity Logs
+                    </h1>
+                    <p class="page-subtitle">Monitor user authentication and access history in real-time</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 32px;">
+            <div class="card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="margin: 0 0 8px 0; font-size: 14px; opacity: 0.9;">Total Login Records</p>
+                        <h3 style="margin: 0; font-size: 32px; font-weight: 700;">${totalLogs}</h3>
+                    </div>
+                    <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="database" style="width: 28px; height: 28px;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="margin: 0 0 8px 0; font-size: 14px; opacity: 0.9;">Successful Logins</p>
+                        <h3 style="margin: 0; font-size: 32px; font-weight: 700;">${successfulLogins}</h3>
+                    </div>
+                    <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="check-circle" style="width: 28px; height: 28px;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="margin: 0 0 8px 0; font-size: 14px; opacity: 0.9;">Failed Attempts</p>
+                        <h3 style="margin: 0; font-size: 32px; font-weight: 700;">${failedLogins}</h3>
+                    </div>
+                    <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="x-circle" style="width: 28px; height: 28px;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; border: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <p style="margin: 0 0 8px 0; font-size: 14px; opacity: 0.9;">Unique Users</p>
+                        <h3 style="margin: 0; font-size: 32px; font-weight: 700;">${uniqueUsers}</h3>
+                    </div>
+                    <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="users" style="width: 28px; height: 28px;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Activity Table -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <div style="padding: 20px 24px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 18px; color: #111827; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="history" style="width:20px;height:20px;color:#3b82f6;"></i>
+                            Authentication History
+                        </h2>
+                        <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280;">Comprehensive log of all user login activities</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <i data-lucide="calendar" style="width:16px;height:16px;color:#6b7280;"></i>
+                            <span style="font-size: 13px; color: #6b7280;">Today:</span>
+                            <strong style="font-size: 15px; color: #111827;">${todayLogins}</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            <i data-lucide="layers" style="width:16px;height:16px;color:#6b7280;"></i>
+                            <span style="font-size: 13px; color: #6b7280;">Total:</span>
+                            <strong style="font-size: 15px; color: #111827;">${totalLogs}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            ${userLogs.length === 0 ? `
+                <div style="text-align: center; padding: 80px 20px; background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);">
+                    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%); border-radius: 24px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; box-shadow: 0 8px 16px rgba(59, 130, 246, 0.1);">
+                        <i data-lucide="shield-alert" style="width:48px;height:48px;color:#3b82f6;opacity:0.6;"></i>
+                    </div>
+                    <h3 style="margin: 0 0 12px 0; font-size: 20px; color: #111827; font-weight: 600;">No Login Activity Recorded</h3>
+                    <p style="margin: 0; font-size: 15px; color: #6b7280; max-width: 400px; margin: 0 auto;">
+                        User authentication records will appear here once users sign in to the system
+                    </p>
+                    <div style="margin-top: 24px; padding: 16px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; max-width: 500px; margin: 24px auto 0;">
+                        <div style="display: flex; align-items: start; gap: 12px; text-align: left;">
+                            <i data-lucide="info" style="width:20px;height:20px;color:#f59e0b;flex-shrink:0;margin-top:2px;"></i>
+                            <div>
+                                <p style="margin: 0; font-size: 13px; color: #92400e; font-weight: 500;">Login activity is automatically tracked when users authenticate through the Access System.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : `
+                <div style="overflow-x: auto;">
+                    <table class="table" style="margin: 0;">
+                        <thead>
+                            <tr>
+                                <th style="padding-left: 24px; min-width: 180px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i data-lucide="clock" style="width:14px;height:14px;"></i>
+                                        Timestamp
+                                    </div>
+                                </th>
+                                <th style="min-width: 180px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i data-lucide="user" style="width:14px;height:14px;"></i>
+                                        User
+                                    </div>
+                                </th>
+                                <th style="min-width: 220px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i data-lucide="mail" style="width:14px;height:14px;"></i>
+                                        Email Address
+                                    </div>
+                                </th>
+                                <th style="min-width: 120px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i data-lucide="zap" style="width:14px;height:14px;"></i>
+                                        Action
+                                    </div>
+                                </th>
+                                <th style="min-width: 160px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i data-lucide="monitor" style="width:14px;height:14px;"></i>
+                                        Device Type
+                                    </div>
+                                </th>
+                                <th style="min-width: 140px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i data-lucide="globe" style="width:14px;height:14px;"></i>
+                                        IP Address
+                                    </div>
+                                </th>
+                                <th style="padding-right: 24px; min-width: 120px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
+                                        Status
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${userLogs.map((log, index) => {
+        const isSuccess = log.status.toLowerCase() === 'success';
+        const deviceIcon = log.device.includes('Windows') ? 'monitor' :
+            log.device.includes('Mac') ? 'laptop' :
+                log.device.includes('Android') || log.device.includes('iOS') ? 'smartphone' :
+                    'monitor';
+
+        return `
+                                <tr style="transition: all 0.2s; ${index === 0 ? 'background: linear-gradient(to right, rgba(59, 130, 246, 0.03), transparent);' : ''}">
+                                    <td style="padding-left: 24px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                                <i data-lucide="clock" style="width:16px;height:16px;color:#1e40af;"></i>
+                                            </div>
+                                            <div>
+                                                <div style="font-family: 'Courier New', monospace; font-size: 13px; color: #111827; font-weight: 600;">
+                                                    ${log.timestamp.split(' ')[1]}
+                                                </div>
+                                                <div style="font-family: 'Courier New', monospace; font-size: 11px; color: #6b7280;">
+                                                    ${log.timestamp.split(' ')[0]}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px; flex-shrink: 0;">
+                                                ${log.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                                            </div>
+                                            <div style="font-weight: 600; color: #111827;">${log.name}</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <i data-lucide="at-sign" style="width:14px;height:14px;color:#9ca3af;"></i>
+                                            <span style="color: #4b5563; font-size: 13px;">${log.email}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 1px 2px rgba(59, 130, 246, 0.1);">
+                                            <i data-lucide="log-in" style="width:14px;height:14px;"></i>
+                                            ${log.action}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 32px; height: 32px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                                <i data-lucide="${deviceIcon}" style="width:16px;height:16px;color:#4b5563;"></i>
+                                            </div>
+                                            <span style="font-size: 13px; color: #4b5563; font-weight: 500;">${log.device}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <i data-lucide="wifi" style="width:12px;height:12px;color:#9ca3af;"></i>
+                                            <span style="font-family: 'Courier New', monospace; font-size: 12px; color: #6b7280;">${log.ipAddress}</span>
+                                        </div>
+                                    </td>
+                                    <td style="padding-right: 24px;">
+                                        <span class="badge ${isSuccess ? 'green' : 'red'}" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; padding: 6px 14px; box-shadow: 0 1px 3px ${isSuccess ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'};">
+                                            <i data-lucide="${isSuccess ? 'check-circle' : 'x-circle'}" style="width:14px;height:14px;"></i>
+                                            ${log.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `}).join("")}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Table Footer with Info -->
+                <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6b7280;">
+                        <i data-lucide="info" style="width:14px;height:14px;"></i>
+                        Showing ${userLogs.length} ${userLogs.length === 1 ? 'record' : 'records'} (most recent first)
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #9ca3af;">
+                        <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i>
+                        Auto-refreshes on page load
+                    </div>
+                </div>
+            `}
         </div>
     `;
 }
@@ -4796,7 +5820,10 @@ function generateAboutPage() {
         <div class="page-header">
             <div class="page-header-content">
                 <div>
-                    <h1 class="page-title">About Us</h1>
+                    <h1 class="page-title">
+                        <i data-lucide="info" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        About Us
+                    </h1>
                     <p class="page-subtitle">Learn more about the SPMO System and the team behind it</p>
                 </div>
                 <div style="display:flex;align-items:center;gap:12px;">
@@ -5250,6 +6277,172 @@ function removeAboutImage(type) {
 }
 
 // -----------------------------//
+// Activity & Notifications Page //
+// -----------------------------//
+
+function generateActivityPage() {
+    // Get all notifications with additional system activities
+    const allNotifications = AppState.notifications || [];
+
+    // Add system activities (sample data - can be expanded)
+    const systemActivities = [
+        {
+            id: 'sys-1',
+            type: 'system',
+            icon: 'package',
+            color: '#3b82f6',
+            title: 'New Product Added',
+            message: 'Office Supplies category updated',
+            time: '2 hours ago',
+            read: true
+        },
+        {
+            id: 'sys-2',
+            type: 'system',
+            icon: 'users',
+            color: '#10b981',
+            title: 'User Account Created',
+            message: 'New user added to the system',
+            time: '5 hours ago',
+            read: true
+        },
+        {
+            id: 'sys-3',
+            type: 'system',
+            icon: 'trending-up',
+            color: '#f59e0b',
+            title: 'Stock Alert',
+            message: 'Low stock items detected',
+            time: '1 day ago',
+            read: true
+        }
+    ];
+
+    const combinedActivities = [...allNotifications, ...systemActivities].sort((a, b) => {
+        // Sort by time (newest first) - simplified sorting
+        return 0; // For demo, maintain current order
+    });
+
+    const unreadCount = combinedActivities.filter(n => !n.read).length;
+
+    return `
+        <div class="page-header">
+            <div class="page-header-content">
+                <div style="display:flex;align-items:center;gap:16px;">
+                    <button class="btn btn-secondary" onclick="navigateToPage('dashboard')" style="display:flex;align-items:center;gap:8px;padding:10px 16px;">
+                        <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
+                        Back
+                    </button>
+                    <div>
+                        <h1 class="page-title">
+                            <i data-lucide="bell" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                            Activity & Notifications
+                        </h1>
+                        <p class="page-subtitle">View all system notifications and activity logs</p>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    ${unreadCount > 0 ? `
+                        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:8px 16px;display:flex;align-items:center;gap:8px;">
+                            <div style="width:8px;height:8px;background:#f59e0b;border-radius:50%;"></div>
+                            <span style="font-size:14px;font-weight:600;color:#b45309;">${unreadCount} unread</span>
+                        </div>
+                    ` : ''}
+                    <button class="btn btn-secondary" onclick="markAllNotificationsRead()" style="display:flex;align-items:center;gap:8px;">
+                        <i data-lucide="check-check" style="width:16px;height:16px;"></i>
+                        Mark all as read
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearAllNotifications()" style="display:flex;align-items:center;gap:8px;">
+                        <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                        Clear all
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-content">
+            ${combinedActivities.length === 0 ? `
+                <div class="card" style="text-align:center;padding:64px 32px;">
+                    <div style="width:80px;height:80px;background:#f3f4f6;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+                        <i data-lucide="bell-off" style="width:40px;height:40px;color:#9ca3af;"></i>
+                    </div>
+                    <h3 style="margin:0 0 8px 0;color:#111827;font-size:20px;">No notifications yet</h3>
+                    <p style="margin:0;color:#6b7280;font-size:14px;">When you receive notifications, they'll appear here</p>
+                </div>
+            ` : `
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div style="background:#f9fafb;border-bottom:1px solid #e5e7eb;padding:16px 24px;">
+                        <h3 style="margin:0;font-size:16px;font-weight:600;color:#111827;">All Activity</h3>
+                    </div>
+                    <div style="display:flex;flex-direction:column;">
+                        ${combinedActivities.map((activity, index) => {
+        const iconName = activity.icon || 'bell';
+        const iconColor = activity.color || '#667eea';
+        const bgColor = activity.read ? '#ffffff' : '#f0f9ff';
+        const borderLeft = activity.read ? 'transparent' : '#3b82f6';
+
+        return `
+                                <div style="display:flex;align-items:start;gap:16px;padding:20px 24px;background:${bgColor};border-left:3px solid ${borderLeft};border-bottom:1px solid #e5e7eb;transition:all 0.2s;cursor:pointer;" 
+                                     onmouseover="this.style.background='#f9fafb'" 
+                                     onmouseout="this.style.background='${bgColor}'">
+                                    <div style="width:48px;height:48px;background:${iconColor}15;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                        <i data-lucide="${iconName}" style="width:24px;height:24px;color:${iconColor};"></i>
+                                    </div>
+                                    <div style="flex:1;min-width:0;">
+                                        <div style="display:flex;align-items:start;justify-content:space-between;gap:12px;margin-bottom:4px;">
+                                            <h4 style="margin:0;font-size:15px;font-weight:600;color:#111827;">${activity.title}</h4>
+                                            <span style="font-size:13px;color:#6b7280;white-space:nowrap;">${activity.time}</span>
+                                        </div>
+                                        <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.5;">${activity.message}</p>
+                                        ${!activity.read ? `
+                                            <button onclick="markNotificationAsRead('${activity.id}')" 
+                                                    style="margin-top:12px;padding:6px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;"
+                                                    onmouseover="this.style.background='#2563eb'"
+                                                    onmouseout="this.style.background='#3b82f6'">
+                                                Mark as read
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `;
+    }).join('')}
+                    </div>
+                </div>
+            `}
+        </div>
+    `;
+}
+
+function markNotificationAsRead(notificationId) {
+    if (AppState.notifications) {
+        const notification = AppState.notifications.find(n => n.id === notificationId);
+        if (notification) {
+            notification.read = true;
+            loadPageContent('activity'); // Refresh the page
+            updateNotificationBadge();
+        }
+    }
+}
+
+function markAllNotificationsRead() {
+    if (AppState.notifications) {
+        AppState.notifications.forEach(n => n.read = true);
+        loadPageContent('activity'); // Refresh the page
+        updateNotificationBadge();
+        showAlert('All notifications marked as read', 'success');
+    }
+}
+
+function clearAllNotifications() {
+    if (confirm('Are you sure you want to clear all notifications?')) {
+        AppState.notifications = [];
+        loadPageContent('activity'); // Refresh the page
+        updateNotificationBadge();
+        showAlert('All notifications cleared', 'success');
+    }
+}
+
+// -----------------------------//
 // Add Product Modal and Functions //
 // -----------------------------//
 
@@ -5321,7 +6514,18 @@ function saveProduct(productId) {
 async function deleteProduct(productId) {
     const ok = await showConfirm('Delete this product?', 'Delete Product');
     if (!ok) return;
+
+    // Find the product name before deleting
+    const product = MockData.products.find(p => p.id === productId);
+    const productName = product ? product.name : 'Product';
+
+    // Delete the product
     MockData.products = MockData.products.filter(p => p.id !== productId);
+
+    // Show success toast
+    showAlert(`${productName} has been successfully deleted`, 'success');
+
+    // Reload the page
     loadPageContent('products');
 }
 
@@ -5676,7 +6880,18 @@ function saveCategory(categoryId) {
 async function deleteCategory(categoryId) {
     const ok = await showConfirm('Delete this category? This action cannot be undone.', 'Delete Category');
     if (!ok) return;
+
+    // Find the category name before deleting
+    const category = MockData.categories.find(c => c.id === categoryId);
+    const categoryName = category ? category.name : 'Category';
+
+    // Delete the category
     MockData.categories = MockData.categories.filter(c => c.id !== categoryId);
+
+    // Show success toast
+    showAlert(`${categoryName} has been successfully deleted`, 'success');
+
+    // Reload the page
     loadPageContent('categories');
 }
 
@@ -5940,7 +7155,18 @@ function saveStockIn(stockId) {
 async function deleteStockIn(id) {
     const ok = await showConfirm('Are you sure you want to delete this stock in record?', 'Delete Stock In');
     if (!ok) return;
+
+    // Find the record before deleting
+    const record = stockInData.find(r => r.id === id);
+    const recordInfo = record ? `${record.productName} (${record.transactionId})` : 'Stock In record';
+
+    // Delete the record
     stockInData = stockInData.filter(r => r.id !== id);
+
+    // Show success toast
+    showAlert(`${recordInfo} has been successfully deleted`, 'success');
+
+    // Reload the page
     loadPageContent('stock-in');
 }
 
@@ -6328,7 +7554,18 @@ function renderStockOutRow(s) {
 async function deleteStockOut(id) {
     const ok = await showConfirm('Delete this stock-out record?', 'Delete Stock Out');
     if (!ok) return;
+
+    // Find the record before deleting
+    const record = stockOutData.find(s => s.id === id);
+    const recordInfo = record ? `${record.productName} (${record.transactionId})` : 'Stock Out record';
+
+    // Delete the record
     stockOutData = stockOutData.filter(s => s.id !== id);
+
+    // Show success toast
+    showAlert(`${recordInfo} has been successfully deleted`, 'success');
+
+    // Reload the page
     loadPageContent('stock-out');
 }
 
@@ -6357,55 +7594,66 @@ function initStatusManagement(filter = "all") {
     if (!mainContent) return;
     AppState.currentStatusFilter = filter;
 
+    // Load latest user requests from localStorage
+    loadUserRequests();
+
     // ✅ Render UI
     mainContent.innerHTML = `
-        <div class="status-container">
-            <!-- Cards -->
-            <div class="status-cards">
-                <div class="status-card incoming" data-status="incoming">
-                    <h3>Incoming</h3>
-                    <div class="count" data-count="incoming">0</div>
-                    <p>New requests received</p>
-                </div>
-                <div class="status-card received" data-status="received">
-                    <h3>Received</h3>
-                    <div class="count" data-count="received">0</div>
-                    <p>Awaiting processing</p>
-                </div>
-                <div class="status-card finished" data-status="finished">
-                    <h3>Finished</h3>
-                    <div class="count" data-count="finished">0</div>
-                    <p>Successfully completed</p>
-                </div>
-                <div class="status-card cancelled" data-status="cancelled">
-                    <h3>Cancelled</h3>
-                    <div class="count" data-count="cancelled">0</div>
-                    <p>Request withdrawn</p>
-                </div>
-                <div class="status-card rejected" data-status="rejected">
-                    <h3>Rejected</h3>
-                    <div class="count" data-count="rejected">0</div>
-                    <p>Request denied</p>
-                </div>
-                <div class="status-card returned" data-status="returned">
-                    <h3>Returned</h3>
-                    <div class="count" data-count="returned">0</div>
-                    <p>Items sent back</p>
-                </div>
-            </div>
-
-            <!-- Header -->
-            <div class="status-header">
+        <div class="page-header">
+            <div class="page-header-content">
                 <div>
-                    <h2>Status Management</h2>
-                    <p>Track and manage request statuses across all departments</p>
+                    <h1 class="page-title">
+                        <i data-lucide="list-checks" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Status Management
+                    </h1>
+                    <p class="page-subtitle">Track and manage request statuses across all departments</p>
                 </div>
-                <div class="actions">
-                    <button class="btn btn-secondary" id="export-status-btn">Export CSV</button>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="export-status-btn">
+                        <i data-lucide="download" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"></i>
+                        Export CSV
+                    </button>
                 </div>
             </div>
+        </div>
 
-            <!-- Filters -->
+        <div class="page-content">
+            <div class="status-container">
+                <!-- Cards -->
+                <div class="status-cards">
+                    <div class="status-card incoming" data-status="incoming">
+                        <h3>Incoming</h3>
+                        <div class="count" data-count="incoming">0</div>
+                        <p>New requests received</p>
+                    </div>
+                    <div class="status-card received" data-status="received">
+                        <h3>Received</h3>
+                        <div class="count" data-count="received">0</div>
+                        <p>Awaiting processing</p>
+                    </div>
+                    <div class="status-card finished" data-status="finished">
+                        <h3>Finished</h3>
+                        <div class="count" data-count="finished">0</div>
+                        <p>Successfully completed</p>
+                    </div>
+                    <div class="status-card cancelled" data-status="cancelled">
+                        <h3>Cancelled</h3>
+                        <div class="count" data-count="cancelled">0</div>
+                        <p>Request withdrawn</p>
+                    </div>
+                    <div class="status-card rejected" data-status="rejected">
+                        <h3>Rejected</h3>
+                        <div class="count" data-count="rejected">0</div>
+                        <p>Request denied</p>
+                    </div>
+                    <div class="status-card returned" data-status="returned">
+                        <h3>Returned</h3>
+                        <div class="count" data-count="returned">0</div>
+                        <p>Items sent back</p>
+                    </div>
+                </div>
+
+                <!-- Filters -->
             <div class="filters">
                 <input type="text" id="searchInput" placeholder="Search by Requester, ID, or Item">
                 <input type="text" id="deptInput" placeholder="Filter by Department">
@@ -6444,6 +7692,7 @@ function initStatusManagement(filter = "all") {
                     ${renderStatusRows(filter)}
                 </tbody>
             </table>
+            </div>
         </div>
     `;
 
@@ -6513,7 +7762,10 @@ function renderStatusRows(status) {
 
         return `
             <tr data-request-id="${r.id}">
-                <td>${r.id}</td>
+                <td>
+                    ${r.id}
+                    ${r.source === 'user-form' ? '<span class="badge blue" style="font-size:10px;margin-left:4px;" title="Submitted via User Request Form"><i data-lucide="user" style="width:10px;height:10px;"></i>User</span>' : ''}
+                </td>
                 <td>${r.requester}</td>
                 <td>${r.department}</td>
                 <td>${r.item}</td>
@@ -6847,11 +8099,27 @@ function viewStatusRequest(id) {
             </dt>
             <dd style="margin: 0; color: #111827;">${rec.requester}</dd>
             
+            ${rec.email ? `
+                <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="mail" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                    Email
+                </dt>
+                <dd style="margin: 0; color: #111827;">${rec.email}</dd>
+            ` : ''}
+            
             <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
                 <i data-lucide="briefcase" style="width: 14px; height: 14px; color: #6b7280;"></i>
                 Department
             </dt>
             <dd style="margin: 0; color: #111827;">${rec.department}</dd>
+            
+            ${rec.unit ? `
+                <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="building" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                    Unit
+                </dt>
+                <dd style="margin: 0; color: #111827;">${rec.unit}</dd>
+            ` : ''}
             
             <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
                 <i data-lucide="flag" style="width: 14px; height: 14px; color: #6b7280;"></i>
@@ -6865,6 +8133,14 @@ function viewStatusRequest(id) {
             </dt>
             <dd style="margin: 0;"><span class="${getBadgeClass(rec.status)} inline" style="padding: 4px 12px; border-radius: 6px; font-size: 13px; font-weight: 500;">${rec.status}</span></dd>
             
+            ${rec.neededDate ? `
+                <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="clock" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                    Needed By
+                </dt>
+                <dd style="margin: 0; color: #111827;">${rec.neededDate}</dd>
+            ` : ''}
+            
             <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
                 <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
                 Updated
@@ -6876,6 +8152,14 @@ function viewStatusRequest(id) {
                 Est. Cost
             </dt>
             <dd style="margin: 0; color: #16a34a; font-weight: 600; font-size: 15px;">${formatCurrency(rec.cost || 0)}</dd>
+            
+            ${rec.source === 'user-form' ? `
+                <dt style="font-weight: 600; color: #374151; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="info" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                    Source
+                </dt>
+                <dd style="margin: 0;"><span class="badge blue inline" style="padding: 4px 12px; border-radius: 6px; font-size: 13px; font-weight: 500;">User Request Form</span></dd>
+            ` : ''}
         `;
     }
     // Icon refresh
