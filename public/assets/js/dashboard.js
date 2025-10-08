@@ -104,6 +104,10 @@ const AppState = {
     aboutUsContent: null
 };
 
+// Pagination defaults (extendable) for Login Activity Logs
+AppState.loginActivityPage = 1;
+AppState.loginActivityPageSize = 10; // show 10 records per page by default
+
 
 // Mock Data
 const MockData = {
@@ -139,31 +143,7 @@ const MockData = {
         }
     ],
 
-    products: [
-        // Expendable products
-        { id: 'E001', name: 'Bond Paper A4', description: '500 sheets, 70gsm', quantity: 20, unitCost: 220.00, totalValue: 4400.00, date: '2025-01-10', type: 'expendable' },
-        { id: 'E002', name: 'Ballpoint Pen', description: 'Black ink, 12 pcs per box', quantity: 50, unitCost: 60.00, totalValue: 3000.00, date: '2025-02-01', type: 'expendable' },
-        { id: 'E003', name: 'Sticky Notes', description: '3x3 inches, assorted color', quantity: 30, unitCost: 35.00, totalValue: 1050.00, date: '2025-03-12', type: 'expendable' },
-        { id: 'E004', name: 'Printer Ink (HP)', description: 'For HP 415 Ink Tank', quantity: 10, unitCost: 750.00, totalValue: 7500.00, date: '2025-02-20', type: 'expendable' },
-        { id: 'E005', name: 'Envelopes', description: 'White long, 100 pcs per box', quantity: 15, unitCost: 130.00, totalValue: 1950.00, date: '2025-04-05', type: 'expendable' },
-        { id: 'E006', name: 'Cleaning Spray', description: 'Description', quantity: 25, unitCost: 100.00, totalValue: 2500.00, date: '2025-01-18', type: 'expendable' },
-
-        // Semi-Expendable products
-        { id: 'SE01', name: 'Laminator SEA1', description: 'A3 Laminator', quantity: 2, unitCost: 3500.00, totalValue: 7000.00, date: '2025-01-15', type: 'semi-expendable' },
-        { id: 'SE02', name: 'Wireless Mouse', description: 'Optical wireless mouse', quantity: 25, unitCost: 600.00, totalValue: 15000.00, date: '2025-01-11', type: 'semi-expendable' },
-        { id: 'SE03', name: 'HDMI Cable 3m', description: 'HDMI Male to HDMI Male Cable connector', quantity: 10, unitCost: 300.00, totalValue: 3000.00, date: '2025-03-10', type: 'semi-expendable' },
-        { id: 'SE04', name: 'HP Laser Printer', description: 'HP Laser Printer LaserJet M15w', quantity: 1, unitCost: 6500.00, totalValue: 6500.00, date: '2025-01-15', type: 'semi-expendable' },
-        { id: 'SE05', name: 'Smart LED TV 43"', description: 'Samsung Crystal UHD Smart TV', quantity: 2, unitCost: 25000.00, totalValue: 50000.00, date: '2025-02-12', type: 'semi-expendable' },
-        { id: 'SH03', name: 'Over Cabinet & Under Cabinet', description: 'Over cabinet and under cabinet', quantity: 5, unitCost: 7500.00, totalValue: 37500.00, date: '2025-01-15', type: 'semi-expendable' },
-
-        // Non-Expendable products
-        { id: 'N001', name: 'Toyota Hiace van', description: 'Toyota Hiace van with plate number', quantity: 1, unitCost: 2700000.00, totalValue: 2700000.00, date: '2025-10-10', type: 'non-expendable' },
-        { id: 'N002', name: 'Office Building', description: '2-floor building used for office operations', quantity: 1, unitCost: 8500000.00, totalValue: 8500000.00, date: '2025-08-03', type: 'non-expendable' },
-        { id: 'N003', name: 'Industrial Machinery', description: 'Heavy diesel engine for construction purposes', quantity: 1, unitCost: 6500000.00, totalValue: 6500000.00, date: '2025-10-15', type: 'non-expendable' },
-        { id: 'N004', name: 'Library Furniture Set', description: 'Complete set including study rooms', quantity: 1, unitCost: 855000.00, totalValue: 855000.00, date: '2025-01-10', type: 'non-expendable' },
-        { id: 'N005', name: 'Library Database System', description: 'Overhead software and library management system', quantity: 1, unitCost: 700000.00, totalValue: 700000.00, date: '2025-01-05', type: 'non-expendable' },
-        { id: 'N006', name: 'Library Database System', description: 'Overhead software and library management system', quantity: 1, unitCost: 800000.00, totalValue: 800000.00, date: '2025-01-05', type: 'non-expendable' }
-    ],
+    products: [],
 
     newRequests: [
     ],
@@ -181,12 +161,150 @@ const MockData = {
     ]
 };
 
+// ==============================
+// Local Storage Persistence Layer
+// ==============================
+const LS_KEYS = {
+    PRODUCTS: 'spmo_products',
+    STOCK_IN: 'spmo_stock_in',
+    STOCK_OUT: 'spmo_stock_out'
+};
+
+function lsAvailable() {
+    try {
+        if (typeof localStorage === 'undefined') return false;
+        const k = '__spmo_test__';
+        localStorage.setItem(k, '1');
+        localStorage.removeItem(k);
+        return true;
+    } catch (e) { return false; }
+}
+
+function persistProducts() {
+    if (!lsAvailable()) return; try { localStorage.setItem(LS_KEYS.PRODUCTS, JSON.stringify(MockData.products || [])); } catch (e) { }
+}
+function persistStockIn() {
+    if (!lsAvailable()) return; try { localStorage.setItem(LS_KEYS.STOCK_IN, JSON.stringify(stockInData || [])); } catch (e) { }
+}
+function persistStockOut() {
+    if (!lsAvailable()) return; try { localStorage.setItem(LS_KEYS.STOCK_OUT, JSON.stringify(stockOutData || [])); } catch (e) { }
+}
+
+function loadPersistedInventoryData() {
+    if (!lsAvailable()) return;
+    try {
+        const pr = localStorage.getItem(LS_KEYS.PRODUCTS);
+        if (pr) { const arr = JSON.parse(pr); if (Array.isArray(arr)) MockData.products = arr; }
+        const si = localStorage.getItem(LS_KEYS.STOCK_IN);
+        if (si) { const arr = JSON.parse(si); if (Array.isArray(arr)) stockInData = arr; }
+        const so = localStorage.getItem(LS_KEYS.STOCK_OUT);
+        if (so) { const arr = JSON.parse(so); if (Array.isArray(arr)) stockOutData = arr; }
+    } catch (e) { console.warn('Persisted inventory load failed', e); }
+}
+
+loadPersistedInventoryData();
+
 // In-memory Stock In records (rendered in Stock In page)
-let stockInData = [
-    { id: generateUniqueId(), transactionId: 'SI-2025-001', date: '2025-01-15', productName: 'Bond Paper A4', sku: 'E001', quantity: 20, unitCost: 250.00, totalCost: 5000.00, supplier: 'ABC Office Supplies', receivedBy: 'John Doe' },
-    { id: generateUniqueId(), transactionId: 'SI-2025-002', date: '2025-01-14', productName: 'Ballpoint Pen Blue', sku: 'E015', quantity: 50, unitCost: 25.00, totalCost: 1250.00, supplier: 'ABC Office Supplies', receivedBy: 'Jane Smith' },
-    { id: generateUniqueId(), transactionId: 'SI-2025-003', date: '2025-01-13', productName: 'Desktop Computer', sku: 'NE001', quantity: 2, unitCost: 35000.00, totalCost: 70000.00, supplier: 'Tech Solutions Inc.', receivedBy: 'Mike Johnson' }
-];
+let stockInData = [];
+
+// --- Inventory Synchronization Helpers ---
+// Low stock notification tracking
+AppState.lowStockAlertedIds = AppState.lowStockAlertedIds || [];
+
+function maybeNotifyLowStock(product) {
+    const threshold = AppState.lowStockThreshold || 20;
+    if (!product || !product.id) return;
+    const currentQty = Number(product.quantity) || 0;
+    const already = AppState.lowStockAlertedIds.includes(product.id);
+    if (currentQty < threshold && !already) {
+        // push notification
+        addNotification(
+            'Low stock: ' + product.name,
+            `${product.name} has only ${currentQty} left (Threshold: ${threshold})`,
+            'warning',
+            'alert-triangle'
+        );
+        AppState.lowStockAlertedIds.push(product.id);
+    } else if (currentQty >= threshold && already) {
+        // remove from alerted so future drops will alert again
+        AppState.lowStockAlertedIds = AppState.lowStockAlertedIds.filter(id => id !== product.id);
+    }
+}
+
+function findProductBySku(sku) {
+    if (!sku) return null;
+    return (MockData.products || []).find(p => p.id === sku.trim());
+}
+
+function recalcProductValue(product) {
+    if (!product) return;
+    const qty = Number(product.quantity) || 0;
+    const uc = Number(product.unitCost) || 0;
+    product.totalValue = qty * uc;
+}
+
+function adjustInventoryOnStockIn(newRecord, oldRecord) {
+    const product = findProductBySku(newRecord.sku);
+    if (!product) return; // silently ignore if sku not in products list
+    const prevQty = oldRecord ? (Number(oldRecord.quantity) || 0) : 0;
+    const delta = (Number(newRecord.quantity) || 0) - prevQty; // add difference
+    if (delta !== 0) {
+        product.quantity = (Number(product.quantity) || 0) + delta;
+        // Optionally update unitCost if changed (keep the latest cost as reference)
+        if (newRecord.unitCost && newRecord.unitCost !== product.unitCost) {
+            product.unitCost = newRecord.unitCost;
+        }
+        recalcProductValue(product);
+        maybeNotifyLowStock(product);
+        persistProducts();
+    }
+}
+
+function adjustInventoryOnStockOut(newRecord, oldRecord) {
+    const product = findProductBySku(newRecord.sku);
+    if (!product) return;
+    const prevQty = oldRecord ? (Number(oldRecord.quantity) || 0) : 0;
+    const delta = (Number(newRecord.quantity) || 0) - prevQty; // positive if new uses more
+    if (delta !== 0) {
+        // delta represents change in issued quantity; subtract that from inventory
+        product.quantity = Math.max(0, (Number(product.quantity) || 0) - delta);
+        recalcProductValue(product);
+        maybeNotifyLowStock(product);
+        persistProducts();
+    }
+}
+
+function restoreInventoryFromDeletedStockIn(record) {
+    const product = findProductBySku(record?.sku);
+    if (!product) return;
+    product.quantity = Math.max(0, (Number(product.quantity) || 0) - (Number(record.quantity) || 0) + 0); // removal of an addition => subtract quantity
+    recalcProductValue(product);
+    maybeNotifyLowStock(product);
+    persistProducts();
+}
+
+function restoreInventoryFromDeletedStockOut(record) {
+    const product = findProductBySku(record?.sku);
+    if (!product) return;
+    // Deleting a stock-out means we should add the issued quantity back
+    product.quantity = (Number(product.quantity) || 0) + (Number(record.quantity) || 0);
+    recalcProductValue(product);
+    maybeNotifyLowStock(product);
+    persistProducts();
+}
+
+function refreshProductsViewIfOpen() {
+    // If current page is products, re-render to reflect counts
+    const productsSection = document.querySelector('.product-tabs');
+    if (productsSection) {
+        loadPageContent('products');
+    }
+    // Also refresh metrics if on dashboard
+    if (AppState.currentPage === 'dashboard') {
+        loadPageContent('dashboard');
+    }
+}
+// --- End Inventory Synchronization Helpers ---
 
 // Utility Functions
 function formatCurrency(amount) {
@@ -1062,6 +1180,9 @@ function loadPageContent(pageId) {
         case 'about':
             mainContent.innerHTML = generateAboutPage();
             break;
+        case 'support':
+            mainContent.innerHTML = generateSupportPage();
+            break;
         default:
             mainContent.innerHTML = generateDashboardPage();
     }
@@ -1214,9 +1335,9 @@ function generateDashboardPage() {
                 <div class="metric-card">
                     <div class="metric-content">
                         <div class="metric-info">
-                            <h3>Total Products</h3>
+                            <h3>Items</h3>
                             <p class="value">${totalProducts}</p>
-                            <p class="change">Products in inventory</p>
+                            <p class="change">In inventory</p>
                         </div>
                         <div class="metric-icon blue">
                             <i data-lucide="package" class="icon"></i>
@@ -1227,9 +1348,9 @@ function generateDashboardPage() {
                 <div class="metric-card">
                     <div class="metric-content">
                         <div class="metric-info">
-                            <h3>Low Stock Items</h3>
+                            <h3>Low Stock</h3>
                             <p class="value">${lowStockItems}</p>
-                            <p class="change">Items below ${lowStockThreshold} units</p>
+                            <p class="change">< ${lowStockThreshold} units</p>
                         </div>
                         <div class="metric-icon orange">
                             <i data-lucide="alert-triangle" class="icon"></i>
@@ -1240,9 +1361,9 @@ function generateDashboardPage() {
                 <div class="metric-card">
                     <div class="metric-content">
                         <div class="metric-info">
-                            <h3>Incoming Requests</h3>
+                            <h3>Incoming</h3>
                             <p class="value">${incomingRequests}</p>
-                            <p class="change">Awaiting processing</p>
+                            <p class="change">Pending flow</p>
                         </div>
                         <div class="metric-icon yellow">
                             <i data-lucide="clock" class="icon"></i>
@@ -1256,7 +1377,7 @@ function generateDashboardPage() {
                         <div class="metric-info">
                             <h3>Received Today</h3>
                             <p class="value">${receivedToday}</p>
-                            <p class="change">Successfully received</p>
+                            <p class="change">Marked received</p>
                         </div>
                         <div class="metric-icon green">
                             <i data-lucide="check-circle" class="icon"></i>
@@ -1267,9 +1388,9 @@ function generateDashboardPage() {
                 <div class="metric-card">
                     <div class="metric-content">
                         <div class="metric-info">
-                            <h3>Total Users</h3>
+                            <h3>Users</h3>
                             <p class="value">${totalUsers}</p>
-                            <p class="change">${activeUsers} active users</p>
+                            <p class="change">${activeUsers} active</p>
                         </div>
                         <div class="metric-icon purple">
                             <i data-lucide="users" class="icon"></i>
@@ -1282,7 +1403,7 @@ function generateDashboardPage() {
                         <div class="metric-info">
                             <h3>Inventory Value</h3>
                             <p class="value currency-value">${formatCurrency(totalInventoryValue)}</p>
-                            <p class="change">Total asset value</p>
+                            <p class="change">Total value</p>
                         </div>
                         <div class="metric-icon indigo">
                             <i data-lucide="bar-chart-3" class="icon"></i>
@@ -1293,53 +1414,7 @@ function generateDashboardPage() {
             
             <!-- Quick Actions & Recent Activity -->
             <div class="dashboard-grid">
-                <div class="card quick-actions">
-                    <div class="card-header">
-                        <h3 class="card-title">Quick Actions</h3>
-                    </div>
-                    <div class="action-list">
-                        <div class="action-item" onclick="navigateToPage('new-request')">
-                            <div class="action-icon red">
-                                <i data-lucide="plus" class="icon"></i>
-                            </div>
-                            <div class="action-content">
-                                <h4>Create New Request</h4>
-                                <p>Start a new purchase order</p>
-                            </div>
-                        </div>
-                        
-                        <div class="action-item" onclick="navigateToPage('products')">
-                            <div class="action-icon blue">
-                                <i data-lucide="package-plus" class="icon"></i>
-                            </div>
-                            <div class="action-content">
-                                <h4>Add New Product</h4>
-                                <p>Register new inventory item</p>
-                            </div>
-                        </div>
-                        
-                        <div class="action-item" onclick="navigateToPage('stock-in')">
-                            <div class="action-icon green">
-                                <i data-lucide="truck" class="icon"></i>
-                            </div>
-                            <div class="action-content">
-                                <h4>Stock In</h4>
-                                <p>Record incoming inventory</p>
-                            </div>
-                        </div>
-                        
-                        <div class="action-item" onclick="navigateToPage('inventory-reports')">
-                            <div class="action-icon purple">
-                                <i data-lucide="bar-chart-3" class="icon"></i>
-                            </div>
-                            <div class="action-content">
-                                <h4>View Reports</h4>
-                                <p>Generate inventory reports</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
+                <!-- Swapped: Recent Activity first -->
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Recent Activity</h3>
@@ -1354,7 +1429,6 @@ function generateDashboardPage() {
                                 <span class="time">2 hours ago</span>
                             </div>
                         </div>
-                        
                         <div class="activity-item">
                             <div class="activity-icon blue">
                                 <i data-lucide="package" class="icon"></i>
@@ -1364,7 +1438,6 @@ function generateDashboardPage() {
                                 <span class="time">4 hours ago</span>
                             </div>
                         </div>
-                        
                         <div class="activity-item">
                             <div class="activity-icon orange">
                                 <i data-lucide="alert-triangle" class="icon"></i>
@@ -1374,7 +1447,6 @@ function generateDashboardPage() {
                                 <span class="time">1 day ago</span>
                             </div>
                         </div>
-                        
                         <div class="activity-item">
                             <div class="activity-icon purple">
                                 <i data-lucide="user-plus" class="icon"></i>
@@ -1384,7 +1456,6 @@ function generateDashboardPage() {
                                 <span class="time">2 days ago</span>
                             </div>
                         </div>
-                        
                         <div class="activity-item">
                             <div class="activity-icon red">
                                 <i data-lucide="file-text" class="icon"></i>
@@ -1395,9 +1466,53 @@ function generateDashboardPage() {
                             </div>
                         </div>
                     </div>
-                    
                     <div class="activity-footer">
                         <a href="#" class="link">View all activity →</a>
+                    </div>
+                </div>
+
+                <!-- Quick Actions moved to second column -->
+                <div class="card quick-actions">
+                    <div class="card-header">
+                        <h3 class="card-title">Quick Actions</h3>
+                    </div>
+                    <div class="action-list">
+                        <div class="action-item" onclick="navigateToPage('new-request')">
+                            <div class="action-icon red">
+                                <i data-lucide="plus" class="icon"></i>
+                            </div>
+                            <div class="action-content">
+                                <h4>Create New Request</h4>
+                                <p>Start a new purchase order</p>
+                            </div>
+                        </div>
+                        <div class="action-item" onclick="navigateToPage('products')">
+                            <div class="action-icon blue">
+                                <i data-lucide="package-plus" class="icon"></i>
+                            </div>
+                            <div class="action-content">
+                                <h4>Add New Product</h4>
+                                <p>Register new inventory item</p>
+                            </div>
+                        </div>
+                        <div class="action-item" onclick="navigateToPage('stock-in')">
+                            <div class="action-icon green">
+                                <i data-lucide="truck" class="icon"></i>
+                            </div>
+                            <div class="action-content">
+                                <h4>Stock In</h4>
+                                <p>Record incoming inventory</p>
+                            </div>
+                        </div>
+                        <div class="action-item" onclick="navigateToPage('inventory-reports')">
+                            <div class="action-icon purple">
+                                <i data-lucide="bar-chart-3" class="icon"></i>
+                            </div>
+                            <div class="action-content">
+                                <h4>View Reports</h4>
+                                <p>Generate inventory reports</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1406,6 +1521,7 @@ function generateDashboardPage() {
 }
 
 function generateCategoriesPage() {
+    const categories = MockData.categories || [];
     return `
         <div class="page-header">
             <div class="page-header-content">
@@ -1422,11 +1538,10 @@ function generateCategoriesPage() {
                 </button>
             </div>
         </div>
-        
         <div class="page-content">
             <div class="table-container">
                 <table class="table">
-                            <thead>
+                    <thead>
                         <tr>
                             <th style="padding: 16px 24px;">Category ID</th>
                             <th style="padding: 16px 24px;">Category Name</th>
@@ -1435,11 +1550,11 @@ function generateCategoriesPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${MockData.categories.map((category, index) => `
+                        ${categories.length ? categories.map((category, index) => `
                             <tr style="${index % 2 === 0 ? 'background-color: white;' : 'background-color: #f9fafb;'}">
                                 <td style="padding: 16px 24px; font-weight: 500;">${category.id}</td>
                                 <td style="padding: 16px 24px; font-weight: 500;">${category.name}</td>
-                                <td style="padding: 16px 24px; color: #6b7280; max-width: 600px; line-height: 1.5;">${category.description}</td>
+                                <td style="padding: 16px 24px; color: #6b7280; max-width: 600px; line-height: 1.5;">${category.description || ''}</td>
                                 <td style="padding: 16px 24px;">
                                     <div class="table-actions">
                                         <button class="icon-action-btn icon-action-warning" title="Edit" onclick="openCategoryModal('edit','${category.id}')">
@@ -1451,7 +1566,7 @@ function generateCategoriesPage() {
                                     </div>
                                 </td>
                             </tr>
-                        `).join('')}
+                        `).join('') : `<tr><td colspan="4" style="text-align:center; padding:32px 12px; color:#6b7280; font-size:14px; font-style:italic;">No categories found</td></tr>`}
                     </tbody>
                 </table>
             </div>
@@ -1532,6 +1647,7 @@ function generateProductsPage() {
                             <th>Product Name</th>
                             <th>Description</th>
                             <th>Quantity</th>
+                            <th>Unit</th>
                             <th>Unit Cost</th>
                             <th>Total Value</th>
                             <th>Date</th>
@@ -1539,17 +1655,18 @@ function generateProductsPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${filteredProducts.map((product, index) => {
+                        ${filteredProducts.length ? filteredProducts.map((product, index) => {
         const rowBg = (index % 2 === 0) ? 'background-color: white;' : 'background-color: #f9fafb;';
         return `
                             <tr style="${rowBg}">
                                 <td style="font-weight: 500;">${product.id}</td>
                                 <td style="font-weight: 500;">${product.name}</td>
-                                <td style="color: #6b7280; max-width: 300px;">${product.description}</td>
-                                <td>${product.quantity}</td>
-                                <td>${formatCurrency(product.unitCost)}</td>
-                                <td style="font-weight: 500;">${formatCurrency(product.totalValue)}</td>
-                                <td>${product.date}</td>
+                                <td style="color: #6b7280; max-width: 300px;">${product.description || ''}</td>
+                                <td>${product.quantity ?? 0}</td>
+                                <td>${product.unit || '-'}</td>
+                                <td>${formatCurrency(product.unitCost || 0)}</td>
+                                <td style="font-weight: 500;">${formatCurrency(product.totalValue || 0)}</td>
+                                <td>${product.date || ''}</td>
                                 <td>
                                     <div class="table-actions">
                                         <button class="icon-action-btn icon-action-danger" title="Delete" onclick="deleteProduct('${product.id}')">
@@ -1561,14 +1678,15 @@ function generateProductsPage() {
                                     </div>
                                 </td>
                             </tr>
-                        `}).join('')}
+                        `;
+    }).join('') : `<tr><td colspan="9" style="text-align:center; padding:32px 12px; color:#6b7280; font-size:14px; font-style:italic;">No products found</td></tr>`}
                     </tbody>
                 </table>
                 
                 <!-- Enhanced Pagination -->
                 <nav class="enhanced-pagination" aria-label="Pagination">
                     <div class="pagination-left" style="margin-left: 16px">
-                        Showing 1 to ${filteredProducts.length} of ${filteredProducts.length} entries
+                        ${filteredProducts.length === 0 ? 'No entries to display' : `Showing 1 to ${filteredProducts.length} of ${filteredProducts.length} entries`}
                     </div>
                     <div class="pagination-right" style="margin-right: 16px">
                         <button class="pagination-btn" disabled>Previous</button>
@@ -1653,7 +1771,7 @@ function generateStockInPage() {
                 <!-- 🔹 Pagination -->
                 <nav class="enhanced-pagination" aria-label="Pagination">
                     <div class="pagination-left" style="margin-left: 16px">
-                        Showing 1 to ${stockInData.length} of ${stockInData.length} entries
+                        ${stockInData.length === 0 ? 'No entries to display' : `Showing 1 to ${stockInData.length} of ${stockInData.length} entries`}
                     </div>
                     <div class="pagination-right" style="margin-right: 16px">
                         <button class="pagination-btn" disabled>Previous</button>
@@ -1754,7 +1872,7 @@ function generateStockOutPage() {
                     <!-- 🔹 Pagination -->
                     <nav class="enhanced-pagination" aria-label="Pagination">
                         <div class="pagination-left" style="margin-left: 16px">
-                            Showing 1 to ${stockOutData.length} of ${stockOutData.length} entries
+                            ${stockOutData.length === 0 ? 'No entries to display' : `Showing 1 to ${stockOutData.length} of ${stockOutData.length} entries`}
                         </div>
                         <div class="pagination-right" style="margin-right: 16px">
                             <button class="pagination-btn" disabled>Previous</button>
@@ -2060,7 +2178,8 @@ function generateCompletedRequestPage() {
                     <p class="page-subtitle">View completed and archived purchase requests</p>
                 </header>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="badge green">${completedList.length} Completed</span>
+                    <!-- Updated: show total rendered completed-type requests (approved, delivered, completed) -->
+                    <span class="badge green">${visibleCompleted.length} Completed Requests</span>
                     <span class="badge blue">${deliveredList.length} Delivered</span>
                 </div>
             </div>
@@ -2157,27 +2276,21 @@ function generateCompletedRequestPage() {
                     </tbody>
                 </table>
 
-                <!-- 🔹 Summary Stats -->
-                <aside class="grid-4 mt-6" style="background-color: #f9fafb; padding: 16px; border-radius: 8px;">
-                    <div class="text-center">
-                        <p style="font-size: 14px; color: #6b7280; margin: 0;">Total Requests</p>
-                        <p style="font-size: 18px; font-weight: 600; color: #111827; margin: 0;">
-                            ${totalRequests}
-                        </p>
+                <!-- 🔹 Summary Stats (Centered) -->
+                <aside class="completed-summary mt-6" style="background-color:#f9fafb;padding:20px 24px;border-radius:12px;display:flex;justify-content:center;align-items:stretch;gap:40px;flex-wrap:wrap;text-align:center;">
+                    <div style="flex:0 1 180px;display:flex;flex-direction:column;gap:4px;">
+                        <p style="font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:#6b7280;font-weight:600;margin:0;">Total Requests</p>
+                        <p style="font-size:26px;font-weight:700;color:#111827;line-height:1;margin:0;">${totalRequests}</p>
                     </div>
-                    <div class="text-center">
-                        <p style="font-size: 14px; color: #6b7280; margin: 0;">Total Value</p>
-                        <p style="font-size: 18px; font-weight: 600; color: #111827; margin: 0;">
-                            ${formatCurrency(totalValue)}
-                        </p>
+                    <div style="flex:0 1 180px;display:flex;flex-direction:column;gap:4px;">
+                        <p style="font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:#6b7280;font-weight:600;margin:0;">Total Value</p>
+                        <p style="font-size:26px;font-weight:700;color:#111827;line-height:1;margin:0;">${formatCurrency(totalValue)}</p>
                     </div>
-                    <div class="text-center">
-                        <p style="font-size: 14px; color: #6b7280; margin: 0;">Completed</p>
-                        <p style="font-size: 18px; font-weight: 600; color: #16a34a; margin: 0;">
-                            ${completedList.length}
-                        </p>
+                    <div style="flex:0 1 180px;display:flex;flex-direction:column;gap:4px;">
+                        <!-- Updated to align with header badge: counts all rendered completed-type requests -->
+                        <p style="font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:#6b7280;font-weight:600;margin:0;">Completed Requests</p>
+                        <p style="font-size:26px;font-weight:700;color:#16a34a;line-height:1;margin:0;">${visibleCompleted.length}</p>
                     </div>
-                    <!-- Paid Orders summary removed -->
                 </aside>
             </section>
         </main>
@@ -2321,10 +2434,12 @@ function generateInventoryReportsPage() {
                     <table class="table" id="inventory-report-table">
                         <thead>
                             <tr>
-                                <th>Stock Number</th>
+                                <th>SKU</th>
                                 <th>Name</th>
-                                <th>Current Stock</th>
+                                <th>Quantity</th>
                                 <th>Unit</th>
+                                <th>Unit Cost</th>
+                                <th>Total Value</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2565,9 +2680,16 @@ function downloadCSV(filename, rows) {
 
 function exportInventoryCSV() {
     // export only currently filtered rows if filters applied
-    const rows = [['Stock Number', 'Name', 'Current Stock', 'Unit']];
-    const rowsToExport = (window.__inventoryFilteredRows && window.__inventoryFilteredRows.length) ? window.__inventoryFilteredRows : MockData.inventory;
-    rowsToExport.forEach(i => rows.push([i.stockNumber, i.name, i.currentStock, i.unit]));
+    const rows = [['SKU', 'Name', 'Quantity', 'Unit', 'Unit Cost', 'Total Value']];
+    const rowsToExport = (window.__inventoryFilteredRows && window.__inventoryFilteredRows.length) ? window.__inventoryFilteredRows : (MockData.products || []);
+    rowsToExport.forEach(i => rows.push([
+        i.id || i.stockNumber || '',
+        i.name || '',
+        typeof i.quantity === 'number' ? i.quantity : (i.currentStock || 0),
+        i.unit || i.unitMeasure || '',
+        (typeof i.unitCost === 'number' ? i.unitCost : (i.unitPrice || 0)),
+        (typeof i.totalValue === 'number' ? i.totalValue : ((typeof i.quantity === 'number' ? i.quantity : (i.currentStock || 0)) * (i.unitCost || i.unitPrice || 0)))
+    ]));
     downloadCSV('inventory-report.csv', rows);
 }
 
@@ -2608,64 +2730,93 @@ function renderInventoryReport() {
     const tbody = document.querySelector('#inventory-report-table tbody');
     if (!tbody) return;
 
-    // apply filters
+    // Filters (department placeholder & future date filters). Products currently lack dept & date metadata.
     const dept = document.getElementById('inventory-department-filter')?.value || 'All';
-    // MockData has no department per item; we'll just allow dept filter to demonstrate
     const from = document.getElementById('inventory-date-from')?.value;
     const to = document.getElementById('inventory-date-to')?.value;
 
-    let rows = MockData.inventory.slice();
-    // date filters ignored for inventory mock but kept for future real data
+    // Source of truth: live products mutated by Stock In/Out
+    let products = (MockData.products || []).map(p => ({ ...p }));
 
-    // save filtered rows globally for export
-    window.__inventoryFilteredRows = rows;
+    // (Future) Department/date filters could be applied here when fields exist
+    if (dept && dept !== 'All') {
+        products = products.filter(p => (p.department || '').toLowerCase().includes(dept.toLowerCase()));
+    }
+    // if products had dateAdded or lastMovementDate we would filter via from/to
+    // For now, ignore from/to as no date metadata is defined in product objects.
 
-    tbody.innerHTML = rows.map(i => `
-        <tr>
-            <td style="font-weight:500;">${i.stockNumber}</td>
-            <td>${i.name}</td>
-            <td>${i.currentStock}</td>
-            <td>${i.unit}</td>
-        </tr>
-    `).join('');
+    // Persist filtered set for CSV export
+    window.__inventoryFilteredRows = products;
 
-    // render chart (simple bar)
-    const labels = rows.map(r => r.name);
-    const data = rows.map(r => r.currentStock);
+    // Build table rows (include total value if present)
+    tbody.innerHTML = products.map(p => {
+        const qty = typeof p.quantity === 'number' ? p.quantity : (p.currentStock || 0);
+        const unit = p.unit || p.unitMeasure || '';
+        const unitCost = (typeof p.unitCost === 'number') ? p.unitCost : (p.unitPrice || 0);
+        const totalValue = typeof p.totalValue === 'number' ? p.totalValue : (qty * unitCost);
+        return `
+            <tr>
+                <td style="font-weight:500;">${p.id || p.stockNumber || ''}</td>
+                <td>${p.name || ''}</td>
+                <td>${qty}</td>
+                <td>${unit}</td>
+                <td>${unitCost ? formatCurrency(unitCost) : '-'}</td>
+                <td>${totalValue ? formatCurrency(totalValue) : '-'}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // Chart (Quantity per product)
+    const labels = products.map(r => r.name || r.id || '');
+    const data = products.map(r => (typeof r.quantity === 'number' ? r.quantity : (r.currentStock || 0)));
     renderInventoryChart(labels, data);
 
-    // Low-stock computation
+    // Low-stock computation (use current threshold input or AppState.lowStockThreshold fallback)
     const thresholdInput = document.getElementById('low-stock-threshold');
-    const threshold = thresholdInput ? parseInt(thresholdInput.value, 10) || 0 : 20;
-    const lowStockItems = rows.filter(r => typeof r.currentStock === 'number' ? r.currentStock <= threshold : false);
+    const threshold = thresholdInput ? (parseInt(thresholdInput.value, 10) || 0) : (AppState.lowStockThreshold || 0);
+    const lowStockItems = products.filter(p => {
+        const qty = typeof p.quantity === 'number' ? p.quantity : (p.currentStock || 0);
+        return qty <= threshold;
+    });
 
-    // populate low-stock table
+    // Populate low-stock table
     const lowTbody = document.querySelector('#low-stock-table tbody');
     if (lowTbody) {
-        lowTbody.innerHTML = lowStockItems.map(i => `
-            <tr>
-                <td style="font-weight:500;">${i.stockNumber}</td>
-                <td>${i.name}</td>
-                <td>${i.currentStock}</td>
-                <td>${i.unit}</td>
-            </tr>
-        `).join('');
+        lowTbody.innerHTML = lowStockItems.map(p => {
+            const qty = typeof p.quantity === 'number' ? p.quantity : (p.currentStock || 0);
+            const unit = p.unit || p.unitMeasure || '';
+            return `
+                <tr>
+                    <td style="font-weight:500;">${p.id || p.stockNumber || ''}</td>
+                    <td>${p.name || ''}</td>
+                    <td>${qty}</td>
+                    <td>${unit}</td>
+                </tr>
+            `;
+        }).join('');
     }
 
-    // update summary
+    // Update summary widgets
     const lowCountEl = document.getElementById('low-stock-count');
     const lowestItemEl = document.getElementById('lowest-item');
     if (lowCountEl) lowCountEl.textContent = lowStockItems.length;
     if (lowestItemEl) {
-        if (lowStockItems.length > 0) {
-            const sorted = lowStockItems.slice().sort((a, b) => a.currentStock - b.currentStock);
-            lowestItemEl.textContent = `${sorted[0].name} (${sorted[0].currentStock} ${sorted[0].unit})`;
+        if (lowStockItems.length) {
+            const sorted = lowStockItems.slice().sort((a, b) => {
+                const qa = (typeof a.quantity === 'number' ? a.quantity : (a.currentStock || 0));
+                const qb = (typeof b.quantity === 'number' ? b.quantity : (b.currentStock || 0));
+                return qa - qb;
+            });
+            const first = sorted[0];
+            const qty = typeof first.quantity === 'number' ? first.quantity : (first.currentStock || 0);
+            const unit = first.unit || first.unitMeasure || '';
+            lowestItemEl.textContent = `${first.name || first.id} (${qty} ${unit})`;
         } else {
             lowestItemEl.textContent = '-';
         }
     }
 
-    // store low-stock rows for export
+    // Store low-stock rows for export
     window.__lowStockRows = lowStockItems;
 }
 
@@ -4800,39 +4951,80 @@ function closeUserMenu() {
     if (menu) menu.style.display = 'none';
 }
 
+// Helper: resolve the correct path to AccessSystem (login) page from any current nested location
+function resolveLoginPath() {
+    try {
+        const path = window.location.pathname.replace(/\\/g, '/');
+        // If already inside /pages/ hierarchy
+        const pagesIdx = path.lastIndexOf('/pages/');
+        if (pagesIdx !== -1) {
+            return path.substring(0, pagesIdx + 7) + 'AccessSystem.html';
+        }
+        // Common case: public is web root and pages is directly under it
+        if (path.includes('/public/')) {
+            return '/public/pages/AccessSystem.html';
+        }
+        // Fallbacks
+        return '/pages/AccessSystem.html';
+    } catch (e) {
+        return '../../pages/AccessSystem.html'; // last resort
+    }
+}
+
 function logout() {
-    // Log the logout action and set status to Inactive
-    if (AppState.currentUser && AppState.currentUser.email) {
-        logUserLogout(AppState.currentUser.email, AppState.currentUser.name);
-    }
-
-    // Clear user session data
-    AppState.currentUser = {
-        id: null,
-        name: 'Guest',
-        email: '',
-        role: '',
-        department: '',
-        status: 'Inactive',
-        created: ''
-    };
-
-    // Clear any stored session/auth data
-    if (typeof (Storage) !== "undefined") {
-        localStorage.removeItem('userSession');
-        localStorage.removeItem('authToken');
-        sessionStorage.clear();
-    }
+    // Prevent double trigger
+    if (window.__isLoggingOut) return;
+    window.__isLoggingOut = true;
 
     closeUserMenu();
 
-    // Show logout message
-    showAlert('Logging out...', 'info');
+    // Inject (or show existing) loading modal
+    showLoadingModal('Signing you out securely...');
 
-    // Redirect to login page after a brief delay
+    // Simulate async logout pipeline
     setTimeout(() => {
-        window.location.href = '../pages/AccessSystem.html';
-    }, 500);
+        try {
+            // Log the logout action and set status to Inactive
+            if (AppState.currentUser && AppState.currentUser.email) {
+                logUserLogout(AppState.currentUser.email, AppState.currentUser.name);
+            }
+
+            // Clear user session data
+            AppState.currentUser = {
+                id: null,
+                name: 'Guest',
+                email: '',
+                role: '',
+                department: '',
+                status: 'Inactive',
+                created: ''
+            };
+
+            // Clear any stored session/auth data
+            if (typeof (Storage) !== 'undefined') {
+                localStorage.removeItem('userSession');
+                localStorage.removeItem('authToken');
+                sessionStorage.clear();
+            }
+
+            // Small delay to keep loader visible then show success
+            setTimeout(() => {
+                hideLoadingModal();
+                showSuccessModal({
+                    title: 'Logged Out',
+                    message: 'You have been signed out successfully. Redirecting to Access System...',
+                    icon: 'log-out',
+                    redirect: resolveLoginPath(),
+                    delay: 900
+                });
+            }, 600);
+        } catch (e) {
+            console.error('Logout error', e);
+            hideLoadingModal();
+            showAlert('An error occurred while logging out', 'error');
+            window.__isLoggingOut = false;
+        }
+    }, 300); // mimic network / processing delay
 }
 
 // Close user menu on outside click
@@ -4859,6 +5051,91 @@ document.addEventListener('DOMContentLoaded', function () {
     // Initialize icons
     lucide.createIcons();
 });
+
+// -----------------------------
+// Loading & Success Modals
+// -----------------------------
+function ensureModalRoot() {
+    let root = document.getElementById('global-modal-root');
+    if (!root) {
+        root = document.createElement('div');
+        root.id = 'global-modal-root';
+        document.body.appendChild(root);
+    }
+    return root;
+}
+
+function showLoadingModal(text = 'Processing...') {
+    const root = ensureModalRoot();
+    let modal = document.getElementById('loading-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'loading-modal';
+        modal.innerHTML = `
+            <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(17,24,39,0.45);backdrop-filter:blur(2px);z-index:2000;">
+                <div style="background:#ffffff;padding:32px 40px;border-radius:16px;box-shadow:0 20px 40px -10px rgba(0,0,0,0.25);display:flex;flex-direction:column;align-items:center;gap:20px;min-width:300px;">
+                    <div class="spinner" style="width:56px;height:56px;border:6px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spmo-spin 0.9s linear infinite;"></div>
+                    <div style="text-align:center;">
+                        <h3 id="loading-modal-text" style="margin:0;font-size:16px;font-weight:600;color:#1f2937;">${text}</h3>
+                        <p style="margin:6px 0 0 0;font-size:13px;color:#6b7280;">Please wait…</p>
+                    </div>
+                </div>
+            </div>`;
+        root.appendChild(modal);
+        // spinner keyframes (inject once)
+        if (!document.getElementById('spinner-style')) {
+            const style = document.createElement('style');
+            style.id = 'spinner-style';
+            style.textContent = '@keyframes spmo-spin{to{transform:rotate(360deg)}}';
+            document.head.appendChild(style);
+        }
+    } else {
+        const textEl = modal.querySelector('#loading-modal-text');
+        if (textEl) textEl.textContent = text;
+        modal.style.display = 'block';
+    }
+}
+
+function hideLoadingModal() {
+    const modal = document.getElementById('loading-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function showSuccessModal({ title = 'Success', message = 'Operation completed successfully.', icon = 'check-circle', redirect = null, delay = 1500 } = {}) {
+    const root = ensureModalRoot();
+    let modal = document.getElementById('success-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'success-modal';
+        modal.innerHTML = `
+            <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(17,24,39,0.4);backdrop-filter:blur(2px);z-index:2100;">
+                <div style="background:#ffffff;padding:32px 40px;border-radius:16px;box-shadow:0 20px 40px -10px rgba(0,0,0,0.25);display:flex;flex-direction:column;align-items:center;gap:18px;min-width:320px;">
+                    <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#dcfce7,#bbf7d0);display:flex;align-items:center;justify-content:center;">
+                        <i data-lucide="${icon}" style="width:32px;height:32px;color:#16a34a;"></i>
+                    </div>
+                    <h3 id="success-modal-title" style="margin:0;font-size:20px;color:#111827;font-weight:700;">${title}</h3>
+                    <p id="success-modal-message" style="margin:0;font-size:14px;color:#6b7280;text-align:center;line-height:1.5;">${message}</p>
+                </div>
+            </div>`;
+        root.appendChild(modal);
+    } else {
+        modal.querySelector('#success-modal-title').textContent = title;
+        modal.querySelector('#success-modal-message').textContent = message;
+        modal.querySelector('i[data-lucide]')?.setAttribute('data-lucide', icon);
+        modal.style.display = 'block';
+    }
+    // Recreate icons inside modal
+    setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 10);
+
+    if (redirect) {
+        setTimeout(() => { window.location.href = redirect; }, delay);
+    } else {
+        // Auto hide if no redirect
+        setTimeout(() => { const m = document.getElementById('success-modal'); if (m) m.style.display = 'none'; }, delay);
+    }
+}
+
+window.logout = logout;
 
 // ------------------------ //
 // Roles & Management Page  //
@@ -5543,8 +5820,20 @@ function generateLoginActivityPage() {
 
     const userLogs = window.MockData.userLogs || [];
 
-    // Calculate statistics
+    // ---- Pagination calculations ----
+    const pageSize = AppState.loginActivityPageSize || 10;
     const totalLogs = userLogs.length;
+    const totalPages = Math.max(1, Math.ceil(totalLogs / pageSize));
+    let currentPage = AppState.loginActivityPage || 1;
+    if (currentPage > totalPages) currentPage = totalPages; // clamp if logs reduced
+    if (currentPage < 1) currentPage = 1;
+    const startIndex = (currentPage - 1) * pageSize;
+    const paginatedLogs = userLogs.slice(startIndex, startIndex + pageSize);
+    const showingFrom = totalLogs === 0 ? 0 : startIndex + 1;
+    const showingTo = startIndex + paginatedLogs.length;
+
+    // Calculate statistics
+    // (totalLogs already computed above)
     const successfulLogins = userLogs.filter(log => log.status.toLowerCase() === 'success').length;
     const failedLogins = userLogs.filter(log => log.status.toLowerCase() === 'failed').length;
     const uniqueUsers = [...new Set(userLogs.map(log => log.email))].length;
@@ -5662,8 +5951,9 @@ function generateLoginActivityPage() {
                     </div>
                 </div>
             ` : `
-                <div style="overflow-x: auto;">
-                    <table class="table" style="margin: 0;">
+                <div style="overflow-x:auto;">
+                    <div style="max-height:420px; overflow-y:auto; overscroll-behavior:contain;">
+                    <table class="table sticky-header" style="margin:0;">
                         <thead>
                             <tr>
                                 <th style="padding-left: 24px; min-width: 180px;">
@@ -5711,7 +6001,7 @@ function generateLoginActivityPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            ${userLogs.map((log, index) => {
+                            ${paginatedLogs.map((log, index) => {
         const isSuccess = log.status.toLowerCase() === 'success';
         const deviceIcon = log.device.includes('Windows') ? 'monitor' :
             log.device.includes('Mac') ? 'laptop' :
@@ -5779,23 +6069,44 @@ function generateLoginActivityPage() {
                             `}).join("")}
                         </tbody>
                     </table>
+                    </div>
                 </div>
                 
-                <!-- Table Footer with Info -->
-                <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6b7280;">
-                        <i data-lucide="info" style="width:14px;height:14px;"></i>
-                        Showing ${userLogs.length} ${userLogs.length === 1 ? 'record' : 'records'} (most recent first)
+                <!-- Table Footer Pagination (Product-style) -->
+                <nav class="enhanced-pagination" aria-label="Pagination" style="padding: 12px 0; border-top:1px solid #e5e7eb; background:#f9fafb;">
+                    <div class="pagination-left" style="margin-left:16px; font-size:13px; color:#6b7280;">
+                        Showing ${showingFrom} to ${showingTo} of ${totalLogs} entries
                     </div>
-                    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #9ca3af;">
-                        <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i>
-                        Auto-refreshes on page load
+                    <div class="pagination-right" style="margin-right:16px; display:flex; gap:4px;">
+                        <button class="pagination-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="setLoginActivityPage(${currentPage - 1})">Previous</button>
+                        ${(() => {
+            const buttons = [];
+            const maxButtons = 5;
+            let start = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let end = start + maxButtons - 1;
+            if (end > totalPages) { end = totalPages; start = Math.max(1, end - maxButtons + 1); }
+            for (let p = start; p <= end; p++) {
+                buttons.push(`<button class=\"pagination-btn ${p === currentPage ? 'active' : ''}\" onclick=\\"setLoginActivityPage(${p})\\">${p}</button>`);
+            }
+            return buttons.join('');
+        })()}
+                        <button class="pagination-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="setLoginActivityPage(${currentPage + 1})">Next</button>
                     </div>
-                </div>
+                </nav>
             `}
         </div>
     `;
 }
+
+// ---- Pagination handlers for Login Activity (exposed globally) ----
+function setLoginActivityPage(page) {
+    const totalLogs = (window.MockData && window.MockData.userLogs) ? window.MockData.userLogs.length : 0;
+    const totalPages = Math.max(1, Math.ceil(totalLogs / (AppState.loginActivityPageSize || 10)));
+    const clamped = Math.min(Math.max(1, page), totalPages);
+    AppState.loginActivityPage = clamped;
+    loadPageContent('login-activity');
+}
+window.setLoginActivityPage = setLoginActivityPage;
 
 // ----------------------------- //
 // About Us Page               //
@@ -6043,6 +6354,98 @@ function generateAboutPage() {
         </div>
     `;
 }
+
+// ----------------------------- //
+// Support Page (Submit Ticket Only)//
+// ----------------------------- //
+function generateSupportPage() {
+    // Load existing support tickets from localStorage
+    let tickets = [];
+    try {
+        const raw = localStorage.getItem('spmo_supportTickets');
+        if (raw) tickets = JSON.parse(raw) || [];
+    } catch (e) { tickets = []; }
+
+    const ticketRows = tickets.map(t => `
+        <tr>
+            <td style="font-weight:600;color:#111827;">${escapeHtml(t.name)}</td>
+            <td>${escapeHtml(t.email)}</td>
+            <td>${escapeHtml(t.message).slice(0, 60)}${t.message.length > 60 ? '…' : ''}</td>
+            <td><span class="badge ${t.status === 'Open' ? 'yellow' : 'green'}" style="font-size:11px;">${t.status}</span></td>
+            <td style="font-size:12px;color:#6b7280;">${t.created}</td>
+        </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;color:#6b7280;">No support tickets yet</td></tr>';
+
+    return `
+        <div class="page-header">
+            <div class="page-header-content">
+                <div>
+                    <h1 class="page-title">
+                        <i data-lucide="life-buoy" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;"></i>
+                        Support Tickets
+                    </h1>
+                    <p class="page-subtitle">Review submitted support tickets</p>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="btn-secondary" onclick="refreshSupportTickets()" aria-label="Refresh tickets" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;font-size:13px;font-weight:600;line-height:1;border-radius:8px;">
+                        <i data-lucide="refresh-cw" style="width:16px;height:16px;margin:-1px 0 0 0;"></i>
+                        <span style="pointer-events:none;">Refresh</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-content" id="support-page">
+            <div class="card" style="margin-top:0;">
+                <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+                    <h3 class="card-title" style="margin:0;display:flex;align-items:center;gap:8px;">
+                        <i data-lucide="list" style="width:18px;height:18px;color:#111827;"></i>
+                        Submitted Tickets
+                    </h3>
+                    <div style="font-size:12px;color:#6b7280;">${tickets.length} total</div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="table" style="min-width:760px;">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Message</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody id="support-ticket-body">${ticketRows}</tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Escape helper
+function escapeHtml(str) {
+    return (str || '').replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c] || c));
+}
+
+// Refresh tickets list (re-render only tickets table body without full page reload)
+function refreshSupportTickets() {
+    if (AppState.currentPage !== 'support') return;
+    let tickets = []; try { const raw = localStorage.getItem('spmo_supportTickets'); if (raw) tickets = JSON.parse(raw) || [] } catch (e) { tickets = []; }
+    const body = document.getElementById('support-ticket-body');
+    if (!body) return;
+    body.innerHTML = tickets.map(t => `<tr><td style=\"font-weight:600;color:#111827;\">${escapeHtml(t.name)}</td><td>${escapeHtml(t.email)}</td><td>${escapeHtml(t.message).slice(0, 60)}${t.message.length > 60 ? '…' : ''}</td><td><span class=\"badge ${t.status === 'Open' ? 'yellow' : 'green'}\" style=\"font-size:11px;\">${t.status}</span></td><td style=\"font-size:12px;color:#6b7280;\">${t.created}</td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;color:#6b7280;">No support tickets yet</td></tr>';
+}
+window.refreshSupportTickets = refreshSupportTickets;
+
+// Extend initializePageEvents to wire support page events
+const _origInitPageEvents_forSupport = initializePageEvents;
+initializePageEvents = function (pageId) {
+    _origInitPageEvents_forSupport(pageId);
+    if (pageId === 'support') {
+        // Simply refresh tickets; submission form removed.
+        refreshSupportTickets();
+    }
+};
 
 // Edit About Us Modal
 function editAboutUs() {
@@ -6472,12 +6875,13 @@ function closeProductModal() {
 
 function saveProduct(productId) {
     const modal = document.getElementById('product-modal');
-    const name = modal.querySelector('input[type="text"]').value.trim();
-    const category = modal.querySelector('select.form-select').value;
-    const description = modal.querySelector('textarea').value.trim();
-    const unitCost = parseFloat(modal.querySelector('input[type="number"]').value) || 0;
-    const quantity = parseInt(modal.querySelectorAll('input[type="number"]')[1].value) || 0;
-    const date = modal.querySelector('input[type="date"]').value || new Date().toISOString().slice(0, 10);
+    const name = modal.querySelector('#productName').value.trim();
+    const category = modal.querySelector('#productCategory').value;
+    const description = modal.querySelector('#productDescription').value.trim();
+    const unitCost = parseFloat(modal.querySelector('#productUnitCost').value) || 0;
+    const quantity = parseInt(modal.querySelector('#productQuantity').value) || 0;
+    const unit = modal.querySelector('#productUnit') ? modal.querySelector('#productUnit').value.trim() : '';
+    const date = modal.querySelector('#productDate').value || new Date().toISOString().slice(0, 10);
 
     if (!name) { showAlert('Product name is required', 'error'); return; }
 
@@ -6490,8 +6894,9 @@ function saveProduct(productId) {
         const padded = String(nextIndex).padStart(3, '0');
         const newId = `${prefix}${padded}`;
 
-        const newProduct = { id: newId, name, description, quantity, unitCost, totalValue, date, type: category };
+        const newProduct = { id: newId, name, description, quantity, unitCost, totalValue, date, type: category, unit };
         MockData.products.push(newProduct);
+        persistProducts();
         showAlert(`Product "${name}" (${newId}) added successfully!`, 'success');
     } else {
         const existing = MockData.products.find(p => p.id === productId);
@@ -6503,6 +6908,8 @@ function saveProduct(productId) {
             existing.totalValue = totalValue;
             existing.date = date;
             existing.type = category;
+            existing.unit = unit;
+            persistProducts();
             showAlert(`Product "${name}" updated successfully!`, 'success');
         }
     }
@@ -6521,6 +6928,7 @@ async function deleteProduct(productId) {
 
     // Delete the product
     MockData.products = MockData.products.filter(p => p.id !== productId);
+    persistProducts();
 
     // Show success toast
     showAlert(`${productName} has been successfully deleted`, 'success');
@@ -6649,6 +7057,23 @@ function generateProductModal(mode = 'create', productData = null) {
                 </div>
 
                 <div class="grid-2">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
+                            <i data-lucide="ruler" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                            Unit
+                        </label>
+                        <input type="text" class="form-input" id="productUnit"
+                               value="${productData?.unit || ''}"
+                               placeholder="e.g., pcs, box, pack"
+                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                               ${isReadOnly ? 'readonly' : ''}>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <!-- spacer / could add future field -->
+                    </div>
+                </div>
+                <div class="grid-2">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
                             <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
@@ -6691,7 +7116,7 @@ function generateProductModal(mode = 'create', productData = null) {
         </div>
 
         <div class="modal-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 24px; display: flex; gap: 12px; justify-content: flex-end;">
-            <button class="btn-secondary" onclick="closeProductModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
+            <button class="btn btn-secondary" onclick="closeProductModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
                 <i data-lucide="${isReadOnly ? 'x' : 'arrow-left'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
                 ${isReadOnly ? 'Close' : 'Cancel'}
             </button>
@@ -6823,7 +7248,7 @@ function generateCategoryModal(mode = 'create', categoryData = null) {
         </div>
 
         <div class="modal-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 24px; display: flex; gap: 12px; justify-content: flex-end;">
-            <button class="btn-secondary" onclick="closeCategoryModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
+            <button class="btn btn-secondary" onclick="closeCategoryModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
                 <i data-lucide="${isReadOnly ? 'x' : 'arrow-left'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
                 ${isReadOnly ? 'Close' : 'Cancel'}
             </button>
@@ -6919,6 +7344,18 @@ function openStockInModal(mode = 'create', stockId = null) {
         const qtyInput = document.getElementById('qty-input');
         const ucInput = document.getElementById('uc-input');
         const totalInput = document.getElementById('total-input');
+        const skuInput = document.getElementById('sku-input');
+        const productInput = document.getElementById('product-input');
+        const currentStockBadgeId = 'current-stock-badge';
+
+        // Insert a live current stock badge below product name if not exists
+        if (!document.getElementById(currentStockBadgeId)) {
+            const badge = document.createElement('div');
+            badge.id = currentStockBadgeId;
+            badge.style.cssText = 'margin-top:6px;font-size:12px;color:#6b7280;font-weight:500;display:flex;align-items:center;gap:6px;';
+            productInput.parentElement.appendChild(badge);
+        }
+        const stockBadge = document.getElementById(currentStockBadgeId);
 
         function updateTotal() {
             const q = parseFloat(qtyInput.value) || 0;
@@ -6929,6 +7366,35 @@ function openStockInModal(mode = 'create', stockId = null) {
         qtyInput.addEventListener('input', updateTotal);
         ucInput.addEventListener('input', updateTotal);
         updateTotal();
+
+        function autoFillFromSku() {
+            const raw = skuInput.value.trim();
+            if (!raw) {
+                productInput.removeAttribute('readonly');
+                stockBadge.textContent = '';
+                return;
+            }
+            const prod = (MockData.products || []).find(p => p.id.toLowerCase() === raw.toLowerCase());
+            if (prod) {
+                productInput.value = prod.name;
+                // If existing product and unit cost empty or zero, default to product's unitCost (if present)
+                if (!ucInput.value || parseFloat(ucInput.value) === 0) {
+                    if (typeof prod.unitCost === 'number') ucInput.value = prod.unitCost.toFixed(2);
+                }
+                productInput.setAttribute('readonly', 'readonly');
+                stockBadge.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;background:#f3f4f6;padding:4px 8px;border-radius:12px;">Current Stock: <strong>${prod.quantity}</strong></span>`;
+                updateTotal();
+            } else {
+                productInput.removeAttribute('readonly');
+                stockBadge.textContent = 'SKU not found in products list';
+            }
+        }
+        skuInput.addEventListener('blur', autoFillFromSku);
+        skuInput.addEventListener('input', function () {
+            // Only trigger when user typed a plausible code pattern (letters+digits length>=2)
+            if (skuInput.value.trim().length >= 2) autoFillFromSku();
+        });
+        autoFillFromSku();
     }
 }
 
@@ -7093,7 +7559,7 @@ function generateStockInModal(mode = 'create', stockData = null) {
         </div>
 
         <div class="modal-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 24px; display: flex; gap: 12px; justify-content: flex-end;">
-            <button class="btn-secondary" onclick="closeStockInModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
+            <button class="btn btn-secondary" onclick="closeStockInModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
                 <i data-lucide="${isReadOnly ? 'x' : 'arrow-left'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
                 ${isReadOnly ? 'Close' : 'Cancel'}
             </button>
@@ -7136,20 +7602,26 @@ function saveStockIn(stockId) {
     if (stockId) {
         const index = stockInData.findIndex(r => r.id === stockId);
         if (index !== -1) {
+            const oldRecord = { ...stockInData[index] };
             newRecord.transactionId = stockInData[index].transactionId;
             stockInData[index] = newRecord;
-            showAlert(`Stock In record ${newRecord.transactionId} updated successfully!`, 'success');
+            adjustInventoryOnStockIn(newRecord, oldRecord);
+            showAlert(`Stock In record ${newRecord.transactionId} updated & inventory adjusted`, 'success');
         }
     } else {
         newRecord.transactionId = generateTransactionId();
         stockInData.push(newRecord);
-        showAlert(`New Stock In record ${newRecord.transactionId} added successfully!`, 'success');
+        adjustInventoryOnStockIn(newRecord, null);
+        showAlert(`New Stock In record ${newRecord.transactionId} added & inventory updated`, 'success');
     }
+
+    persistStockIn();
 
     console.log("Saving stock-in record:", newRecord);
 
     closeStockInModal();
     loadPageContent('stock-in'); // refresh stock-in page
+    refreshProductsViewIfOpen();
 }
 
 async function deleteStockIn(id) {
@@ -7160,18 +7632,20 @@ async function deleteStockIn(id) {
     const record = stockInData.find(r => r.id === id);
     const recordInfo = record ? `${record.productName} (${record.transactionId})` : 'Stock In record';
 
-    // Delete the record
+    // Delete the record & restore inventory (reverse addition)
+    if (record) restoreInventoryFromDeletedStockIn(record);
     stockInData = stockInData.filter(r => r.id !== id);
+    persistStockIn();
 
-    // Show success toast
-    showAlert(`${recordInfo} has been successfully deleted`, 'success');
+    showAlert(`${recordInfo} deleted & inventory adjusted`, 'success');
 
     // Reload the page
     loadPageContent('stock-in');
+    refreshProductsViewIfOpen();
 }
 
 function renderStockInRows() {
-    if (!stockInData || stockInData.length === 0) return '<tr><td colspan="10">No records found</td></tr>';
+    if (!stockInData || stockInData.length === 0) return '<tr><td colspan="10" style="text-align:center; padding:32px 12px; color:#6b7280; font-size:14px; font-style:italic;">No records found</td></tr>';
     return stockInData.map((r, i) => renderStockInRow(r, i)).join('');
 }
 
@@ -7233,6 +7707,18 @@ function openStockOutModal(mode = 'create', stockId = null) {
         const qty = modal.querySelector('#so-qty');
         const uc = modal.querySelector('#so-uc');
         const total = modal.querySelector('#so-total');
+        const skuInput = modal.querySelector('#so-sku');
+        const productInput = modal.querySelector('#so-product');
+
+        // Add a current stock badge under product input
+        const badgeId = 'so-current-stock-badge';
+        if (productInput && !document.getElementById(badgeId)) {
+            const badge = document.createElement('div');
+            badge.id = badgeId;
+            badge.style.cssText = 'margin-top:6px;font-size:12px;color:#6b7280;font-weight:500;display:flex;align-items:center;gap:6px;';
+            productInput.parentElement.appendChild(badge);
+        }
+        const stockBadge = document.getElementById(badgeId);
 
         function updateTotal() {
             const q = parseFloat(qty.value) || 0;
@@ -7244,6 +7730,46 @@ function openStockOutModal(mode = 'create', stockId = null) {
             qty.addEventListener('input', updateTotal);
             uc.addEventListener('input', updateTotal);
             updateTotal();
+        }
+
+        function autoFillFromSku() {
+            if (!skuInput) return;
+            const raw = skuInput.value.trim();
+            if (!raw) {
+                productInput && productInput.removeAttribute('readonly');
+                if (stockBadge) stockBadge.textContent = '';
+                return;
+            }
+            const prod = (MockData.products || []).find(p => p.id.toLowerCase() === raw.toLowerCase());
+            if (prod) {
+                if (productInput) {
+                    productInput.value = prod.name;
+                    productInput.setAttribute('readonly', 'readonly');
+                }
+                if (uc && (!uc.value || parseFloat(uc.value) === 0)) {
+                    if (typeof prod.unitCost === 'number') uc.value = prod.unitCost.toFixed(2);
+                }
+                if (stockBadge) {
+                    stockBadge.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;background:#eef2ff;padding:4px 8px;border-radius:12px;">Available: <strong>${prod.quantity}</strong></span>`;
+                }
+                // Prevent entering quantity greater than available
+                if (qty) {
+                    qty.setAttribute('max', prod.quantity);
+                    if (parseInt(qty.value) > prod.quantity) qty.value = prod.quantity;
+                }
+                updateTotal();
+            } else {
+                if (productInput) productInput.removeAttribute('readonly');
+                if (stockBadge) stockBadge.textContent = 'SKU not found in products list';
+                if (qty) qty.removeAttribute('max');
+            }
+        }
+        if (skuInput) {
+            skuInput.addEventListener('blur', autoFillFromSku);
+            skuInput.addEventListener('input', () => {
+                if (skuInput.value.trim().length >= 2) autoFillFromSku();
+            });
+            autoFillFromSku();
         }
     }
 }
@@ -7433,7 +7959,7 @@ function generateStockOutModal(mode = 'create', stockData = null) {
         </div>
 
         <div class="modal-footer" style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 20px 24px; display: flex; gap: 12px; justify-content: flex-end;">
-            <button class="btn-secondary" onclick="closeStockOutModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
+            <button class="btn btn-secondary" onclick="closeStockOutModal()" style="padding: 10px 24px; font-weight: 500; border: 2px solid #d1d5db; transition: all 0.2s;">
                 <i data-lucide="${isReadOnly ? 'x' : 'arrow-left'}" style="width: 16px; height: 16px; margin-right: 6px;"></i>
                 ${isReadOnly ? 'Close' : 'Cancel'}
             </button>
@@ -7475,19 +8001,46 @@ function saveStockOut(stockId) {
         status
     };
 
+    // Inventory validation & adjustment
+    const product = findProductBySku(record.sku);
+    if (!product) {
+        showAlert('Product not found in inventory list for this SKU.', 'error');
+        return;
+    }
     if (stockId) {
         const idx = stockOutData.findIndex(s => s.id === stockId);
         if (idx !== -1) {
+            const oldRecord = { ...stockOutData[idx] };
+            const prevIssued = Number(oldRecord.quantity) || 0;
+            const newIssued = Number(record.quantity) || 0;
+            const delta = newIssued - prevIssued; // additional quantity to subtract
+            if (delta > 0 && product.quantity < delta) {
+                showAlert('Insufficient stock for the additional quantity.', 'error');
+                return;
+            }
             stockOutData[idx] = record;
-            showAlert(`Stock Out record ${record.issueId} updated successfully!`, 'success');
+            adjustInventoryOnStockOut(record, oldRecord);
+            showAlert(`Stock Out record ${record.issueId} updated & inventory adjusted`, 'success');
         } else {
+            if (product.quantity < record.quantity) {
+                showAlert('Insufficient stock for this issuance.', 'error');
+                return;
+            }
             stockOutData.push(record);
-            showAlert(`New Stock Out record ${record.issueId} added successfully!`, 'success');
+            adjustInventoryOnStockOut(record, null);
+            showAlert(`New Stock Out record ${record.issueId} added & inventory updated`, 'success');
         }
     } else {
+        if (product.quantity < record.quantity) {
+            showAlert('Insufficient stock for this issuance.', 'error');
+            return;
+        }
         stockOutData.push(record);
-        showAlert(`New Stock Out record ${record.issueId} added successfully!`, 'success');
+        adjustInventoryOnStockOut(record, null);
+        showAlert(`New Stock Out record ${record.issueId} added & inventory updated`, 'success');
     }
+
+    persistStockOut();
 
     // Update DOM if Stock Out table is present to avoid full page reload
     const tbody = document.getElementById('stock-out-table-body');
@@ -7507,16 +8060,14 @@ function saveStockOut(stockId) {
         loadPageContent('stock-out');
     }
     closeStockOutModal();
+    refreshProductsViewIfOpen();
 }
 
 // In-memory stock-out records (initialize from MockData if available)
-var stockOutData = (window.MockData && Array.isArray(window.MockData.stockOut)) ? window.MockData.stockOut.slice() : [
-    // sample entry kept minimal
-    { id: generateUniqueId(), issueId: 'SO-2025-001', date: '2025-01-16', productName: 'Ballpoint Pen', sku: 'E002', quantity: 50, unitCost: 15.0, totalCost: 750.0, department: 'Administration', issuedTo: 'Jane Smith', issuedBy: 'John Doe', status: 'Completed' }
-];
+var stockOutData = (window.MockData && Array.isArray(window.MockData.stockOut)) ? window.MockData.stockOut.slice() : [];
 
 function renderStockOutRows() {
-    if (!stockOutData || stockOutData.length === 0) return '<tr><td colspan="12">No records found</td></tr>';
+    if (!stockOutData || stockOutData.length === 0) return '<tr><td colspan="12" style="text-align:center; padding:32px 12px; color:#6b7280; font-size:14px; font-style:italic;">No records found</td></tr>';
     return stockOutData.map(s => renderStockOutRow(s)).join('');
 }
 
@@ -7561,6 +8112,7 @@ async function deleteStockOut(id) {
 
     // Delete the record
     stockOutData = stockOutData.filter(s => s.id !== id);
+    persistStockOut();
 
     // Show success toast
     showAlert(`${recordInfo} has been successfully deleted`, 'success');

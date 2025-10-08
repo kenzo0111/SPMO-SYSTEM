@@ -153,28 +153,80 @@
             }
         }
 
-        // Form submission
-        document.querySelector('.support-form').addEventListener('submit', (e) => {
+        // Form submission -> persist ticket so it appears in Dashboard Support page
+        const supportForm = document.querySelector('.support-form');
+        supportForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            const nameEl = document.getElementById('name');
+            const emailEl = document.getElementById('email');
+            const msgEl = document.getElementById('message');
+            const filesEl = document.getElementById('screenshot');
 
-            // Show success message (you can replace this with actual form submission)
+            const name = (nameEl.value || '').trim();
+            const email = (emailEl.value || '').trim();
+            const message = (msgEl.value || '').trim();
+            if (!name || !email || !message) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            // Build ticket object to mirror dashboard support page expectations
+            let tickets = [];
+            try {
+                const raw = localStorage.getItem('spmo_supportTickets');
+                if (raw) tickets = JSON.parse(raw) || [];
+            } catch (err) {
+                tickets = [];
+            }
+
+            const attachments = [];
+            if (filesEl && filesEl.files && filesEl.files.length) {
+                for (let i = 0; i < filesEl.files.length; i++) {
+                    const f = filesEl.files[i];
+                    attachments.push({ name: f.name, size: f.size, type: f.type });
+                }
+            }
+
+            const ticket = {
+                id: 'T' + Date.now(),
+                name,
+                email,
+                message,
+                status: 'Open',
+                created: new Date().toLocaleString(),
+                attachments
+            };
+
+            tickets.unshift(ticket);
+            // Optional: cap list length
+            if (tickets.length > 300) tickets = tickets.slice(0, 300);
+            localStorage.setItem('spmo_supportTickets', JSON.stringify(tickets));
+
             const submitBtn = document.querySelector('.submit-btn');
             const originalText = submitBtn.innerHTML;
-
             submitBtn.innerHTML = '<span class="btn-text">Sending...</span>';
             submitBtn.disabled = true;
 
             setTimeout(() => {
-                submitBtn.innerHTML = '<span class="btn-text">Message Sent!</span><span class="btn-icon">✅</span>';
-
+                submitBtn.innerHTML = '<span class="btn-text">Ticket Submitted!</span><span class="btn-icon">✅</span>';
                 setTimeout(() => {
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;
-                    document.querySelector('.support-form').reset();
+                    supportForm.reset();
                     document.querySelector('.upload-primary').textContent = 'Drop files here or click to browse';
-                }, 2000);
-            }, 1500);
+                }, 1500);
+            }, 900);
         });
+
+        // Pre-fill name/email from session if available
+        try {
+            const sessionRaw = localStorage.getItem('userSession');
+            if (sessionRaw) {
+                const session = JSON.parse(sessionRaw);
+                if (session.name) document.getElementById('name').value = session.name;
+                if (session.email) document.getElementById('email').value = session.email;
+            }
+        } catch (_) { }
     </script>
 </body>
 

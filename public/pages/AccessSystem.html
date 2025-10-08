@@ -6,6 +6,129 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SPMO Access System</title>
   <link rel="stylesheet" href="../assets/css/AccessSystem.css" />
+  <style>
+    /* Inline styles for dialogs (centered) */
+    dialog.loading-dialog,
+    dialog.success-dialog,
+    dialog.login-dialog {
+      border: none;
+      border-radius: 14px;
+      padding: 32px 40px;
+      box-shadow: 0 10px 40px -5px rgba(0, 0, 0, .25);
+      font-family: system-ui, sans-serif;
+    }
+
+    /* Force centering for all dialogs when open */
+    dialog[open] {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      max-width: 460px;
+      width: calc(100% - 40px);
+    }
+
+    dialog.loading-dialog {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      align-items: center;
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 58px;
+      height: 58px;
+      border: 5px solid #e5e7eb;
+      border-top-color: #dc2626;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-text {
+      font-size: 15px;
+      font-weight: 500;
+      color: #374151;
+      letter-spacing: .3px;
+    }
+
+    dialog.success-dialog {
+      text-align: center;
+    }
+
+    .success-icon {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: #16a34a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      box-shadow: 0 4px 12px rgba(22, 163, 74, .4);
+    }
+
+    .success-icon svg {
+      width: 38px;
+      height: 38px;
+      color: #fff;
+    }
+
+    dialog.success-dialog h3 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    dialog.success-dialog p {
+      margin: 0 0 20px;
+      color: #4b5563;
+      font-size: 14px;
+    }
+
+    dialog.success-dialog menu {
+      display: flex;
+      justify-content: center;
+      padding: 0;
+      margin: 0;
+    }
+
+    .primary-btn {
+      background: #dc2626;
+      color: #fff;
+      border: none;
+      padding: 10px 26px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: .5px;
+      box-shadow: 0 4px 14px -2px rgba(220, 38, 38, .5);
+      transition: background .25s, transform .25s;
+    }
+
+    .primary-btn:hover {
+      background: #b91c1c;
+    }
+
+    .primary-btn:active {
+      transform: translateY(1px);
+    }
+
+    dialog::backdrop {
+      background: rgba(17, 24, 39, .55);
+      -webkit-backdrop-filter: blur(3px);
+      backdrop-filter: blur(3px);
+    }
+  </style>
 </head>
 
 <body>
@@ -31,8 +154,8 @@
 
         <form class="login-card" onsubmit="handleLogin(event)">
           <div class="login-header">
-            <h2>Welcome Back</h2>
-            <div class="login-subtitle">Sign in to access your account</div>
+            <h2 id="welcomeHeading">Welcome</h2>
+            <div class="login-subtitle" id="welcomeSub">Sign in to access your account</div>
           </div>
 
           <div class="form-group">
@@ -85,6 +208,36 @@
       } catch (e) { alert(message); }
     }
 
+    // Determine if user is returning (has a prior login log)
+    function isReturningUser(email) {
+      if (!email) return false;
+      try {
+        const logsRaw = localStorage.getItem('spmo_userLogs');
+        if (!logsRaw) return false;
+        const logs = JSON.parse(logsRaw);
+        return Array.isArray(logs) && logs.some(l => (l.email || '').toLowerCase() === email.toLowerCase() && l.action === 'Login');
+      } catch (e) { return false; }
+    }
+
+    // Update welcome heading dynamically
+    const welcomeHeading = document.getElementById('welcomeHeading');
+    const welcomeSub = document.getElementById('welcomeSub');
+    function updateWelcomeHeading() {
+      const emailVal = (emailInput.value || '').trim().toLowerCase();
+      if (!emailVal) {
+        welcomeHeading.textContent = 'Welcome';
+        welcomeSub.textContent = 'Sign in to access your account';
+        return;
+      }
+      if (isReturningUser(emailVal)) {
+        welcomeHeading.textContent = 'Welcome Back';
+        welcomeSub.textContent = 'Good to see you again';
+      } else {
+        welcomeHeading.textContent = 'Welcome';
+        welcomeSub.textContent = 'Let\'s get you started';
+      }
+    }
+
     // OTP / PIN behavior (Updated for new class names)
     const otpInputs = Array.from(document.querySelectorAll('.otp-container input'));
     const hiddenPin = document.getElementById('hiddenPin');
@@ -129,6 +282,9 @@
         return; // Stop the login process
       }
 
+      // Update heading in case email just completed
+      updateWelcomeHeading();
+
       // --- In a real application, you would send userEmail and userPin to a server here ---
       // Show a modal dialog that confirms the attempted login instead of logging to the console
       showLoginDialog(userEmail, userPin);
@@ -157,6 +313,30 @@
     </form>
   </dialog>
 
+  <!-- Loading dialog (modal, non-dismissible) -->
+  <dialog id="loadingDialog" class="loading-dialog" aria-live="assertive" aria-label="Authenticating" data-no-close>
+    <div class="loading-spinner" role="status" aria-label="Loading"></div>
+    <div class="loading-text">Authenticating your credentials...</div>
+  </dialog>
+
+  <!-- Success dialog -->
+  <dialog id="successDialog" class="success-dialog" aria-live="polite" aria-label="Login Successful">
+    <form method="dialog">
+      <div class="success-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+      </div>
+      <h3>Signed In</h3>
+      <p id="successText">Welcome back! Redirecting to your dashboard.</p>
+      <menu>
+        <button id="successContinue" class="primary-btn" value="ok" type="submit">Continue</button>
+      </menu>
+    </form>
+  </dialog>
+
   <script>
     // Mask the PIN for display (show only last 2 digits)
     function maskPin(pin) {
@@ -165,28 +345,19 @@
       return '*'.repeat(pin.length - 2) + pin.slice(-2);
     }
 
-    // User Login Logging Function
-    // Update user status in MockData
+    // Update user status in MockData (localStorage only for this standalone page)
     function updateUserStatus(email, status) {
       try {
-        // Get or initialize users from localStorage
         let users = [];
         try {
           const stored = localStorage.getItem('mockDataUsers');
-          if (stored) {
-            users = JSON.parse(stored);
-          }
+          if (stored) users = JSON.parse(stored);
         } catch (e) {
           console.warn('Could not load existing users:', e);
         }
-
-        // Find user by email and update status
         const user = users.find(u => u.email === email);
         if (user) {
           user.status = status;
-          console.log(`User ${email} status updated to ${status}`);
-
-          // Save updated users to localStorage
           localStorage.setItem('mockDataUsers', JSON.stringify(users));
         }
       } catch (error) {
@@ -265,42 +436,60 @@
       const text = document.getElementById('dialogText');
       const masked = maskPin(pin);
       text.textContent = `Sign in as ${email} with PIN ${masked}?`;
-
       if (typeof dialog.showModal === 'function') {
         dialog.showModal();
-        // Wire buttons
-        const confirm = document.getElementById('confirmBtn');
-        const cancel = document.getElementById('cancelBtn');
-
-        function onClose(e) {
-          // value is provided by <menu> button values
+        function onClose() {
           const val = dialog.returnValue;
           dialog.removeEventListener('close', onClose);
           if (val === 'confirm') {
-            // Save user session data
-            saveUserSession(email);
-            // Log user login before proceeding to dashboard
-            logUserLogin(email);
-            // proceed to dashboard
-            window.location.href = 'admin/dashboard.html';
+            startAuthentication(email);
           } else {
-            // allow user to edit PIN/email
             otpInputs[0].focus();
           }
         }
-
         dialog.addEventListener('close', onClose);
       } else {
-        // Fallback: use confirm() dialog
         const ok = confirm(`Sign in as ${email} with PIN ${masked}?`);
-        if (ok) {
-          saveUserSession(email);
-          logUserLogin(email);
-          window.location.href = 'admin/dashboard.html';
-        }
-        else otpInputs[0].focus();
+        if (ok) startAuthentication(email, true); else otpInputs[0].focus();
       }
     }
+
+    // Authentication workflow with loading & success dialogs
+    function startAuthentication(email, fallback = false) {
+      const loading = document.getElementById('loadingDialog');
+      const success = document.getElementById('successDialog');
+      const proceed = () => {
+        try { saveUserSession(email); logUserLogin(email); } catch (e) { console.error(e); }
+        if (loading && loading.open) loading.close();
+        if (!fallback && success && typeof success.showModal === 'function') {
+          const successText = document.getElementById('successText');
+          if (successText) {
+            successText.textContent = isReturningUser(email) ? 'Welcome back! Redirecting to your dashboard.' : 'Welcome! Redirecting to your dashboard.';
+          }
+          success.showModal();
+          setTimeout(() => { if (success.open) { success.close(); redirectToDashboard(); } }, 1800);
+        } else {
+          alert((isReturningUser(email) ? 'Welcome back' : 'Welcome') + '! Redirecting to dashboard...');
+          redirectToDashboard();
+        }
+      };
+      if (!fallback && loading && typeof loading.showModal === 'function') {
+        loading.showModal();
+        loading.addEventListener('cancel', ev => ev.preventDefault());
+      }
+      setTimeout(proceed, 1200); // simulate async auth request
+    }
+
+    function redirectToDashboard() { window.location.href = 'admin/dashboard.html'; }
+
+    // Success dialog close -> redirect safeguard
+    (function attachSuccessHandler() {
+      const success = document.getElementById('successDialog');
+      if (!success) return;
+      success.addEventListener('close', () => {
+        if (window.location.pathname.endsWith('AccessSystem.html')) redirectToDashboard();
+      });
+    })();
 
     // Save user session to localStorage
     function saveUserSession(email) {
@@ -360,6 +549,13 @@
         alert(message);
       }
     }
+
+    // Attach dynamic heading listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      updateWelcomeHeading();
+      emailInput.addEventListener('input', updateWelcomeHeading);
+      emailInput.addEventListener('blur', updateWelcomeHeading);
+    });
   </script>
 </body>
 

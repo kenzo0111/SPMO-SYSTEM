@@ -1067,6 +1067,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px; /* improve breathing room */
 }
 
 .metric-info h3 {
@@ -1106,13 +1107,27 @@ body {
     color: #ea580c;
 }
 
+/* Metric Icon container (reduced size for better text emphasis) */
 .metric-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    margin-left: 4px; /* slight inset from edge when on right */
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 3px 6px rgba(0,0,0,0.05), 0 0 0 2px rgba(255,255,255,0.9);
+    transition: box-shadow 0.25s ease, transform 0.25s ease, background-color 0.25s ease;
+}
+
+/* Slight lift on card hover for extra depth */
+@media (hover:hover) {
+    .metric-card:hover .metric-icon {
+            box-shadow: 0 3px 8px rgba(0,0,0,0.07), 0 6px 14px rgba(0,0,0,0.05), 0 0 0 2px rgba(255,255,255,0.95);
+            transform: translateY(-2px);
+    }
 }
 
 .metric-icon.blue {
@@ -1122,6 +1137,25 @@ body {
 .metric-icon.blue .icon {
     color: #2563eb;
 }
+
+/* --- Metric Icon Fix: ensure Lucide SVGs get correct size & color --- */
+/* Lucide replaces <i data-lucide> with <svg>, so rules scoped to .icon may stop applying */
+.metric-icon { line-height: 0; }
+.metric-icon svg { /* fallback when <i> becomes <svg> */
+    width: 20px;
+    height: 20px;
+    stroke-width: 1.8;
+    stroke: currentColor;
+}
+/* Set color on the container so svg (stroke: currentColor) adopts it */
+.metric-icon.blue { color: #2563eb; }
+.metric-icon.red { color: #dc2626; }
+.metric-icon.orange { color: #ea580c; }
+.metric-icon.green { color: #16a34a; }
+.metric-icon.yellow { color: #d97706; }
+.metric-icon.purple { color: #7c3aed; }
+.metric-icon.indigo { color: #4f46e5; }
+/* ------------------------------------------------------------------ */
 
 .metric-icon.red {
     background-color: #fecaca;
@@ -1171,9 +1205,22 @@ body {
     color: #4f46e5;
 }
 
-.metric-icon .icon {
-    width: 24px;
-    height: 24px;
+.metric-icon .icon { /* if <i> not yet replaced by Lucide */
+        width: 20px;
+        height: 20px;
+}
+
+/* Improve wrapping & layout resilience */
+.metric-info { flex: 1 1 auto; min-width: 0; }
+.metric-info .value { overflow-wrap: anywhere; }
+.metric-info .change { color: #4b5563; }
+
+/* Compact variant for small screens */
+@media (max-width: 640px) {
+    .metric-card { padding: 18px 16px; }
+    .metric-info .value { font-size: 20px; }
+    .metric-icon { width: 36px; height: 36px; }
+    .metric-icon svg, .metric-icon .icon { width: 18px; height: 18px; }
 }
 
 /* Quick Actions & Recent Activity */
@@ -1728,6 +1775,10 @@ body {
     font-weight: 450; /* Semi-bold text */
     cursor: pointer;
     transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .modal-close {
@@ -2949,6 +3000,25 @@ textarea:focus {
     border-radius: 6px;
 }
 
+/* Sticky header support for tables with scrolling tbody (e.g., Login Activity) */
+table.sticky-header thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #ffffff;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+}
+
+/* Optional subtle divider under sticky header */
+table.sticky-header thead tr th { box-shadow: 0 1px 0 #e5e7eb; }
+
+/* Narrow custom scrollbar for inner scroll wrapper (uses parent container overflow) */
+.login-activity-scroll::-webkit-scrollbar { width: 8px; }
+.login-activity-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+.login-activity-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.login-activity-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
 .btn-secondary {
     background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
     border: 1px solid #d1d5db;
@@ -3091,4 +3161,8 @@ textarea:focus {
         max-width: none;
     }
 }
+
+/* Global modal helpers */
+#global-modal-root { position: relative; z-index: 1999; }
+body.modal-open { overflow: hidden; }
 
