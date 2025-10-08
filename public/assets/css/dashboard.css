@@ -719,6 +719,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    padding-right: 8px;
 }
 
 .status-header .actions {

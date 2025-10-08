@@ -4787,7 +4787,9 @@ function generateAboutPage() {
         vision: 'To be the leading digital solution for educational institutions, setting the standard for efficient resource management, data-driven decision making, and operational excellence.',
         institution: 'Camarines Norte State College - Supply and Property Management Office',
         email: 'cnsc.spmo@.edu.ph',
-        phone: '(054) 440-1134'
+        phone: '(054) 440-1134',
+        heroImage: '',
+        institutionLogo: ''
     };
 
     return `
@@ -4809,8 +4811,9 @@ function generateAboutPage() {
 
         <div class="page-content">
             <!-- Hero Section -->
-            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 48px 32px; text-align: center; border: none;">
+            <div class="card" style="background: ${aboutContent.heroImage ? `linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%), url('${aboutContent.heroImage}') center/cover` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}; color: white; padding: 48px 32px; text-align: center; border: none;">
                 <div style="max-width: 800px; margin: 0 auto;">
+                    ${aboutContent.institutionLogo ? `<img src="${aboutContent.institutionLogo}" alt="Institution Logo" style="width: 100px; height: 100px; object-fit: contain; margin: 0 auto 20px; display: block; background: white; border-radius: 12px; padding: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">` : ''}
                     <h2 id="hero-title" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 700; color: white;">${aboutContent.heroTitle}</h2>
                     <p id="hero-subtitle" style="font-size: 18px; line-height: 1.8; margin: 0; opacity: 0.95;">
                         ${aboutContent.heroSubtitle}
@@ -4893,8 +4896,8 @@ function generateAboutPage() {
 
             <!-- Team Section -->
             <div class="card" style="margin-top: 24px;">
-                <h3 style="margin: 0 0 8px 0; font-size: 24px; color: #111827; text-align: center;">Meet the Team</h3>
-                <p style="text-align: center; color: #6b7280; margin: 0 0 32px 0;">The dedicated professionals behind SPMO System</p>
+                <h3 style="margin: 0 0 8px 0; font-size: 24px; color: #111827; text-align: center;">Meet the Coordinators</h3>
+                <p style="text-align: center; color: #6b7280; margin: 0 0 32px 0;">The dedicated coordinators behind SPMO System</p>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
                     <div style="text-align: center; padding: 24px; background: #f9fafb; border-radius: 12px; border: 2px solid #e5e7eb; transition: all 0.3s;">
@@ -4932,15 +4935,42 @@ function generateAboutPage() {
                 </div>
             </div>
 
+            <!-- Headed by Section -->
+            <div class="card" style="margin-top: 24px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px solid #bae6fd;">
+                <div style="text-align: center; max-width: 700px; margin: 0 auto;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px;">
+                        <div style="width: 48px; height: 48px; background: #0284c7; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="shield-check" style="width: 24px; height: 24px; color: white;"></i>
+                        </div>
+                        <h3 style="margin: 0; font-size: 24px; color: #111827;">Headed by</h3>
+                    </div>
+                    
+                    <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;">
+                            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; color: white; border: 4px solid white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                                SO
+                            </div>
+                            <div style="text-align: left;">
+                                <h4 style="margin: 0 0 4px 0; color: #111827; font-size: 22px; font-weight: 700;">Supply Officer III</h4>
+                                <p style="margin: 0; color: #0284c7; font-weight: 600; font-size: 16px;">Property and Supply Management Office</p>
+                                <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 14px; font-style: italic;">
+                                    Overseeing the strategic management and coordination of SPMO operations
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Contact Section -->
             <div class="card" style="margin-top: 24px; background: #f9fafb; border: 2px solid #e5e7eb;">
                 <div style="text-align: center; max-width: 600px; margin: 0 auto;">
                     <div style="width: 64px; height: 64px; background: #667eea; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
                         <i data-lucide="mail" style="width: 32px; height: 32px; color: white;"></i>
                     </div>
-                    <h3 style="margin: 0 0 8px 0; font-size: 24px; color: #111827;">Get in Touch</h3>
+                    <h3 style="margin: 0 0 8px 0; font-size: 24px; color: #111827;">Contact Information</h3>
                     <p style="margin: 0 0 24px 0; color: #6b7280; line-height: 1.6;">
-                        Have questions or need support? We're here to help!
+                        Get in touch with us for questions or support
                     </p>
                     
                     <div style="display: grid; gap: 16px; text-align: left;">
@@ -4959,7 +4989,7 @@ function generateAboutPage() {
                                 <i data-lucide="mail" style="width: 20px; height: 20px; color: #3b82f6;"></i>
                             </div>
                             <div>
-                                <p style="margin: 0; font-weight: 600; color: #111827; font-size: 14px;">Email</p>
+                                <p style="margin: 0; font-weight: 600; color: #111827; font-size: 14px;">Institutional Email</p>
                                 <p id="email-text" style="margin: 0; color: #6b7280; font-size: 14px;">${aboutContent.email}</p>
                             </div>
                         </div>
@@ -4969,7 +4999,7 @@ function generateAboutPage() {
                                 <i data-lucide="phone" style="width: 20px; height: 20px; color: #10b981;"></i>
                             </div>
                             <div>
-                                <p style="margin: 0; font-weight: 600; color: #111827; font-size: 14px;">Phone</p>
+                                <p style="margin: 0; font-weight: 600; color: #111827; font-size: 14px;">Contact Number</p>
                                 <p id="phone-text" style="margin: 0; color: #6b7280; font-size: 14px;">${aboutContent.phone}</p>
                             </div>
                         </div>
@@ -4996,7 +5026,9 @@ function editAboutUs() {
         vision: 'To be the leading digital solution for educational institutions, setting the standard for efficient resource management, data-driven decision making, and operational excellence.',
         institution: 'Camarines Norte State College - Supply and Property Management Office',
         email: 'cnsc.spmo@.edu.ph',
-        phone: '(054) 440-1134'
+        phone: '(054) 440-1134',
+        heroImage: '',
+        institutionLogo: ''
     };
 
     let modal = document.getElementById('edit-about-modal');
@@ -5019,6 +5051,27 @@ function editAboutUs() {
             </div>
             
             <div style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+                <!-- Images Section -->
+                <div style="padding: 16px; background: #f9fafb; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">Images</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Institution Logo</label>
+                            <input type="file" id="edit-logo-upload" accept="image/*" 
+                                   style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">Upload institution logo (recommended: 200x200px)</p>
+                            ${currentContent.institutionLogo ? `<div style="margin-top: 8px;"><img src="${currentContent.institutionLogo}" style="width: 80px; height: 80px; object-fit: contain; border: 1px solid #e5e7eb; border-radius: 8px; padding: 4px;"><button onclick="removeAboutImage('logo')" class="btn btn-secondary" style="margin-left: 8px; padding: 4px 8px; font-size: 12px;">Remove</button></div>` : ''}
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Hero Background Image</label>
+                            <input type="file" id="edit-hero-upload" accept="image/*" 
+                                   style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">Upload hero background image (recommended: 1920x600px)</p>
+                            ${currentContent.heroImage ? `<div style="margin-top: 8px;"><img src="${currentContent.heroImage}" style="width: 120px; height: 40px; object-fit: cover; border: 1px solid #e5e7eb; border-radius: 4px;"><button onclick="removeAboutImage('hero')" class="btn btn-secondary" style="margin-left: 8px; padding: 4px 8px; font-size: 12px;">Remove</button></div>` : ''}
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Hero Section -->
                 <div style="padding: 16px; background: #f9fafb; border-radius: 8px; border: 2px solid #e5e7eb;">
                     <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">Hero Section</h3>
@@ -5063,12 +5116,12 @@ function editAboutUs() {
                                    style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
                         </div>
                         <div>
-                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Email</label>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Institutional Email</label>
                             <input type="email" id="edit-email" value="${currentContent.email.replace(/"/g, '&quot;')}" 
                                    style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
                         </div>
                         <div>
-                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Phone</label>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Contact Number</label>
                             <input type="tel" id="edit-phone" value="${currentContent.phone.replace(/"/g, '&quot;')}" 
                                    style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
                         </div>
@@ -5116,24 +5169,84 @@ function saveAboutUs() {
         return;
     }
 
-    // Save to AppState
-    AppState.aboutUsContent = {
-        heroTitle,
-        heroSubtitle,
-        mission,
-        vision,
-        institution,
-        email,
-        phone
+    // Handle image uploads
+    const logoFile = document.getElementById('edit-logo-upload').files[0];
+    const heroFile = document.getElementById('edit-hero-upload').files[0];
+
+    // Keep existing images if no new file is uploaded
+    let logoImage = AppState.aboutUsContent?.institutionLogo || '';
+    let heroImage = AppState.aboutUsContent?.heroImage || '';
+
+    const processImages = () => {
+        // Save to AppState
+        AppState.aboutUsContent = {
+            heroTitle,
+            heroSubtitle,
+            mission,
+            vision,
+            institution,
+            email,
+            phone,
+            institutionLogo: logoImage,
+            heroImage: heroImage
+        };
+
+        // Close modal
+        closeEditAboutModal();
+
+        // Reload page to show updated content
+        loadPageContent('about');
+
+        showAlert('About Us content updated successfully!', 'success');
     };
 
-    // Close modal
-    closeEditAboutModal();
+    // Process logo upload if exists
+    if (logoFile) {
+        const logoReader = new FileReader();
+        logoReader.onload = (e) => {
+            logoImage = e.target.result;
 
-    // Reload page to show updated content
-    loadPageContent('about');
+            // Process hero image if exists, otherwise finish
+            if (heroFile) {
+                const heroReader = new FileReader();
+                heroReader.onload = (e) => {
+                    heroImage = e.target.result;
+                    processImages();
+                };
+                heroReader.readAsDataURL(heroFile);
+            } else {
+                processImages();
+            }
+        };
+        logoReader.readAsDataURL(logoFile);
+    } else if (heroFile) {
+        // No logo, but hero image exists
+        const heroReader = new FileReader();
+        heroReader.onload = (e) => {
+            heroImage = e.target.result;
+            processImages();
+        };
+        heroReader.readAsDataURL(heroFile);
+    } else {
+        // No new images
+        processImages();
+    }
+}
 
-    showAlert('About Us content updated successfully!', 'success');
+function removeAboutImage(type) {
+    if (type === 'logo') {
+        if (AppState.aboutUsContent) {
+            AppState.aboutUsContent.institutionLogo = '';
+        }
+    } else if (type === 'hero') {
+        if (AppState.aboutUsContent) {
+            AppState.aboutUsContent.heroImage = '';
+        }
+    }
+
+    // Re-open modal to refresh display
+    editAboutUs();
+    showAlert('Image removed successfully!', 'success');
 }
 
 // -----------------------------//

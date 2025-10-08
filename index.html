@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPMO System - Camarines Norte State College</title>
+    <meta name="description" content="Supply and Property Management Office System for Camarines Norte State College">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #b30000, #000000, #ffd500);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loader {
+            text-align: center;
+            color: white;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        p {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loader">
+        <div class="logo"></div>
+        <h1>SPMO System</h1>
+        <p>Redirecting to homepage...</p>
+    </div>
+
+    <script>
+        // Redirect to the main application
+        setTimeout(() => {
+            window.location.href = './public/index.html';
+        }, 1500);
+    </script>
+</body>
+
+</html>
