@@ -35,7 +35,11 @@ const AppState = {
             quantity: 0,
             currentStock: 0,
             unitCost: 0,
-            amount: 0
+            amount: 0,
+            generateICS: false,
+            generateRIS: false,
+            generatePAR: false,
+            generateIAR: false
         }
     ],
     // Wizard step for multi-step PO creation (1-4)
@@ -91,13 +95,16 @@ const AppState = {
     ],
     // Unified status list (replaces hardcoded table rows in status management)
     statusRequests: [
-        { id: 'REQ-2025-001', requester: 'John Smith', department: 'IT Department', item: 'Laptop Computer', priority: 'high', updatedAt: '2025-01-15', status: 'received', cost: 1200 },
-        { id: 'REQ-2025-005', requester: 'David Brown', department: 'Operations', item: 'Safety Equipment', priority: 'high', updatedAt: '2025-01-16', status: 'received', cost: 400 },
+        { id: 'REQ-2025-001', requester: 'John Smith', department: 'IT Department', item: 'Laptop Computer', priority: 'high', updatedAt: '2025-01-15', status: 'incoming', cost: 1200 },
+        { id: 'REQ-2025-005', requester: 'David Brown', department: 'Operations', item: 'Safety Equipment', priority: 'high', updatedAt: '2025-01-16', status: 'incoming', cost: 400 },
         { id: 'REQ-2025-002', requester: 'Alice Green', department: 'Finance', item: 'Printer', priority: 'medium', updatedAt: '2025-01-10', status: 'finished', cost: 300 },
         { id: 'REQ-2025-003', requester: 'Bob Lee', department: 'HR', item: 'Office Chairs', priority: 'low', updatedAt: '2025-01-12', status: 'cancelled', cost: 500 },
         { id: 'REQ-2025-004', requester: 'Emily Davis', department: 'Marketing', item: 'Projector', priority: 'medium', updatedAt: '2025-01-14', status: 'rejected', cost: 700 }
     ],
-    currentStatusFilter: 'all'
+    currentStatusFilter: 'all',
+
+    // About Us Content
+    aboutUsContent: null
 };
 
 
@@ -196,9 +203,11 @@ function getBadgeClass(status, type = 'status') {
             'approved': 'badge blue',
             'delivered': 'badge green',
             'completed': 'badge emerald',
+            'incoming': 'badge purple',
             'received': 'badge blue',
             'finished': 'badge emerald',
             'cancelled': 'badge red',
+            'returned': 'badge orange',
 
         },
         priority: {
@@ -709,6 +718,9 @@ function loadPageContent(pageId) {
             // Show all statuses
             initStatusManagement('all');
             break;
+        case 'incoming':
+            initStatusManagement('incoming');
+            break;
         case 'received':
             initStatusManagement('received');
             break;
@@ -720,6 +732,9 @@ function loadPageContent(pageId) {
             break;
         case 'rejected':
             initStatusManagement('rejected');
+            break;
+        case 'returned':
+            initStatusManagement('returned');
             break;
         case 'new-request':
             mainContent.innerHTML = generateNewRequestPage();
@@ -2555,9 +2570,9 @@ function renderPurchaseOrderWizardStep(requestData) {
                             <div class="form-group" style="margin-bottom: 16px;">
                                 <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
                                     <i data-lucide="file-text" style="width: 14px; height: 14px; color: #6b7280;"></i>
-                                    P.O. Number
+                                    P.O. Number<span style="color:#dc2626"> *</span>
                                 </label>
-                                <input type="text" class="form-input" id="po-number" placeholder="Auto generated" value="${AppState.purchaseOrderDraft.poNumber || ''}" readonly style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; background: #f9fafb; color: #6b7280;">
+                                <input type="text" class="form-input" id="po-number" placeholder="Enter P.O. number" value="${AppState.purchaseOrderDraft.poNumber || ''}" required style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
                             </div>
                         </div>
                     </div>
@@ -2584,14 +2599,6 @@ function renderPurchaseOrderWizardStep(requestData) {
             </div>
         `;
         footer.innerHTML = footerButtons(true, 'Next');
-        // Pre-fill PO number
-        const poInput = document.getElementById('po-number');
-        if (poInput && !poInput.value) {
-            // generate once and persist in draft
-            const gen = generateNewPONumber();
-            poInput.value = gen;
-            AppState.purchaseOrderDraft.poNumber = gen;
-        }
     }
     else if (step === 2) {
         const departments = [
@@ -2676,12 +2683,20 @@ function renderPurchaseOrderWizardStep(requestData) {
                                     <i data-lucide="calendar-check" style="width: 14px; height: 14px; color: #6b7280;"></i>
                                     Date of Delivery
                                 </label>
-                                <input type="text" class="form-input" id="po-delivery-date" placeholder="e.g. Within 30 days" value="${AppState.purchaseOrderDraft.deliveryDate || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                                <select class="form-select" id="po-delivery-date" onchange="toggleDeliveryDateOther(this)" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                                    <option value="">Select delivery timeframe</option>
+                                    <option value="15 days" ${AppState.purchaseOrderDraft.deliveryDate === '15 days' ? 'selected' : ''}>15 days</option>
+                                    <option value="30 days" ${AppState.purchaseOrderDraft.deliveryDate === '30 days' ? 'selected' : ''}>30 days</option>
+                                    <option value="45 days" ${AppState.purchaseOrderDraft.deliveryDate === '45 days' ? 'selected' : ''}>45 days</option>
+                                    <option value="60 days" ${AppState.purchaseOrderDraft.deliveryDate === '60 days' ? 'selected' : ''}>60 days</option>
+                                    <option value="others" ${!['', '15 days', '30 days', '45 days', '60 days'].includes(AppState.purchaseOrderDraft.deliveryDate || '') ? 'selected' : ''}>Others</option>
+                                </select>
+                                <input type="text" class="form-input" id="po-delivery-date-other" placeholder="Specify delivery timeframe" value="${!['', '15 days', '30 days', '45 days', '60 days'].includes(AppState.purchaseOrderDraft.deliveryDate || '') ? AppState.purchaseOrderDraft.deliveryDate : ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s; margin-top: 8px; display: ${!['', '15 days', '30 days', '45 days', '60 days'].includes(AppState.purchaseOrderDraft.deliveryDate || '') ? 'block' : 'none'};">
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
                                     <i data-lucide="clock" style="width: 14px; height: 14px; color: #6b7280;"></i>
-                                    Delivery Term
+                                    Delivery Status
                                 </label>
                                 <input type="text" class="form-input" id="po-delivery-term" placeholder="e.g. Partial / Complete" value="${AppState.purchaseOrderDraft.deliveryTerm || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
                             </div>
@@ -2732,13 +2747,14 @@ function renderPurchaseOrderWizardStep(requestData) {
                                     <th style="padding: 12px;">Qty</th>
                                     <th style="padding: 12px;">Unit Cost</th>
                                     <th style="padding: 12px;">Amount</th>
+                                    <th style="padding: 12px;">Forms</th>
                                     <th style="padding: 12px;">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="po-items-tbody"></tbody>
                             <tfoot>
                                 <tr style="border-top: 2px solid #e5e7eb; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
-                                    <td colspan="6" style="text-align: right; font-weight: 600; padding: 16px; color: #1e40af;">Grand Total:</td>
+                                    <td colspan="7" style="text-align: right; font-weight: 600; padding: 16px; color: #1e40af;">Grand Total:</td>
                                     <td style="font-weight: 700; color: #2563eb; padding: 16px; font-size: 16px;" id="grand-total">₱0.00</td>
                                     <td style="padding: 16px;"></td>
                                 </tr>
@@ -2798,7 +2814,13 @@ function renderPurchaseOrderWizardStep(requestData) {
                                     <i data-lucide="layers" style="width: 14px; height: 14px; color: #6b7280;"></i>
                                     Fund Cluster
                                 </label>
-                                <input type="text" class="form-input" id="po-fund-cluster" placeholder="e.g. 01" value="${AppState.purchaseOrderDraft.fundCluster || ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                                <select class="form-select" id="po-fund-cluster" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                                    <option value="">Select fund cluster</option>
+                                    <option value="01 - Regular Agency Fund" ${AppState.purchaseOrderDraft.fundCluster === '01 - Regular Agency Fund' ? 'selected' : ''}>01 - Regular Agency Fund</option>
+                                    <option value="05 - Income Generated Fund" ${AppState.purchaseOrderDraft.fundCluster === '05 - Income Generated Fund' ? 'selected' : ''}>05 - Income Generated Fund</option>
+                                    <option value="06 - Business Related Fund" ${AppState.purchaseOrderDraft.fundCluster === '06 - Business Related Fund' ? 'selected' : ''}>06 - Business Related Fund</option>
+                                    <option value="07 - General Appropriations Act (GAA)" ${AppState.purchaseOrderDraft.fundCluster === '07 - General Appropriations Act (GAA)' ? 'selected' : ''}>07 - General Appropriations Act (GAA)</option>
+                                </select>
                             </div>
                             <div class="form-group" style="margin-bottom: 16px;">
                                 <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
@@ -2847,45 +2869,6 @@ function renderPurchaseOrderWizardStep(requestData) {
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Forms Required -->
-                    <div>
-                        <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #374151; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="file-check" style="width: 16px; height: 16px; color: #2563eb;"></i>
-                            Forms Required
-                        </h4>
-                        <p style="margin: 0 0 16px 0; font-size: 13px; color: #6b7280;">Select supporting documents to prepare with this Purchase Order</p>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
-                            <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
-                                   onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#2563eb';"
-                                   onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
-                                <input type="checkbox" id="po-gen-ics" ${AppState.purchaseOrderDraft.generateICS ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
-                                <span style="font-size: 14px; font-weight: 500; color: #374151;">ICS</span>
-                            </label>
-                            
-                            <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
-                                   onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#2563eb';"
-                                   onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
-                                <input type="checkbox" id="po-gen-ris" ${AppState.purchaseOrderDraft.generateRIS ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
-                                <span style="font-size: 14px; font-weight: 500; color: #374151;">RIS</span>
-                            </label>
-                            
-                            <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
-                                   onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#2563eb';"
-                                   onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
-                                <input type="checkbox" id="po-gen-par" ${AppState.purchaseOrderDraft.generatePAR ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
-                                <span style="font-size: 14px; font-weight: 500; color: #374151;">PAR</span>
-                            </label>
-                            
-                            <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
-                                   onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#2563eb';"
-                                   onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
-                                <input type="checkbox" id="po-gen-iar" ${AppState.purchaseOrderDraft.generateIAR ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
-                                <span style="font-size: 14px; font-weight: 500; color: #374151;">IAR</span>
-                            </label>
-                        </div>
-                    </div>
                 </div>
             </div>
         `;
@@ -2927,9 +2910,18 @@ function persistCurrentWizardStep() {
         AppState.purchaseOrderDraft.procurementMode = modal.querySelector('#po-mode')?.value || '';
         AppState.purchaseOrderDraft.gentlemen = modal.querySelector('#po-gentlemen')?.value || '';
         AppState.purchaseOrderDraft.placeOfDelivery = modal.querySelector('#po-place')?.value || '';
-        AppState.purchaseOrderDraft.deliveryDate = modal.querySelector('#po-delivery-date')?.value || '';
+        // Handle delivery date dropdown with "others" option
+        const deliveryDateSelect = modal.querySelector('#po-delivery-date');
+        const deliveryDateOther = modal.querySelector('#po-delivery-date-other');
+        if (deliveryDateSelect?.value === 'others') {
+            AppState.purchaseOrderDraft.deliveryDate = deliveryDateOther?.value || '';
+        } else {
+            AppState.purchaseOrderDraft.deliveryDate = deliveryDateSelect?.value || '';
+        }
         AppState.purchaseOrderDraft.deliveryTerm = modal.querySelector('#po-delivery-term')?.value || '';
         AppState.purchaseOrderDraft.paymentTerm = modal.querySelector('#po-payment-term')?.value || '';
+    } else if (step === 3) {
+        // Step 3 (items) - forms are now integrated into each item, no separate checkboxes to save
     } else if (step === 4) {
         AppState.purchaseOrderDraft.orsNo = modal.querySelector('#po-ors-no')?.value || '';
         AppState.purchaseOrderDraft.orsDate = modal.querySelector('#po-ors-date')?.value || '';
@@ -2937,10 +2929,6 @@ function persistCurrentWizardStep() {
         AppState.purchaseOrderDraft.fundCluster = modal.querySelector('#po-fund-cluster')?.value || '';
         AppState.purchaseOrderDraft.fundsAvailable = modal.querySelector('#po-funds-available')?.value || '';
         AppState.purchaseOrderDraft.notes = modal.querySelector('#po-notes')?.value || '';
-        AppState.purchaseOrderDraft.generateICS = modal.querySelector('#po-gen-ics')?.checked || false;
-        AppState.purchaseOrderDraft.generateRIS = modal.querySelector('#po-gen-ris')?.checked || false;
-        AppState.purchaseOrderDraft.generatePAR = modal.querySelector('#po-gen-par')?.checked || false;
-        AppState.purchaseOrderDraft.generateIAR = modal.querySelector('#po-gen-iar')?.checked || false;
     }
 }
 
@@ -2997,10 +2985,11 @@ function finalizePurchaseOrderCreation() {
         status: 'submitted',
         requestedBy: 'Current User',
         department,
-        generateICS: !!draft.generateICS,
-        generateRIS: !!draft.generateRIS,
-        generatePAR: !!draft.generatePAR,
-        generateIAR: !!draft.generateIAR,
+        // Aggregate forms from items (check if any item has each form enabled)
+        generateICS: AppState.purchaseOrderItems.some(item => item.generateICS),
+        generateRIS: AppState.purchaseOrderItems.some(item => item.generateRIS),
+        generatePAR: AppState.purchaseOrderItems.some(item => item.generatePAR),
+        generateIAR: AppState.purchaseOrderItems.some(item => item.generateIAR),
         items: [...AppState.purchaseOrderItems]
     };
     AppState.newRequests.push(newRequest);
@@ -3105,13 +3094,13 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                         <div class="form-group" style="margin-bottom: 20px;">
                             <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
                                 <i data-lucide="file-text" style="width: 14px; height: 14px; color: #6b7280;"></i>
-                                P.O. Number
+                                P.O. Number${isReadOnly ? '' : '<span style="color:#dc2626"> *</span>'}
                             </label>
                             <input type="text" class="form-input" id="poNumber"
                                    value="${requestData?.poNumber || ''}"
                                    placeholder="Enter P.O. number" 
                                    style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
-                                   ${isReadOnly ? 'readonly' : ''}>
+                                   ${isReadOnly ? 'readonly' : 'required'}>
                         </div>
                         
                         <div class="form-group" style="margin-bottom: 20px;">
@@ -3202,10 +3191,22 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                                 <i data-lucide="calendar-check" style="width: 14px; height: 14px; color: #6b7280;"></i>
                                 Date of Delivery
                             </label>
-                            <input type="text" class="form-input" id="deliveryDate"
-                                   value="${requestData?.deliveryDate || ''}"
-                                   style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
-                                   ${isReadOnly ? 'readonly' : ''}>
+                            ${isReadOnly ? `
+                                <input type="text" class="form-input" id="deliveryDate"
+                                       value="${requestData?.deliveryDate || ''}"
+                                       style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                                       readonly>
+                            ` : `
+                                <select class="form-select" id="deliveryDate" onchange="toggleDeliveryDateOtherModal(this)" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                                    <option value="">Select delivery timeframe</option>
+                                    <option value="15 days" ${requestData?.deliveryDate === '15 days' ? 'selected' : ''}>15 days</option>
+                                    <option value="30 days" ${requestData?.deliveryDate === '30 days' ? 'selected' : ''}>30 days</option>
+                                    <option value="45 days" ${requestData?.deliveryDate === '45 days' ? 'selected' : ''}>45 days</option>
+                                    <option value="60 days" ${requestData?.deliveryDate === '60 days' ? 'selected' : ''}>60 days</option>
+                                    <option value="others" ${!['', '15 days', '30 days', '45 days', '60 days'].includes(requestData?.deliveryDate || '') && requestData?.deliveryDate ? 'selected' : ''}>Others</option>
+                                </select>
+                                <input type="text" class="form-input" id="deliveryDateOther" placeholder="Specify delivery timeframe" value="${!['', '15 days', '30 days', '45 days', '60 days'].includes(requestData?.deliveryDate || '') && requestData?.deliveryDate ? requestData.deliveryDate : ''}" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s; margin-top: 8px; display: ${!['', '15 days', '30 days', '45 days', '60 days'].includes(requestData?.deliveryDate || '') && requestData?.deliveryDate ? 'block' : 'none'};">
+                            `}
                         </div>
                     </div>
 
@@ -3265,13 +3266,14 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                                 <th style="padding: 12px;">Quantity</th>
                                 <th style="padding: 12px;">Unit Cost</th>
                                 <th style="padding: 12px;">Amount</th>
+                                <th style="padding: 12px;">Forms</th>
                                 ${!isReadOnly ? '<th style="padding: 12px;">Action</th>' : ''}
                             </tr>
                         </thead>
                         <tbody id="po-items-tbody"></tbody>
                         <tfoot>
                             <tr style="border-top: 2px solid #e5e7eb; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
-                                <td colspan="${isReadOnly ? '6' : '7'}" style="text-align: right; font-weight: 600; padding: 16px; color: #1e40af;">Grand Total:</td>
+                                <td colspan="${isReadOnly ? '7' : '8'}" style="text-align: right; font-weight: 600; padding: 16px; color: #1e40af;">Grand Total:</td>
                                 <td style="font-weight: 700; color: #2563eb; padding: 16px; font-size: 16px;" id="grand-total">
                                     ${requestData ? formatCurrency(requestData.totalAmount || 0) : '₱0.00'}
                                 </td>
@@ -3295,11 +3297,20 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                             <i data-lucide="layers" style="width: 14px; height: 14px; color: #6b7280;"></i>
                             Fund Cluster
                         </label>
-                        <input type="text" class="form-input" id="fundCluster"
-                               value="${requestData?.fundCluster || ''}" 
-                               placeholder="e.g. 01" 
-                               style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
-                               ${isReadOnly ? 'readonly' : ''}>
+                        ${isReadOnly ? `
+                            <input type="text" class="form-input" id="fundCluster"
+                                   value="${requestData?.fundCluster || ''}" 
+                                   style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;"
+                                   readonly>
+                        ` : `
+                            <select class="form-select" id="fundCluster" style="border: 2px solid #e5e7eb; padding: 10px 14px; font-size: 14px; transition: all 0.2s;">
+                                <option value="">Select fund cluster</option>
+                                <option value="01 - Regular Agency Fund" ${requestData?.fundCluster === '01 - Regular Agency Fund' ? 'selected' : ''}>01 - Regular Agency Fund</option>
+                                <option value="05 - Income Generated Fund" ${requestData?.fundCluster === '05 - Income Generated Fund' ? 'selected' : ''}>05 - Income Generated Fund</option>
+                                <option value="06 - Business Related Fund" ${requestData?.fundCluster === '06 - Business Related Fund' ? 'selected' : ''}>06 - Business Related Fund</option>
+                                <option value="07 - General Appropriations Act (GAA)" ${requestData?.fundCluster === '07 - General Appropriations Act (GAA)' ? 'selected' : ''}>07 - General Appropriations Act (GAA)</option>
+                            </select>
+                        `}
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 500; color: #374151;">
@@ -3369,49 +3380,6 @@ function generatePurchaseOrderModal(mode, requestData = null) {
                     </div>
                 </div>
             </div>
-
-            <!-- Forms Required -->
-            <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #111827; display: flex; align-items: center; gap: 8px;">
-                    <i data-lucide="file-check" style="width: 18px; height: 18px; color: #2563eb;"></i>
-                    Forms Required
-                </h3>
-                <p style="margin: 0 0 16px 0; font-size: 13px; color: #6b7280;">Select supporting documents for this Purchase Order</p>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px;">
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; ${isReadOnly ? 'opacity: 0.6; cursor: not-allowed;' : 'hover: {background: #eff6ff; border-color: #2563eb;}'}"
-                           onmouseover="if(!${isReadOnly}) this.style.background='#eff6ff'; if(!${isReadOnly}) this.style.borderColor='#2563eb';"
-                           onmouseout="if(!${isReadOnly}) this.style.background='#f9fafb'; if(!${isReadOnly}) this.style.borderColor='#e5e7eb';">
-                        <input type="checkbox" id="generateICS" ${requestData?.generateICS ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''} 
-                               style="width: 16px; height: 16px; cursor: ${isReadOnly ? 'not-allowed' : 'pointer'};">
-                        <span style="font-size: 14px; font-weight: 500; color: #374151;">ICS</span>
-                    </label>
-                    
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; ${isReadOnly ? 'opacity: 0.6; cursor: not-allowed;' : ''}"
-                           onmouseover="if(!${isReadOnly}) this.style.background='#eff6ff'; if(!${isReadOnly}) this.style.borderColor='#2563eb';"
-                           onmouseout="if(!${isReadOnly}) this.style.background='#f9fafb'; if(!${isReadOnly}) this.style.borderColor='#e5e7eb';">
-                        <input type="checkbox" id="generateRIS" ${requestData?.generateRIS ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''} 
-                               style="width: 16px; height: 16px; cursor: ${isReadOnly ? 'not-allowed' : 'pointer'};">
-                        <span style="font-size: 14px; font-weight: 500; color: #374151;">RIS</span>
-                    </label>
-                    
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; ${isReadOnly ? 'opacity: 0.6; cursor: not-allowed;' : ''}"
-                           onmouseover="if(!${isReadOnly}) this.style.background='#eff6ff'; if(!${isReadOnly}) this.style.borderColor='#2563eb';"
-                           onmouseout="if(!${isReadOnly}) this.style.background='#f9fafb'; if(!${isReadOnly}) this.style.borderColor='#e5e7eb';">
-                        <input type="checkbox" id="generatePAR" ${requestData?.generatePAR ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''} 
-                               style="width: 16px; height: 16px; cursor: ${isReadOnly ? 'not-allowed' : 'pointer'};">
-                        <span style="font-size: 14px; font-weight: 500; color: #374151;">PAR</span>
-                    </label>
-                    
-                    <label style="display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; ${isReadOnly ? 'opacity: 0.6; cursor: not-allowed;' : ''}"
-                           onmouseover="if(!${isReadOnly}) this.style.background='#eff6ff'; if(!${isReadOnly}) this.style.borderColor='#2563eb';"
-                           onmouseout="if(!${isReadOnly}) this.style.background='#f9fafb'; if(!${isReadOnly}) this.style.borderColor='#e5e7eb';">
-                        <input type="checkbox" id="generateIAR" ${requestData?.generateIAR ? 'checked' : ''} ${isReadOnly ? 'disabled' : ''} 
-                               style="width: 16px; height: 16px; cursor: ${isReadOnly ? 'not-allowed' : 'pointer'};">
-                        <span style="font-size: 14px; font-weight: 500; color: #374151;">IAR</span>
-                    </label>
-                </div>
-            </div>
         </div>
 
         <!-- Modal Footer -->
@@ -3448,7 +3416,11 @@ function initializePurchaseOrderModal(requestData = null, options = {}) {
             quantity: 0,
             currentStock: 0,
             unitCost: 0,
-            amount: 0
+            amount: 0,
+            generateICS: false,
+            generateRIS: false,
+            generatePAR: false,
+            generateIAR: false
         }];
     }
 
@@ -3468,7 +3440,11 @@ function addPOItem() {
         quantity: 0,
         currentStock: 0,
         unitCost: 0,
-        amount: 0
+        amount: 0,
+        generateICS: false,
+        generateRIS: false,
+        generatePAR: false,
+        generateIAR: false
     };
     AppState.purchaseOrderItems.push(newItem);
     showAlert('New item added to purchase order!', 'info');
@@ -3504,6 +3480,17 @@ function updatePOItem(id, field, value) {
 
     AppState.purchaseOrderItems[itemIndex] = item;
     renderPOItems();
+}
+
+function updatePOItemForm(itemId, formField, checked) {
+    const itemIndex = AppState.purchaseOrderItems.findIndex(i => i.id === itemId);
+    if (itemIndex === -1) return;
+
+    const item = AppState.purchaseOrderItems[itemIndex];
+    item[formField] = checked;
+
+    AppState.purchaseOrderItems[itemIndex] = item;
+    // No need to re-render the entire table for checkbox changes
 }
 
 function renderPOItems() {
@@ -3567,6 +3554,35 @@ function renderPOItems() {
                        ${isReadOnly ? 'readonly' : ''}>
             </td>
             <td style="padding: 12px; font-weight: 500;">${formatCurrency(item.amount)}</td>
+            <td style="padding: 12px;">
+                ${!isReadOnly ? `
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center;">
+                        <label style="display: inline-flex; align-items: center; gap: 2px; padding: 4px 6px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap;" title="Inventory Custodian Slip">
+                            <input type="checkbox" ${item.generateICS ? 'checked' : ''} onchange="updatePOItemForm('${item.id}', 'generateICS', this.checked)" style="width: 14px; height: 14px; cursor: pointer;">
+                            <span style="font-weight: 500; color: #0369a1;">ICS</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 2px; padding: 4px 6px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap;" title="Requisition and Issue Slip">
+                            <input type="checkbox" ${item.generateRIS ? 'checked' : ''} onchange="updatePOItemForm('${item.id}', 'generateRIS', this.checked)" style="width: 14px; height: 14px; cursor: pointer;">
+                            <span style="font-weight: 500; color: #15803d;">RIS</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 2px; padding: 4px 6px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap;" title="Property Acknowledgement Receipt">
+                            <input type="checkbox" ${item.generatePAR ? 'checked' : ''} onchange="updatePOItemForm('${item.id}', 'generatePAR', this.checked)" style="width: 14px; height: 14px; cursor: pointer;">
+                            <span style="font-weight: 500; color: #a16207;">PAR</span>
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 2px; padding: 4px 6px; background: #fce7f3; border: 1px solid #fbcfe8; border-radius: 4px; cursor: pointer; font-size: 11px; white-space: nowrap;" title="Inspection and Acceptance Report">
+                            <input type="checkbox" ${item.generateIAR ? 'checked' : ''} onchange="updatePOItemForm('${item.id}', 'generateIAR', this.checked)" style="width: 14px; height: 14px; cursor: pointer;">
+                            <span style="font-weight: 500; color: #be185d;">IAR</span>
+                        </label>
+                    </div>
+                ` : `
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                        ${item.generateICS ? '<span style="padding: 2px 6px; background: #bae6fd; border-radius: 4px; font-size: 11px; font-weight: 500; color: #0369a1;">ICS</span>' : ''}
+                        ${item.generateRIS ? '<span style="padding: 2px 6px; background: #bbf7d0; border-radius: 4px; font-size: 11px; font-weight: 500; color: #15803d;">RIS</span>' : ''}
+                        ${item.generatePAR ? '<span style="padding: 2px 6px; background: #fde68a; border-radius: 4px; font-size: 11px; font-weight: 500; color: #a16207;">PAR</span>' : ''}
+                        ${item.generateIAR ? '<span style="padding: 2px 6px; background: #fbcfe8; border-radius: 4px; font-size: 11px; font-weight: 500; color: #be185d;">IAR</span>' : ''}
+                    </div>
+                `}
+            </td>
             ${!isReadOnly ? `
                 <td style="padding: 12px;">
                     <button onclick="removePOItem('${item.id}')" 
@@ -3686,7 +3702,15 @@ function savePurchaseOrder(existingId = null) {
     const department = document.getElementById('departmentSelect')?.value || '';
     const gentlemen = document.getElementById('gentlemen')?.value || '';
     const placeOfDelivery = document.getElementById('placeOfDelivery')?.value || '';
-    const deliveryDate = document.getElementById('deliveryDate')?.value || '';
+    // Handle delivery date dropdown with "others" option
+    const deliveryDateSelect = document.getElementById('deliveryDate');
+    const deliveryDateOther = document.getElementById('deliveryDateOther');
+    let deliveryDate = '';
+    if (deliveryDateSelect?.value === 'others') {
+        deliveryDate = deliveryDateOther?.value || '';
+    } else {
+        deliveryDate = deliveryDateSelect?.value || '';
+    }
     const deliveryTerm = document.getElementById('deliveryTerm')?.value || '';
     const paymentTerm = document.getElementById('paymentTerm')?.value || '';
     const fundCluster = document.getElementById('fundCluster')?.value || '';
@@ -4225,6 +4249,7 @@ window.closePurchaseOrderModal = closePurchaseOrderModal;
 window.addPOItem = addPOItem;
 window.removePOItem = removePOItem;
 window.updatePOItem = updatePOItem;
+window.updatePOItemForm = updatePOItemForm;
 window.savePurchaseOrder = savePurchaseOrder;
 window.approveRequest = approveRequest;
 window.rejectRequest = rejectRequest;
@@ -4247,7 +4272,7 @@ function closeUserMenu() {
 }
 
 function logout() {
-    // Basic logout behaviour: clear AppState.currentUser and navigate to a light landing page
+    // Clear user session data
     AppState.currentUser = {
         id: null,
         name: 'Guest',
@@ -4258,16 +4283,22 @@ function logout() {
         created: ''
     };
 
-    // Update avatar only (header no longer shows name/role)
-    const avatarEl = document.getElementById('header-user-avatar');
-    if (avatarEl) avatarEl.textContent = AppState.currentUser.name ? AppState.currentUser.name.split(' ').map(n => n[0]).slice(0, 2).join('') : '';
+    // Clear any stored session/auth data
+    if (typeof (Storage) !== "undefined") {
+        localStorage.removeItem('userSession');
+        localStorage.removeItem('authToken');
+        sessionStorage.clear();
+    }
 
     closeUserMenu();
-    showAlert('Logged out', 'info');
 
-    // Optionally navigate to a non-protected landing or login page
-    // For now, go to dashboard
-    navigateToPage('dashboard');
+    // Show logout message
+    showAlert('Logging out...', 'info');
+
+    // Redirect to login page after a brief delay
+    setTimeout(() => {
+        window.location.href = '../frontend/AccessSystem.html';
+    }, 500);
 }
 
 // Close user menu on outside click
@@ -4747,6 +4778,18 @@ function generateUsersManagementPage() {
 // ----------------------------- //
 function generateAboutPage() {
     const currentYear = new Date().getFullYear();
+
+    // Get stored About Us content or use defaults
+    const aboutContent = AppState.aboutUsContent || {
+        heroTitle: 'SPMO System',
+        heroSubtitle: 'Revolutionizing Inventory & Procurement Management for Camarines Norte State College',
+        mission: 'To provide a comprehensive, user-friendly platform that streamlines inventory management, automates procurement processes, and ensures transparency in resource allocation across all departments of CNSC.',
+        vision: 'To be the leading digital solution for educational institutions, setting the standard for efficient resource management, data-driven decision making, and operational excellence.',
+        institution: 'Camarines Norte State College - Supply and Property Management Office',
+        email: 'cnsc.spmo@.edu.ph',
+        phone: '(054) 440-1134'
+    };
+
     return `
         <div class="page-header">
             <div class="page-header-content">
@@ -4755,6 +4798,10 @@ function generateAboutPage() {
                     <p class="page-subtitle">Learn more about the SPMO System and the team behind it</p>
                 </div>
                 <div style="display:flex;align-items:center;gap:12px;">
+                    <button class="btn btn-primary" onclick="editAboutUs()" style="display:flex;align-items:center;gap:8px;">
+                        <i data-lucide="edit-3" style="width:16px;height:16px;"></i>
+                        Edit About Us
+                    </button>
                     <div style="text-align:right;color:#6b7280;font-size:14px;">Updated: ${currentYear}</div>
                 </div>
             </div>
@@ -4764,9 +4811,9 @@ function generateAboutPage() {
             <!-- Hero Section -->
             <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 48px 32px; text-align: center; border: none;">
                 <div style="max-width: 800px; margin: 0 auto;">
-                    <h2 style="margin: 0 0 16px 0; font-size: 32px; font-weight: 700; color: white;">SPMO System</h2>
-                    <p style="font-size: 18px; line-height: 1.8; margin: 0; opacity: 0.95;">
-                        Revolutionizing Inventory & Procurement Management for Camarines Norte State College
+                    <h2 id="hero-title" style="margin: 0 0 16px 0; font-size: 32px; font-weight: 700; color: white;">${aboutContent.heroTitle}</h2>
+                    <p id="hero-subtitle" style="font-size: 18px; line-height: 1.8; margin: 0; opacity: 0.95;">
+                        ${aboutContent.heroSubtitle}
                     </p>
                 </div>
             </div>
@@ -4780,10 +4827,8 @@ function generateAboutPage() {
                         </div>
                         <h3 style="margin: 0; font-size: 20px; color: #111827;">Our Mission</h3>
                     </div>
-                    <p style="color: #4b5563; line-height: 1.7; margin: 0;">
-                        To provide a comprehensive, user-friendly platform that streamlines inventory management, 
-                        automates procurement processes, and ensures transparency in resource allocation across 
-                        all departments of CNSC.
+                    <p id="mission-text" style="color: #4b5563; line-height: 1.7; margin: 0;">
+                        ${aboutContent.mission}
                     </p>
                 </div>
 
@@ -4794,9 +4839,8 @@ function generateAboutPage() {
                         </div>
                         <h3 style="margin: 0; font-size: 20px; color: #111827;">Our Vision</h3>
                     </div>
-                    <p style="color: #4b5563; line-height: 1.7; margin: 0;">
-                        To be the leading digital solution for educational institutions, setting the standard 
-                        for efficient resource management, data-driven decision making, and operational excellence.
+                    <p id="vision-text" style="color: #4b5563; line-height: 1.7; margin: 0;">
+                        ${aboutContent.vision}
                     </p>
                 </div>
             </div>
@@ -4906,7 +4950,7 @@ function generateAboutPage() {
                             </div>
                             <div>
                                 <p style="margin: 0; font-weight: 600; color: #111827; font-size: 14px;">Institution</p>
-                                <p style="margin: 0; color: #6b7280; font-size: 14px;">Camarines Norte State College - Supply and Property Management Office</p>
+                                <p id="institution-text" style="margin: 0; color: #6b7280; font-size: 14px;">${aboutContent.institution}</p>
                             </div>
                         </div>
 
@@ -4916,7 +4960,7 @@ function generateAboutPage() {
                             </div>
                             <div>
                                 <p style="margin: 0; font-weight: 600; color: #111827; font-size: 14px;">Email</p>
-                                <p style="margin: 0; color: #6b7280; font-size: 14px;">cnsc.spmo@.edu.ph</p>
+                                <p id="email-text" style="margin: 0; color: #6b7280; font-size: 14px;">${aboutContent.email}</p>
                             </div>
                         </div>
 
@@ -4926,7 +4970,7 @@ function generateAboutPage() {
                             </div>
                             <div>
                                 <p style="margin: 0; font-weight: 600; color: #111827; font-size: 14px;">Phone</p>
-                                <p style="margin: 0; color: #6b7280; font-size: 14px;">(054) 123-4567</p>
+                                <p id="phone-text" style="margin: 0; color: #6b7280; font-size: 14px;">${aboutContent.phone}</p>
                             </div>
                         </div>
                     </div>
@@ -4941,6 +4985,155 @@ function generateAboutPage() {
             </div>
         </div>
     `;
+}
+
+// Edit About Us Modal
+function editAboutUs() {
+    const currentContent = AppState.aboutUsContent || {
+        heroTitle: 'SPMO System',
+        heroSubtitle: 'Revolutionizing Inventory & Procurement Management for Camarines Norte State College',
+        mission: 'To provide a comprehensive, user-friendly platform that streamlines inventory management, automates procurement processes, and ensures transparency in resource allocation across all departments of CNSC.',
+        vision: 'To be the leading digital solution for educational institutions, setting the standard for efficient resource management, data-driven decision making, and operational excellence.',
+        institution: 'Camarines Norte State College - Supply and Property Management Office',
+        email: 'cnsc.spmo@.edu.ph',
+        phone: '(054) 440-1134'
+    };
+
+    let modal = document.getElementById('edit-about-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'edit-about-modal';
+        modal.className = 'modal-overlay';
+        document.body.appendChild(modal);
+    }
+
+    modal.className = 'modal-overlay active';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow: hidden; padding: 0; display: flex; flex-direction: column;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; flex-shrink: 0;">
+                <h2 style="margin: 0; font-size: 24px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                    <i data-lucide="edit-3" style="width: 24px; height: 24px;"></i>
+                    Edit About Us Content
+                </h2>
+                <p style="margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">Update the information displayed on the About Us page</p>
+            </div>
+            
+            <div style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+                <!-- Hero Section -->
+                <div style="padding: 16px; background: #f9fafb; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">Hero Section</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Title</label>
+                            <input type="text" id="edit-hero-title" value="${currentContent.heroTitle.replace(/"/g, '&quot;')}" 
+                                   style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Subtitle</label>
+                            <textarea id="edit-hero-subtitle" rows="2" 
+                                      style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: inherit; resize: vertical;">${currentContent.heroSubtitle.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mission & Vision -->
+                <div style="padding: 16px; background: #f9fafb; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">Mission & Vision</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Our Mission</label>
+                            <textarea id="edit-mission" rows="3" 
+                                      style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: inherit; resize: vertical;">${currentContent.mission.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Our Vision</label>
+                            <textarea id="edit-vision" rows="3" 
+                                      style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: inherit; resize: vertical;">${currentContent.vision.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contact Information -->
+                <div style="padding: 16px; background: #f9fafb; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">Contact Information</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Institution</label>
+                            <input type="text" id="edit-institution" value="${currentContent.institution.replace(/"/g, '&quot;')}" 
+                                   style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Email</label>
+                            <input type="email" id="edit-email" value="${currentContent.email.replace(/"/g, '&quot;')}" 
+                                   style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: #374151;">Phone</label>
+                            <input type="tel" id="edit-phone" value="${currentContent.phone.replace(/"/g, '&quot;')}" 
+                                   style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer" style="padding: 20px 24px; border-top: 1px solid #e5e7eb; background: #f9fafb; flex-shrink: 0; display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="closeEditAboutModal()" class="btn btn-secondary">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                    Cancel
+                </button>
+                <button onclick="saveAboutUs()" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    `;
+
+    try { lucide.createIcons(); } catch (e) { }
+}
+
+function closeEditAboutModal() {
+    const modal = document.getElementById('edit-about-modal');
+    if (modal) {
+        modal.className = 'modal-overlay';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+function saveAboutUs() {
+    // Get values from form
+    const heroTitle = document.getElementById('edit-hero-title').value.trim();
+    const heroSubtitle = document.getElementById('edit-hero-subtitle').value.trim();
+    const mission = document.getElementById('edit-mission').value.trim();
+    const vision = document.getElementById('edit-vision').value.trim();
+    const institution = document.getElementById('edit-institution').value.trim();
+    const email = document.getElementById('edit-email').value.trim();
+    const phone = document.getElementById('edit-phone').value.trim();
+
+    // Validation
+    if (!heroTitle || !heroSubtitle || !mission || !vision || !institution || !email || !phone) {
+        showAlert('Please fill in all fields', 'error');
+        return;
+    }
+
+    // Save to AppState
+    AppState.aboutUsContent = {
+        heroTitle,
+        heroSubtitle,
+        mission,
+        vision,
+        institution,
+        email,
+        phone
+    };
+
+    // Close modal
+    closeEditAboutModal();
+
+    // Reload page to show updated content
+    loadPageContent('about');
+
+    showAlert('About Us content updated successfully!', 'success');
 }
 
 // -----------------------------//
@@ -6056,6 +6249,11 @@ function initStatusManagement(filter = "all") {
         <div class="status-container">
             <!-- Cards -->
             <div class="status-cards">
+                <div class="status-card incoming" data-status="incoming">
+                    <h3>Incoming</h3>
+                    <div class="count" data-count="incoming">0</div>
+                    <p>New requests received</p>
+                </div>
                 <div class="status-card received" data-status="received">
                     <h3>Received</h3>
                     <div class="count" data-count="received">0</div>
@@ -6075,6 +6273,11 @@ function initStatusManagement(filter = "all") {
                     <h3>Rejected</h3>
                     <div class="count" data-count="rejected">0</div>
                     <p>Request denied</p>
+                </div>
+                <div class="status-card returned" data-status="returned">
+                    <h3>Returned</h3>
+                    <div class="count" data-count="returned">0</div>
+                    <p>Items sent back</p>
                 </div>
             </div>
 
@@ -6121,6 +6324,7 @@ function initStatusManagement(filter = "all") {
                         <th>Date Updated</th>
                         <th>Action</th>
                         <th>Cost</th>
+                        <th>Remarks</th>
                     </tr>
                 </thead>
                 <tbody id="status-table-body">
@@ -6137,14 +6341,13 @@ function initStatusManagement(filter = "all") {
     document.getElementById("prioritySelect").addEventListener("change", applyFilters);
     // Export handler (same behavior as Reports export)
     document.getElementById('export-status-btn')?.addEventListener('click', exportStatusCSV);
-    // Card click events to switch filters
 
     refreshStatusCards();
 }
 
 function refreshStatusCards() {
     const counts = (AppState.statusRequests || []).reduce((acc, r) => { acc[r.status] = (acc[r.status] || 0) + 1; return acc; }, {});
-    ['received', 'finished', 'cancelled', 'rejected'].forEach(s => {
+    ['incoming', 'received', 'finished', 'cancelled', 'rejected', 'returned'].forEach(s => {
         const el = document.querySelector(`.status-card .count[data-count="${s}"]`);
         if (el) el.textContent = counts[s] || 0;
     });
@@ -6153,25 +6356,48 @@ function refreshStatusCards() {
 // ===== Dummy Rows =====
 function renderStatusRows(status) {
     const list = (AppState.statusRequests || []).filter(r => status === 'all' ? true : r.status === status);
-    if (!list.length) return `<tr><td colspan="8" style="text-align:center;padding:16px;color:#6b7280;">No records</td></tr>`;
+    if (!list.length) return `<tr><td colspan="9" style="text-align:center;padding:16px;color:#6b7280;">No records</td></tr>`;
     const html = list.map(r => {
         const priorityColor = r.priority === 'high' ? 'red' : r.priority === 'medium' ? 'orange' : 'green';
-        const showActions = r.status === 'received';
+        const showActions = r.status === 'incoming' || r.status === 'received';
         const actionsHtml = showActions ? `
             <div class="table-actions" style="flex-wrap:wrap;">
                 <button class="icon-action-btn" title="View Details" onclick="viewStatusRequest('${r.id}')">
                     <i data-lucide="eye"></i>
                 </button>
+                ${r.status === 'incoming' ? `
+                    <button class="icon-action-btn icon-action-primary" title="Mark as Received" onclick="updateStatusRow('${r.id}','received')">
+                        <i data-lucide="inbox"></i>
+                    </button>
+                ` : ''}
                 <button class="icon-action-btn icon-action-danger" title="Reject" onclick="updateStatusRow('${r.id}','rejected')">
                     <i data-lucide="x-circle"></i>
                 </button>
                 <button class="icon-action-btn icon-action-warning" title="Cancel" onclick="updateStatusRow('${r.id}','cancelled')">
                     <i data-lucide="ban"></i>
                 </button>
-                <button class="icon-action-btn icon-action-success" title="Complete" onclick="updateStatusRow('${r.id}','finished')">
-                    <i data-lucide="check-circle"></i>
+                <button class="icon-action-btn icon-action-info" title="Return" onclick="showReturnModal('${r.id}')">
+                    <i data-lucide="undo-2"></i>
                 </button>
+                ${r.status !== 'incoming' ? `
+                    <button class="icon-action-btn icon-action-success" title="Complete" onclick="updateStatusRow('${r.id}','finished')">
+                        <i data-lucide="check-circle"></i>
+                    </button>
+                ` : ''}
             </div>` : `<span class="${getBadgeClass(r.status)}"><i data-lucide="badge-check" style="width:14px;height:14px;"></i>${r.status.charAt(0).toUpperCase() + r.status.slice(1)}</span>`;
+
+        // Generate remarks HTML
+        let remarksHtml = '-';
+        if (r.returnRemarks && r.returnRemarks.length > 0) {
+            const remarksList = r.returnRemarks.map(remark => `<li style="margin: 2px 0;">${remark}</li>`).join('');
+            remarksHtml = `
+                <div style="max-width: 250px;">
+                    <ul style="margin: 0; padding-left: 16px; font-size: 12px; color: #374151; line-height: 1.5;">
+                        ${remarksList}
+                    </ul>
+                </div>`;
+        }
+
         return `
             <tr data-request-id="${r.id}">
                 <td>${r.id}</td>
@@ -6182,6 +6408,7 @@ function renderStatusRows(status) {
                 <td>${r.updatedAt}</td>
                 <td>${actionsHtml}</td>
                 <td>${formatCurrency(r.cost || 0)}</td>
+                <td>${remarksHtml}</td>
         </tr>`;
     }).join('');
     // Defer icon init until injected into DOM (caller will set innerHTML, then we init here with a microtask)
@@ -6210,6 +6437,216 @@ function applyFilters() {
 
         row.style.display = match ? "" : "none";
     });
+}
+
+// ===== Return Modal with Remarks =====
+function showReturnModal(requestId) {
+    const rec = (AppState.statusRequests || []).find(r => r.id === requestId);
+    if (!rec) { showAlert('Request not found', 'error'); return; }
+
+    let modal = document.getElementById('return-remarks-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'return-remarks-modal';
+        document.body.appendChild(modal);
+    }
+
+    modal.className = 'modal-overlay active';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px; padding: 0; border-radius: 12px; overflow: hidden;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 24px; color: white;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                    <i data-lucide="undo-2" style="width: 24px; height: 24px;"></i>
+                    Return Request
+                </h2>
+                <p style="margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">Request ID: ${requestId}</p>
+            </div>
+            
+            <!-- Body -->
+            <div style="padding: 24px;">
+                <p style="margin: 0 0 20px 0; font-size: 14px; color: #6b7280;">
+                    Please select the reason(s) for returning this request:
+                </p>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <label style="display: flex; align-items: start; gap: 12px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                           onmouseover="this.style.background='#fef3c7'; this.style.borderColor='#f59e0b';"
+                           onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
+                        <input type="checkbox" class="return-reason" value="Incomplete Documentation" 
+                               style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer; accent-color: #f97316;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 500; color: #111827;">Incomplete Documentation</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Missing required forms or attachments</div>
+                        </div>
+                    </label>
+                    
+                    <label style="display: flex; align-items: start; gap: 12px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                           onmouseover="this.style.background='#fef3c7'; this.style.borderColor='#f59e0b';"
+                           onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
+                        <input type="checkbox" class="return-reason" value="Incorrect Information" 
+                               style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer; accent-color: #f97316;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 500; color: #111827;">Incorrect Information</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Details need to be corrected</div>
+                        </div>
+                    </label>
+                    
+                    <label style="display: flex; align-items: start; gap: 12px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                           onmouseover="this.style.background='#fef3c7'; this.style.borderColor='#f59e0b';"
+                           onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
+                        <input type="checkbox" class="return-reason" value="Budget Not Available" 
+                               style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer; accent-color: #f97316;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 500; color: #111827;">Budget Not Available</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Insufficient funds for this request</div>
+                        </div>
+                    </label>
+                    
+                    <label style="display: flex; align-items: start; gap: 12px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                           onmouseover="this.style.background='#fef3c7'; this.style.borderColor='#f59e0b';"
+                           onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
+                        <input type="checkbox" class="return-reason" value="Need Additional Approval" 
+                               style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer; accent-color: #f97316;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 500; color: #111827;">Need Additional Approval</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Requires higher authority approval</div>
+                        </div>
+                    </label>
+                    
+                    <label style="display: flex; align-items: start; gap: 12px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                           onmouseover="this.style.background='#fef3c7'; this.style.borderColor='#f59e0b';"
+                           onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
+                        <input type="checkbox" class="return-reason" value="Item Not Available" 
+                               style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer; accent-color: #f97316;">
+                        <div>
+                            <div style="font-size: 14px; font-weight: 500; color: #111827;">Item Not Available</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Requested items are out of stock</div>
+                        </div>
+                    </label>
+                    
+                    <label style="display: flex; align-items: start; gap: 12px; padding: 12px; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                           onmouseover="this.style.background='#fef3c7'; this.style.borderColor='#f59e0b';"
+                           onmouseout="this.style.background='#f9fafb'; this.style.borderColor='#e5e7eb';">
+                        <input type="checkbox" id="other-reasons-checkbox" class="return-reason" value="Other Reasons" 
+                               onchange="toggleOtherReasonsInput()"
+                               style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer; accent-color: #f97316;">
+                        <div style="flex: 1;">
+                            <div style="font-size: 14px; font-weight: 500; color: #111827;">Other Reasons</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Other reasons for returning</div>
+                        </div>
+                    </label>
+                </div>
+                
+                <!-- Text input for "Other Reasons" - Initially hidden -->
+                <div id="other-reasons-input-container" style="display: none; margin-top: 12px;">
+                    <textarea id="other-reasons-text" 
+                              placeholder="Please specify the reason..." 
+                              rows="3"
+                              style="width: 100%; padding: 12px; border: 2px solid #f97316; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; transition: all 0.2s;"
+                              onfocus="this.style.borderColor='#ea580c'; this.style.boxShadow='0 0 0 3px rgba(249, 115, 22, 0.1)';"
+                              onblur="this.style.borderColor='#f97316'; this.style.boxShadow='none';"></textarea>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="padding: 16px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="closeReturnModal()" 
+                        style="padding: 10px 20px; background: white; color: #374151; border: 1px solid #d1d5db; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.2s;"
+                        onmouseover="this.style.background='#f3f4f6';"
+                        onmouseout="this.style.background='white';">
+                    Cancel
+                </button>
+                <button onclick="confirmReturn('${requestId}')" 
+                        style="padding: 10px 20px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; box-shadow: 0 2px 4px rgba(249, 115, 22, 0.25); transition: all 0.2s;"
+                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 6px rgba(249, 115, 22, 0.3)';"
+                        onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 4px rgba(249, 115, 22, 0.25)';">
+                    <i data-lucide="check" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i>
+                    Confirm Return
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Initialize icons
+    try { lucide.createIcons(); } catch (e) { }
+}
+
+function toggleOtherReasonsInput() {
+    const checkbox = document.getElementById('other-reasons-checkbox');
+    const inputContainer = document.getElementById('other-reasons-input-container');
+    const textInput = document.getElementById('other-reasons-text');
+
+    if (checkbox && inputContainer) {
+        if (checkbox.checked) {
+            inputContainer.style.display = 'block';
+            // Focus on the textarea
+            setTimeout(() => textInput?.focus(), 100);
+        } else {
+            inputContainer.style.display = 'none';
+            // Clear the text when unchecked
+            if (textInput) textInput.value = '';
+        }
+    }
+}
+
+function closeReturnModal() {
+    const modal = document.getElementById('return-remarks-modal');
+    if (modal) {
+        modal.className = 'modal-overlay';
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+function confirmReturn(requestId) {
+    // Get selected reasons
+    const checkboxes = document.querySelectorAll('.return-reason:checked');
+    const reasons = Array.from(checkboxes).map(cb => cb.value);
+
+    if (reasons.length === 0) {
+        showAlert('Please select at least one reason for returning', 'error');
+        return;
+    }
+
+    // Check if "Other Reasons" is selected and get the specific text
+    const otherCheckbox = document.getElementById('other-reasons-checkbox');
+    const otherText = document.getElementById('other-reasons-text');
+
+    if (otherCheckbox && otherCheckbox.checked) {
+        const specificReason = otherText?.value.trim();
+        if (!specificReason) {
+            showAlert('Please specify the reason for "Other Reasons"', 'error');
+            return;
+        }
+        // Replace "Other Reasons" with the specific text
+        const index = reasons.indexOf('Other Reasons');
+        if (index !== -1) {
+            reasons[index] = `Other: ${specificReason}`;
+        }
+    }
+
+    // Update the request with return status and remarks
+    const rec = (AppState.statusRequests || []).find(r => r.id === requestId);
+    if (rec) {
+        rec.status = 'returned';
+        rec.returnRemarks = reasons;
+        rec.updatedAt = new Date().toISOString().split('T')[0];
+    }
+
+    // Close modal
+    closeReturnModal();
+
+    // Re-render table
+    const body = document.getElementById('status-table-body');
+    if (body) body.innerHTML = renderStatusRows(AppState.currentStatusFilter || 'all');
+    try { lucide.createIcons(); } catch (e) { }
+
+    // Update counts
+    refreshStatusCards();
+
+    // Show success message
+    const remarksText = reasons.join(', ');
+    showAlert(`Request ${requestId} returned. Reasons: ${remarksText}`, 'success');
 }
 
 // ===== Update Row Status (for Received actions) =====
@@ -6406,6 +6843,36 @@ function viewStatusRequestDetails(requestId) {
 
 // Make functions globally accessible
 window.viewStatusRequestDetails = viewStatusRequestDetails;
+
+// Toggle function for Date of Delivery "Others" option in wizard
+function toggleDeliveryDateOther(selectElement) {
+    const otherInput = document.getElementById('po-delivery-date-other');
+    if (otherInput) {
+        if (selectElement.value === 'others') {
+            otherInput.style.display = 'block';
+            otherInput.focus();
+        } else {
+            otherInput.style.display = 'none';
+            otherInput.value = '';
+        }
+    }
+}
+window.toggleDeliveryDateOther = toggleDeliveryDateOther;
+
+// Toggle function for Date of Delivery "Others" option in regular modal
+function toggleDeliveryDateOtherModal(selectElement) {
+    const otherInput = document.getElementById('deliveryDateOther');
+    if (otherInput) {
+        if (selectElement.value === 'others') {
+            otherInput.style.display = 'block';
+            otherInput.focus();
+        } else {
+            otherInput.style.display = 'none';
+            otherInput.value = '';
+        }
+    }
+}
+window.toggleDeliveryDateOtherModal = toggleDeliveryDateOtherModal;
 
 // Sidebar and status behavior is handled centrally by the navigation initialization
 // (initializeNavigation, toggleNavGroup, navigateToPage and loadPageContent).
