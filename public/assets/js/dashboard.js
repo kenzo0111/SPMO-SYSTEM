@@ -170,6 +170,10 @@ const LS_KEYS = {
     STOCK_OUT: 'spmo_stock_out'
 };
 
+// Initialize in-memory stock datasets early so persistence loader can assign safely
+let stockInData = [];
+let stockOutData = [];
+
 function lsAvailable() {
     try {
         if (typeof localStorage === 'undefined') return false;
@@ -203,9 +207,6 @@ function loadPersistedInventoryData() {
 }
 
 loadPersistedInventoryData();
-
-// In-memory Stock In records (rendered in Stock In page)
-let stockInData = [];
 
 // --- Inventory Synchronization Helpers ---
 // Low stock notification tracking
@@ -2766,14 +2767,24 @@ function renderInventoryReport() {
         `;
     }).join('');
 
-    // Chart (Quantity per product)
-    const labels = products.map(r => r.name || r.id || '');
-    const data = products.map(r => (typeof r.quantity === 'number' ? r.quantity : (r.currentStock || 0)));
-    renderInventoryChart(labels, data);
-
-    // Low-stock computation (use current threshold input or AppState.lowStockThreshold fallback)
+    // Chart (Quantity per product) with sorting, top-N, and threshold coloring
     const thresholdInput = document.getElementById('low-stock-threshold');
     const threshold = thresholdInput ? (parseInt(thresholdInput.value, 10) || 0) : (AppState.lowStockThreshold || 0);
+
+    const pairs = products.map(r => {
+        const qty = (typeof r.quantity === 'number' ? r.quantity : (r.currentStock || 0));
+        return { label: r.name || r.id || '', value: qty };
+    });
+    // Sort desc by quantity and cap to top 20 for readability
+    const TOP_N = 20;
+    const sorted = pairs.sort((a, b) => b.value - a.value).slice(0, TOP_N);
+    const labels = sorted.map(p => p.label);
+    const data = sorted.map(p => p.value);
+    const lowMask = sorted.map(p => p.value <= threshold);
+    renderInventoryChart(labels, data, { threshold, lowMask, topN: TOP_N, totalItems: pairs.length });
+
+    // Low-stock computation (use current threshold input or AppState.lowStockThreshold fallback)
+    // Threshold computed above
     const lowStockItems = products.filter(p => {
         const qty = typeof p.quantity === 'number' ? p.quantity : (p.currentStock || 0);
         return qty <= threshold;
@@ -2872,14 +2883,50 @@ let __requisitionChartInstance = null;
 function renderRequisitionChart(labels, data) {
     const ctx = document.getElementById('requisition-chart');
     if (!ctx) return;
+    if (typeof Chart === 'undefined') return;
     if (__requisitionChartInstance) __requisitionChartInstance.destroy();
     __requisitionChartInstance = new Chart(ctx.getContext('2d'), {
         type: 'bar',
         data: {
             labels,
-            datasets: [{ label: 'Total Amount (₱)', data, backgroundColor: '#6366f1' }]
+            datasets: [{
+                label: 'Total Amount (₱)',
+                data,
+                borderRadius: 8,
+                borderSkipped: false,
+                maxBarThickness: 48,
+                backgroundColor: (context) => {
+                    const { chart } = context;
+                    const { ctx: c, chartArea } = chart;
+                    if (!chartArea) return '#6366f1';
+                    const g = c.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                    g.addColorStop(0, '#f59e0b'); // amber-500
+                    g.addColorStop(1, '#6366f1'); // indigo-500
+                    return g;
+                }
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: 8 },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#6b7280', font: { size: 12 } } },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.06)' },
+                    ticks: { color: '#6b7280', font: { size: 12 }, callback: (v) => formatCurrency(v) }
+                }
+            },
+            plugins: {
+                legend: { display: true, labels: { color: '#111827', font: { weight: '600' } } },
+                tooltip: { callbacks: { label: (ctx) => ` ${formatCurrency(ctx.raw)}` } },
+                title: { display: true, text: 'Requisition Totals by Supplier', color: '#111827', font: { weight: '600', size: 14 } },
+                valueDataLabels: { display: true, format: 'currency' }
+            },
+            animation: { duration: 600, easing: 'easeOutQuart' }
+        },
+        plugins: [ValueDataLabelsPlugin]
     });
 }
 
@@ -3016,19 +3063,145 @@ function showStatusDetails(status) {
 
 window.showStatusDetails = showStatusDetails;
 
+// Chart helpers and renderers
+function numberWithCommas(x) {
+    if (x === null || x === undefined) return '';
+    const n = typeof x === 'number' ? x : Number(String(x).replace(/[^0-9.-]/g, ''));
+    if (isNaN(n)) return String(x);
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// Lightweight plugin to draw values above bars
+const ValueDataLabelsPlugin = {
+    id: 'valueDataLabels',
+    afterDatasetsDraw(chart, args, pluginOptions) {
+        const display = chart?.options?.plugins?.valueDataLabels?.display;
+        if (!display) return;
+        const { ctx } = chart;
+        const datasetIndex = pluginOptions?.datasetIndex ?? 0;
+        const meta = chart.getDatasetMeta(datasetIndex);
+        if (!meta?.data) return;
+        ctx.save();
+        ctx.fillStyle = pluginOptions?.color || '#111827';
+        ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        meta.data.forEach((el, i) => {
+            const raw = chart.data?.datasets?.[datasetIndex]?.data?.[i];
+            if (raw === undefined || raw === null) return;
+            const format = chart.options?.plugins?.valueDataLabels?.format;
+            const text = format === 'currency' ? formatCurrency(raw) : numberWithCommas(raw);
+            const x = el.x;
+            const y = el.y - 6;
+            ctx.fillText(text, x, y);
+        });
+        ctx.restore();
+    }
+};
+
+// Center text plugin for doughnut charts to display the total
+const DoughnutCenterTextPlugin = {
+    id: 'doughnutCenterText',
+    afterDraw(chart, args, opts) {
+        if (chart.config.type !== 'doughnut') return;
+        const dataset = chart.config.data?.datasets?.[0];
+        if (!dataset || !Array.isArray(dataset.data)) return;
+        const total = dataset.data.reduce((a, b) => a + (Number(b) || 0), 0);
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return;
+        const cx = (chartArea.left + chartArea.right) / 2;
+        const cy = (chartArea.top + chartArea.bottom) / 2;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.fillStyle = opts?.color || '#111827';
+        ctx.font = '600 16px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+        ctx.fillText(numberWithCommas(total), cx, cy);
+        ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+        ctx.fillStyle = '#6b7280';
+        ctx.fillText('Total', cx, cy + 18);
+        ctx.restore();
+    }
+};
+
 // Chart renderers
 let __inventoryChartInstance = null;
-function renderInventoryChart(labels, data) {
+function renderInventoryChart(labels, data, opts = {}) {
     const ctx = document.getElementById('inventory-chart');
     if (!ctx) return;
+    if (typeof Chart === 'undefined') return;
     if (__inventoryChartInstance) __inventoryChartInstance.destroy();
+    const threshold = typeof opts.threshold === 'number' ? opts.threshold : null;
+    const lowMask = Array.isArray(opts.lowMask) ? opts.lowMask : labels.map(() => false);
+    const ThresholdLinePlugin = {
+        id: 'thresholdLine',
+        afterDatasetsDraw(chart) {
+            if (threshold == null) return;
+            const { ctx, chartArea, scales } = chart;
+            if (!chartArea || !scales?.y) return;
+            const y = scales.y.getPixelForValue(threshold);
+            ctx.save();
+            ctx.strokeStyle = '#ef4444';
+            ctx.setLineDash([4, 4]);
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(chartArea.left, y);
+            ctx.lineTo(chartArea.right, y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#ef4444';
+            ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto, Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText(`Threshold: ${numberWithCommas(threshold)}`, chartArea.right - 4, y - 6);
+            ctx.restore();
+        }
+    };
+
     __inventoryChartInstance = new Chart(ctx.getContext('2d'), {
         type: 'bar',
         data: {
             labels,
-            datasets: [{ label: 'Current Stock', data, backgroundColor: '#3b82f6' }]
+            datasets: [{
+                label: 'Current Stock',
+                data,
+                borderRadius: 8,
+                borderSkipped: false,
+                maxBarThickness: 48,
+                backgroundColor: (context) => {
+                    const idx = context?.dataIndex ?? 0;
+                    // Low items get warm gradient, others cool gradient
+                    const low = !!lowMask[idx];
+                    const { chart } = context;
+                    const { ctx: c, chartArea } = chart;
+                    if (!chartArea) return low ? '#f97316' : '#3b82f6';
+                    const g = c.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                    if (low) {
+                        g.addColorStop(0, '#f97316'); // orange-500
+                        g.addColorStop(1, '#ef4444'); // red-500
+                    } else {
+                        g.addColorStop(0, '#22c55e'); // green-500
+                        g.addColorStop(1, '#3b82f6'); // blue-500
+                    }
+                    return g;
+                }
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: 8 },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#6b7280', font: { size: 12 } } },
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { color: '#6b7280', font: { size: 12 }, callback: (v) => numberWithCommas(v) } }
+            },
+            plugins: {
+                legend: { display: true, labels: { color: '#111827', font: { weight: '600' } } },
+                tooltip: { callbacks: { label: (ctx) => ` ${numberWithCommas(ctx.raw)}` } },
+                title: { display: true, text: opts?.totalItems && opts?.topN && opts.totalItems > opts.topN ? `Inventory Stock (Top ${opts.topN} of ${opts.totalItems})` : 'Inventory Stock by Product', color: '#111827', font: { weight: '600', size: 14 } },
+                valueDataLabels: { display: true, format: 'number' }
+            },
+            animation: { duration: 600, easing: 'easeOutQuart' }
+        },
+        plugins: [ValueDataLabelsPlugin, ThresholdLinePlugin]
     });
 }
 
@@ -3036,6 +3209,7 @@ let __statusChartInstance = null;
 function renderStatusChart(labels, data) {
     const ctx = document.getElementById('status-chart');
     if (!ctx) return;
+    if (typeof Chart === 'undefined') return;
     if (__statusChartInstance) __statusChartInstance.destroy();
 
     // Generate colors based on actual status labels
@@ -3043,8 +3217,30 @@ function renderStatusChart(labels, data) {
 
     __statusChartInstance = new Chart(ctx.getContext('2d'), {
         type: 'doughnut',
-        data: { labels, datasets: [{ data, backgroundColor: backgroundColors }] },
-        options: { responsive: true, maintainAspectRatio: false }
+        data: { labels, datasets: [{ data, backgroundColor: backgroundColors, borderWidth: 2, borderColor: '#ffffff' }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            layout: { padding: 8 },
+            plugins: {
+                legend: { position: 'top', labels: { color: '#111827', boxWidth: 12, usePointStyle: true } },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const total = ctx.dataset.data.reduce((a, b) => a + (Number(b) || 0), 0);
+                            const val = Number(ctx.raw) || 0;
+                            const pct = total ? ((val / total) * 100).toFixed(1) : '0.0';
+                            return ` ${ctx.label}: ${numberWithCommas(val)} (${pct}%)`;
+                        }
+                    }
+                },
+                title: { display: true, text: 'Requests by Status', color: '#111827', font: { weight: '600', size: 14 } },
+                doughnutCenterText: { color: '#111827' }
+            },
+            animation: { animateScale: true, animateRotate: true }
+        },
+        plugins: [DoughnutCenterTextPlugin]
     });
 }
 
@@ -8064,7 +8260,9 @@ function saveStockOut(stockId) {
 }
 
 // In-memory stock-out records (initialize from MockData if available)
-var stockOutData = (window.MockData && Array.isArray(window.MockData.stockOut)) ? window.MockData.stockOut.slice() : [];
+if (!Array.isArray(stockOutData) || stockOutData.length === 0) {
+    stockOutData = (window.MockData && Array.isArray(window.MockData.stockOut)) ? window.MockData.stockOut.slice() : [];
+}
 
 function renderStockOutRows() {
     if (!stockOutData || stockOutData.length === 0) return '<tr><td colspan="12" style="text-align:center; padding:32px 12px; color:#6b7280; font-size:14px; font-style:italic;">No records found</td></tr>';
